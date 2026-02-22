@@ -2,6 +2,6 @@ version: "3.9"
 
 services:
   backend:
-    build:
-    port:
-        - "8000:8000"
+      build: .
+          ports:
+                - "8000:8000"
