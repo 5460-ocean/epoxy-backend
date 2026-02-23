@@ -4,4 +4,4 @@ app = FastAPI()
 
 @app.get("/")
 def root():
-        return {"message": "EpoxyDesignAI Backend Running 🚀"}
+            return {"message": "EpoxyDesignAI Backend Running 🚀"}
