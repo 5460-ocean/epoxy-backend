@@ -9,13 +9,13 @@ def root():
     return {"message": "EpoxyDesignAI Backend Running 🚀"}
 
 
-    # 👇 NOTICE THIS IS NOT INDENTED
-    class Project(BaseModel):
-            name: str
-                surface_id: int
-                    theme_id: int
-                        asset_ids: List[int]
-                            user_id: int
+
+class Project(BaseModel):
+        name: str
+            surface_id: int
+                theme_id: int
+                    asset_ids: List[int]
+                        user_id: int
 
 
                         # 👇 ALSO NOT INDENTED
