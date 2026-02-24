@@ -8,6 +8,8 @@ app = FastAPI(docs_url="/docs", redoc_url="/redoc", openapi_url="/openapi.json")
 def root():
     return {"message": "EpoxyDesignAI Backend Running 🚀"}
 
+
+    # 👇 NOTICE THIS IS NOT INDENTED
     class Project(BaseModel):
         name: str
             surface_id: int
@@ -15,6 +17,8 @@ def root():
                     asset_ids: List[int]
                         user_id: int
 
+
+                        # 👇 ALSO NOT INDENTED
                         @app.post("/wizard/projects")
                         def create_project(project: Project):
                             return {
@@ -25,4 +29,3 @@ def root():
                                                                     "user_id": project.user_id,
                                                                             "created_at": "2026-02-24T15:09:52.274Z"
                                                                                 }
-                            
