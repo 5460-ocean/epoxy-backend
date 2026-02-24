@@ -11,11 +11,11 @@ def root():
 
     # 👇 NOTICE THIS IS NOT INDENTED
     class Project(BaseModel):
-        name: str
-            surface_id: int
-                theme_id: int
-                    asset_ids: List[int]
-                        user_id: int
+            name: str
+                surface_id: int
+                    theme_id: int
+                        asset_ids: List[int]
+                            user_id: int
 
 
                         # 👇 ALSO NOT INDENTED
