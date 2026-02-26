@@ -6,7 +6,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - sqlite_data:/data
+      - epoxy_sqlite_data:/data
 
 volumes:
-  sqlite_data:
+  epoxy_sqlite_data:
