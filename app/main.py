@@ -1,97 +1,45 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List
-from datetime import datetime
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+from .database import SessionLocal, engine
+from . import models, schemas
 
-app = FastAPI(docs_url="/docs", redoc_url="/redoc", openapi_url="/openapi.json")
+models.Base.metadata.create_all(bind=engine)
 
-projects_db = []
-project_counter = 1
-
-
-@app.get("/")
-def root():
-    return {"message": "EpoxyDesignAI Backend Running 🚀"}
+app = FastAPI()
 
 
-class CreateProject(BaseModel):
-    name: str
-    user_id: int
+# Dependency to get DB session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
-class UpdateStyle(BaseModel):
-    surface_id: int
-    theme_id: int
-
-
-class UpdateAssets(BaseModel):
-    asset_ids: List[int]
-
-
-@app.post("/wizard/projects")
-def create_project(project: CreateProject):
-    global project_counter
-
-    new_project = {
-        "id": project_counter,
-        "name": project.name,
-        "user_id": project.user_id,
-        "surface_id": None,
-        "theme_id": None,
-        "asset_ids": [],
-        "status": "draft",
-        "created_at": datetime.utcnow().isoformat()
-    }
-
-    projects_db.append(new_project)
-    project_counter += 1
-
-    return new_project
-
-
-@app.put("/wizard/projects/{project_id}/style")
-def update_style(project_id: int, style: UpdateStyle):
-    for project in projects_db:
-        if project["id"] == project_id:
-            project["surface_id"] = style.surface_id
-            project["theme_id"] = style.theme_id
-            return project
-
-    raise HTTPException(status_code=404, detail="Project not found")
-
-
-@app.put("/wizard/projects/{project_id}/assets")
-def update_assets(project_id: int, assets: UpdateAssets):
-    for project in projects_db:
-        if project["id"] == project_id:
-            project["asset_ids"] = assets.asset_ids
-            return project
-
-    raise HTTPException(status_code=404, detail="Project not found")
-
-
-# 🔥 NEW STEP 4
-@app.put("/wizard/projects/{project_id}/complete")
-def complete_project(project_id: int):
-    for project in projects_db:
-        if project["id"] == project_id:
-
-            if project["surface_id"] is None:
-                raise HTTPException(status_code=400, detail="Surface not selected")
-
-            if project["theme_id"] is None:
-                raise HTTPException(status_code=400, detail="Theme not selected")
-
-            if not project["asset_ids"]:
-                raise HTTPException(status_code=400, detail="No assets selected")
-
-            project["status"] = "completed"
-            return project
-
-    raise HTTPException(status_code=404, detail="Project not found")
+@app.post("/wizard/project")
+def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)):
+    db_project = models.Project(
+        name=project.name,
+        user_id=project.user_id
+    )
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    return db_project
 
 
 @app.get("/wizard/projects")
-def list_projects():
-    return projects_db
+def list_projects(db: Session = Depends(get_db)):
+    return db.query(models.Project).all()
 
+
+@app.delete("/wizard/project/{project_id}")
+def delete_project(project_id: int, db: Session = Depends(get_db)):
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    db.delete(project)
+    db.commit()
+    return {"message": "Project deleted"}
