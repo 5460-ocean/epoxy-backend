@@ -43,3 +43,13 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
     db.delete(project)
     db.commit()
     return {"message": "Project deleted"}
+
+
+@app.get("/")
+def root():
+    return {"message": "EpoxyDesignAI Backend Running 🚀"}
+
+
+@app.get("/")
+def root():
+    return {"message": "EpoxyDesignAI Backend Running 🚀"}
