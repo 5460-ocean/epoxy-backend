@@ -1,1 +1,1 @@
-from .project import ProjectCreate, ProjectResponse
+from .project import ProjectCreate, ProjectResponse, ProjectUpdate

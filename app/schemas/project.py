@@ -15,3 +15,8 @@ class ProjectResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ProjectUpdate(BaseModel):
+    name: str
+    user_id: int
