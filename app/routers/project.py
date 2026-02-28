@@ -6,7 +6,7 @@ from app.database import SessionLocal
 from app import models, schemas
 from app.dependencies import get_current_user
 
-router = APIRouter(prefix="/wizard", tags=["Wizard"])
+router = APIRouter(prefix="/wizard", tags=["Projects"])
 
 
 def get_db():
@@ -17,67 +17,73 @@ def get_db():
         db.close()
 
 
+# CREATE PROJECT (auto attach to logged-in user)
 @router.post("/project", response_model=schemas.ProjectResponse)
 def create_project(
     project: schemas.ProjectCreate,
-    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
-    db_project = models.Project(
+    new_project = models.Project(
         name=project.name,
-        user_id=current_user.id
+        owner_id=current_user.id
     )
-    db.add(db_project)
+
+    db.add(new_project)
+    db.commit()
+    db.refresh(new_project)
+    return new_project
+
+
+# GET PROJECTS (only user’s projects)
+@router.get("/projects", response_model=List[schemas.ProjectResponse])
+def get_projects(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    return db.query(models.Project).filter(
+        models.Project.owner_id == current_user.id
+    ).all()
+
+
+# UPDATE PROJECT (ownership enforced)
+@router.put("/project/{project_id}", response_model=schemas.ProjectResponse)
+def update_project(
+    project_id: int,
+    project: schemas.ProjectCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    db_project = db.query(models.Project).filter(
+        models.Project.id == project_id,
+        models.Project.owner_id == current_user.id
+    ).first()
+
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    db_project.name = project.name
     db.commit()
     db.refresh(db_project)
     return db_project
 
 
-@router.get("/projects", response_model=List[schemas.ProjectResponse])
-def list_projects(
-    current_user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return db.query(models.Project).filter(
-        models.Project.user_id == current_user.id
-    ).all()
-
-
-@router.put("/project/{project_id}", response_model=schemas.ProjectResponse)
-def update_project(
-    project_id: int,
-    updated_project: schemas.ProjectUpdate,
-    current_user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    project = db.query(models.Project).filter(
-        models.Project.id == project_id,
-        models.Project.user_id == current_user.id
-    ).first()
-
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    project.name = updated_project.name
-    db.commit()
-    db.refresh(project)
-    return project
-
-
-@router.delete("/project/{project_id}", response_model=dict)
+# DELETE PROJECT (ownership enforced)
+@router.delete("/project/{project_id}")
 def delete_project(
     project_id: int,
-    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
-    project = db.query(models.Project).filter(
+    db_project = db.query(models.Project).filter(
         models.Project.id == project_id,
-        models.Project.user_id == current_user.id
+        models.Project.owner_id == current_user.id
     ).first()
 
-    if not project:
+    if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    db.delete(project)
+    db.delete(db_project)
     db.commit()
-    return {"message": "Project deleted"}
+
+    return {"detail": "Project deleted"}
