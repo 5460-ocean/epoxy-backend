@@ -18,10 +18,9 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    new_project = models.Project(
-        name=project.name,
-        user_id=current_user.id   # ✅ FIXED
-    )
+    new_project = models.Project()
+    new_project.name = project.name
+    new_project.user_id = current_user.id
 
     db.add(new_project)
     db.commit()
@@ -37,46 +36,3 @@ def get_projects(
     return db.query(models.Project).filter(
         models.Project.user_id == current_user.id
     ).all()
-
-
-@router.put("/project/{project_id}", response_model=schemas.ProjectResponse)
-def update_project(
-    project_id: int,
-    project: schemas.ProjectUpdate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
-):
-    db_project = db.query(models.Project).filter(
-        models.Project.id == project_id,
-        models.Project.user_id == current_user.id
-    ).first()
-
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    if project.name is not None:
-        db_project.name = project.name
-
-    db.commit()
-    db.refresh(db_project)
-    return db_project
-
-
-@router.delete("/project/{project_id}")
-def delete_project(
-    project_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
-):
-    db_project = db.query(models.Project).filter(
-        models.Project.id == project_id,
-        models.Project.user_id == current_user.id
-    ).first()
-
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    db.delete(db_project)
-    db.commit()
-
-    return {"detail": "Project deleted"}
