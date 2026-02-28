@@ -17,7 +17,7 @@ class ProjectUpdate(BaseModel):
 
 class ProjectResponse(ProjectBase):
     id: int
-    owner_id: int
+    user_id: int   # ✅ must match model
     created_at: datetime
 
     class Config:

@@ -20,7 +20,7 @@ def create_project(
 ):
     new_project = models.Project(
         name=project.name,
-        owner_id=current_user.id
+        user_id=current_user.id   # ✅ FIXED
     )
 
     db.add(new_project)
@@ -35,7 +35,7 @@ def get_projects(
     current_user: models.User = Depends(get_current_user)
 ):
     return db.query(models.Project).filter(
-        models.Project.owner_id == current_user.id
+        models.Project.user_id == current_user.id
     ).all()
 
 
@@ -48,7 +48,7 @@ def update_project(
 ):
     db_project = db.query(models.Project).filter(
         models.Project.id == project_id,
-        models.Project.owner_id == current_user.id
+        models.Project.user_id == current_user.id
     ).first()
 
     if not db_project:
@@ -70,7 +70,7 @@ def delete_project(
 ):
     db_project = db.query(models.Project).filter(
         models.Project.id == project_id,
-        models.Project.owner_id == current_user.id
+        models.Project.user_id == current_user.id
     ).first()
 
     if not db_project:
