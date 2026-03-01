@@ -1,17 +1,16 @@
 from pydantic import BaseModel
-from typing import Optional
 
-class ProjectBase(BaseModel):
+# Project schemas
+class ProjectCreate(BaseModel):
     name: str
 
-class ProjectCreate(ProjectBase):
-    pass
-
 class ProjectUpdate(BaseModel):
-    name: Optional[str] = None
+    name: str
 
-class ProjectOut(ProjectBase):
+class ProjectOut(BaseModel):
     id: int
+    name: str
+    user_id: int
 
     class Config:
-        from_attributes = True
+        orm_mode = True
