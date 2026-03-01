@@ -8,6 +8,7 @@ app = FastAPI()
 
 # Public routes
 app.include_router(auth.router)
+app.include_router(auth.router)
 
 # Protected routes
 app.include_router(project.router)
