@@ -1,24 +1,17 @@
 from pydantic import BaseModel
-from datetime import datetime
 from typing import Optional
-
 
 class ProjectBase(BaseModel):
     name: str
 
-
 class ProjectCreate(ProjectBase):
     pass
-
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
 
-
-class ProjectResponse(ProjectBase):
+class ProjectOut(ProjectBase):
     id: int
-    user_id: int   # ✅ must match model
-    created_at: datetime
 
     class Config:
         from_attributes = True
