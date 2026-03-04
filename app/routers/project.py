@@ -28,12 +28,18 @@ def create_project(
 def get_projects(
     skip: int = 0,
     limit: int = 10,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     query = db.query(models.Project).filter(
         models.Project.owner_id == current_user.id
     )
+
+    if search:
+        query = query.filter(
+            models.Project.name.ilike(f"%{search}%")
+        )
 
     total = query.count()
     projects = query.offset(skip).limit(limit).all()
