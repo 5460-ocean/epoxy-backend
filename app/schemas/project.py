@@ -22,3 +22,12 @@ class ProjectOut(ProjectBase):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProjectPagination(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    items: list[ProjectOut]
+
+    model_config = ConfigDict(from_attributes=True)
