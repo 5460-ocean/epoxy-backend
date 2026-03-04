@@ -1,4 +1,3 @@
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app import models, schemas
@@ -25,16 +24,26 @@ def create_project(
     return new_project
 
 
-@router.get("/", response_model=List[schemas.ProjectOut])
+@router.get("/", response_model=schemas.ProjectPagination)
 def get_projects(
     skip: int = 0,
     limit: int = 10,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    return db.query(models.Project).filter(
+    query = db.query(models.Project).filter(
         models.Project.owner_id == current_user.id
-    ).offset(skip).limit(limit).all()
+    )
+
+    total = query.count()
+    projects = query.offset(skip).limit(limit).all()
+
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "items": projects,
+    }
 
 
 @router.put("/{project_id}", response_model=schemas.ProjectOut)
