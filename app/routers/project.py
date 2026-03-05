@@ -29,6 +29,8 @@ def get_projects(
     skip: int = 0,
     limit: int = 10,
     search: str | None = None,
+    sort_by: str = "id",
+    order: str = "asc",
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -36,10 +38,22 @@ def get_projects(
         models.Project.owner_id == current_user.id
     )
 
+    # Search
     if search:
         query = query.filter(
             models.Project.name.ilike(f"%{search}%")
         )
+
+    # 🔥 Dynamic column validation
+    if not hasattr(models.Project, sort_by):
+        raise HTTPException(status_code=400, detail="Invalid sort field")
+
+    column = getattr(models.Project, sort_by)
+
+    if order.lower() == "desc":
+        query = query.order_by(column.desc())
+    else:
+        query = query.order_by(column.asc())
 
     total = query.count()
     projects = query.offset(skip).limit(limit).all()
