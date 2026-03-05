@@ -150,3 +150,35 @@ def get_projects(
         "items": projects
     }
 
+# Admin: get all projects
+@router.get("/admin/projects", status_code=200)
+def get_all_projects(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+
+    # Only admins can access
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+
+    projects = db.query(models.Project).all()
+
+    return projects
+^D
+CTRL + C
+^D
+,
+
+
+@router.get("/admin/projects")
+def get_all_projects(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    projects = db.query(models.Project).all()
+
+    return projects
+

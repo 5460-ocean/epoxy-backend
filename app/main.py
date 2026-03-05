@@ -10,3 +10,7 @@ app = FastAPI()
 # Include routers
 app.include_router(auth.router)
 app.include_router(project.router)
+
+from app.routers import admin
+app.include_router(admin.router)
+
