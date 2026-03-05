@@ -108,3 +108,45 @@ def delete_project(
 
     db.delete(project)
     db.commit()
+
+@router.get("/", response_model=schemas.ProjectPagination)
+def get_projects(
+    skip: int = 0,
+    limit: int = 10,
+    search: str | None = None,
+    sort_by: str = "id",
+    order: str = "asc",
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+
+    query = db.query(models.Project)
+
+    # Admin can see everything
+    if current_user.role != "admin":
+        query = query.filter(models.Project.owner_id == current_user.id)
+
+    if search:
+        query = query.filter(models.Project.name.contains(search))
+
+    if sort_by not in ["id", "name", "owner_id"]:
+        raise HTTPException(status_code=400, detail="Invalid sort field")
+
+    sort_column = getattr(models.Project, sort_by)
+
+    if order == "desc":
+        query = query.order_by(sort_column.desc())
+    else:
+        query = query.order_by(sort_column.asc())
+
+    total = query.count()
+
+    projects = query.offset(skip).limit(limit).all()
+
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "items": projects
+    }
+
