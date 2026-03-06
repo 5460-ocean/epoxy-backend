@@ -161,13 +161,6 @@ def get_all_projects(db: Session = Depends(get_db), current_user=Depends(get_cur
     projects = db.query(models.Project).all()
 
     return projects
-^D
-CTRL + C
-^D
-,
-
-
-@router.get("/admin/projects")
 def get_all_projects(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
@@ -181,4 +174,3 @@ def get_all_projects(
     projects = db.query(models.Project).all()
 
     return projects
-
