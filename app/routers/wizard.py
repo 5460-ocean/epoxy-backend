@@ -28,3 +28,15 @@ def create_project(
     db.commit()
     db.refresh(new_project)
     return new_project
+
+from app.services.activity_logger import log_activity
+
+def log_project_create(db, user, project):
+    log_activity(db, user.id, "create", "project", project.id)
+
+def log_project_update(db, user, project):
+    log_activity(db, user.id, "update", "project", project.id)
+
+def log_project_delete(db, user, project):
+    log_activity(db, user.id, "delete", "project", project.id)
+
