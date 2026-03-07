@@ -31,3 +31,14 @@ class ProjectPagination(BaseModel):
     items: list[ProjectOut]
 
     model_config = ConfigDict(from_attributes=True)
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+# Correct ProjectOut with owner_id
+class ProjectOut(ProjectBase):
+    id: int
+    owner_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+

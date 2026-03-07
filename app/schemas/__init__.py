@@ -7,3 +7,4 @@ from .project import (
     ProjectOut,
     ProjectPagination,
 )
+from .project import ProjectUpdate

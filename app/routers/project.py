@@ -174,3 +174,79 @@ def get_all_projects(
     projects = db.query(models.Project).all()
 
     return projects
+
+@router.put("/{project_id}", response_model=schemas.ProjectOut)
+def update_project(
+    project_id: int,
+    project: schemas.ProjectUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+
+    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
+
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if db_project.owner_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    if project.name is not None:
+        db_project.name = project.name
+
+    if project.description is not None:
+        db_project.description = project.description
+
+    db.commit()
+    db.refresh(db_project)
+
+    return db_project
+
+
+# Secure UPDATE project (owner or admin)
+@router.put("/wizard/{project_id}", response_model=schemas.ProjectOut)
+def update_project(
+    project_id: int,
+    project_update: schemas.ProjectUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if project.owner_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    for key, value in project_update.dict(exclude_unset=True).items():
+        setattr(project, key, value)
+
+    db.commit()
+    db.refresh(project)
+
+    return project
+
+
+# Secure DELETE project (owner or admin)
+@router.delete("/wizard/{project_id}", status_code=204)
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if project.owner_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    db.delete(project)
+    db.commit()
+
+    return
+
