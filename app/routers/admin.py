@@ -23,3 +23,19 @@ def get_all_projects(
 ):
     projects = db.query(models.Project).all()
     return projects
+
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from app.database import get_db
+from app.models.activity_log import ActivityLog
+from app.dependencies import get_current_admin
+
+
+@router.get("/logs")
+def get_activity_logs(
+    db: Session = Depends(get_db),
+    current_admin = Depends(get_current_admin)
+):
+    logs = db.query(ActivityLog).order_by(ActivityLog.timestamp.desc()).all()
+    return logs
+

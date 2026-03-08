@@ -1,42 +1,89 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from app import models, schemas
 from app.database import get_db
+from app.models.project import Project
+from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectOut
 from app.dependencies import get_current_user
-
-router = APIRouter(prefix="/wizard", tags=["Projects"])
-
-
-@router.post(
-    "/",
-    response_model=schemas.ProjectOut,
-    status_code=status.HTTP_201_CREATED
-)
-def create_project(
-    project: schemas.ProjectCreate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    new_project = models.Project(
-        name=project.name,
-        description=project.description,
-        owner_id=current_user.id,
-    )
-    db.add(new_project)
-    db.commit()
-    db.refresh(new_project)
-    return new_project
-
 from app.services.activity_logger import log_activity
 
-def log_project_create(db, user, project):
-    log_activity(db, user.id, "create", "project", project.id)
+router = APIRouter(prefix="/wizard", tags=["wizard"])
 
-def log_project_update(db, user, project):
-    log_activity(db, user.id, "update", "project", project.id)
 
-def log_project_delete(db, user, project):
-    log_activity(db, user.id, "delete", "project", project.id)
+@router.get("", response_model=List[ProjectOut])
+def get_projects(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    projects = db.query(Project).filter(Project.owner_id == current_user.id).all()
+    return projects
+
+
+@router.post("", response_model=ProjectOut)
+def create_project(
+    project: ProjectCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+
+    db_project = Project(**project.dict(), owner_id=current_user.id)
+
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+
+    log_activity(db, current_user.id, "create", "project", db_project.id)
+
+    return db_project
+
+
+@router.put("/{project_id}", response_model=ProjectOut)
+def update_project(
+    project_id: int,
+    project_update: ProjectUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+
+    project = db.query(Project).filter(
+        Project.id == project_id,
+        Project.owner_id == current_user.id
+    ).first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    for key, value in project_update.dict(exclude_unset=True).items():
+        setattr(project, key, value)
+
+    db.commit()
+    db.refresh(project)
+
+    log_activity(db, current_user.id, "update", "project", project.id)
+
+    return project
+
+
+@router.delete("/{project_id}")
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+
+    project = db.query(Project).filter(
+        Project.id == project_id,
+        Project.owner_id == current_user.id
+    ).first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    db.delete(project)
+    db.commit()
+
+    log_activity(db, current_user.id, "delete", "project", project_id)
+
+    return {"message": "Project deleted"}
 
