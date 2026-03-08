@@ -13,6 +13,7 @@ from app.services.activity_logger import log_activity
 
 router = APIRouter(prefix="/wizard", tags=["wizard"])
 
+# Rate limiter
 limiter = Limiter(key_func=get_remote_address)
 
 
