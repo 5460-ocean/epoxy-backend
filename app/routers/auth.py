@@ -17,7 +17,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
     new_user = User(
         email=user.email,
-        password_hash=hash_password(user.password),
+        hashed_password=hash_password(user.password),
         is_admin=user.is_admin
     )
 
@@ -41,7 +41,7 @@ def login(
             detail="Invalid credentials"
         )
 
-    if not verify_password(form_data.password, user.password_hash):
+    if not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"

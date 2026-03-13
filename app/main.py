@@ -1,8 +1,7 @@
-from fastapi import FastAPI
-
-from app.routers import auth
-from app.routers import wizard
-from app.routers import admin
+from fastapi import FastAPI, Depends
+from fastapi.security import OAuth2PasswordBearer
+from app.routers import auth, wizard, admin
+from app.security import oauth2_scheme
 
 app = FastAPI(
     title="SaaS Backend",
@@ -10,26 +9,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Authentication routes
-app.include_router(
-    auth.router,
-    tags=["auth"]
-)
+# Include routers
+app.include_router(auth.router, tags=["auth"])
+app.include_router(wizard.router, prefix="/wizard", tags=["wizard"])
+app.include_router(admin.router, prefix="/admin", tags=["admin"])
 
-# User project routes
-app.include_router(
-    wizard.router,
-    prefix="/wizard",
-    tags=["wizard"]
-)
-
-# Admin routes
-app.include_router(
-    admin.router,
-    prefix="/admin",
-    tags=["admin"]
-)
-
-@app.get("/")
-def root():
-    return {"message": "SaaS backend running"}
+# Example root route with security (Swagger will prompt for token)
+@app.get("/", summary="Root endpoint (requires token)")
+def root(token: str = Depends(oauth2_scheme)):
+    return {"message": "SaaS backend running", "token": token}
