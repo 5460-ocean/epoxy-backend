@@ -1,41 +1,34 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from typing import List
+
 from app.database import get_db
-from app.dependencies import get_current_admin
-from app import models
+from app.models.user import User
+from app.models.project import Project
+from app.models.activity_log import ActivityLog
+from app.dependencies.auth import get_current_admin
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
-
+router = APIRouter()
 
 @router.get("/users")
-def get_all_users(
+def get_users(
     db: Session = Depends(get_db),
-    admin=Depends(get_current_admin)
+    current_admin: User = Depends(get_current_admin)
 ):
-    users = db.query(models.User).all()
-    return users
+    return db.query(User).all()
 
 
 @router.get("/projects")
-def get_all_projects(
+def get_projects(
     db: Session = Depends(get_db),
-    admin=Depends(get_current_admin)
+    current_admin: User = Depends(get_current_admin)
 ):
-    projects = db.query(models.Project).all()
-    return projects
-
-from sqlalchemy.orm import Session
-from fastapi import Depends
-from app.database import get_db
-from app.models.activity_log import ActivityLog
-from app.dependencies import get_current_admin
+    return db.query(Project).all()
 
 
 @router.get("/logs")
-def get_activity_logs(
+def get_logs(
     db: Session = Depends(get_db),
-    current_admin = Depends(get_current_admin)
+    current_admin: User = Depends(get_current_admin)
 ):
-    logs = db.query(ActivityLog).order_by(ActivityLog.timestamp.desc()).all()
-    return logs
-
+    return db.query(ActivityLog).all()

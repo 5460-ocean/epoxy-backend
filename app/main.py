@@ -1,27 +1,35 @@
 from fastapi import FastAPI
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-from slowapi import _rate_limit_exceeded_handler
 
-from app.routers import auth, wizard, admin
+from app.routers import auth
+from app.routers import wizard
+from app.routers import admin
 
-app = FastAPI(title="SaaS Backend")
+app = FastAPI(
+    title="SaaS Backend",
+    description="FastAPI SaaS backend with JWT authentication",
+    version="1.0.0"
+)
 
-# Rate limiter
-limiter = Limiter(key_func=get_remote_address)
+# Authentication routes
+app.include_router(
+    auth.router,
+    tags=["auth"]
+)
 
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
+# User project routes
+app.include_router(
+    wizard.router,
+    prefix="/wizard",
+    tags=["wizard"]
+)
 
-# Routers
-app.include_router(auth.router)
-app.include_router(wizard.router)
-app.include_router(admin.router)
-
+# Admin routes
+app.include_router(
+    admin.router,
+    prefix="/admin",
+    tags=["admin"]
+)
 
 @app.get("/")
 def root():
-    return {"message": "API running"}
+    return {"message": "SaaS backend running"}
