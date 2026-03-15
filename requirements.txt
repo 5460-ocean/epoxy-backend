@@ -7,3 +7,12 @@ bcrypt==4.0.1
 python-jose[cryptography]
 slowapi
 python-multipart
+bcrypt==4.0.1
+fastapi
+passlib[bcrypt]
+pydantic[email]
+python-jose[cryptography]
+python-multipart
+slowapi
+sqlalchemy
+uvicorn[standard]
