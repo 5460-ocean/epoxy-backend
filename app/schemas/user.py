@@ -5,9 +5,11 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    role: str = "user"   # ✅ default user
 
 class UserOut(UserBase):
     id: int
+    role: str
 
     class Config:
         from_attributes = True

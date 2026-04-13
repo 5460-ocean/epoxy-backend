@@ -18,7 +18,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
     new_user = models.User(
         email=user.email,
-        hashed_password=hash_password(user.password)
+        hashed_password=hash_password(user.password),
+        role=user.role   # ✅ now supports admin
     )
 
     db.add(new_user)
@@ -35,7 +36,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    token = create_access_token({"sub": user.email})
+    token = create_access_token({
+        "sub": user.email,
+        "role": user.role   # ✅ include role
+    })
 
     return {
         "access_token": token,
