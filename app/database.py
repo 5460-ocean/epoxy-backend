@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./fresh.db"
 
@@ -13,7 +12,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-# ✅ THIS WAS MISSING (CRITICAL)
+# ✅ REQUIRED FUNCTION
 def get_db():
     db = SessionLocal()
     try:
