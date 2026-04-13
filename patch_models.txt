@@ -1,0 +1,9 @@
+In models.py (Log model), update fields:
+
+timestamp = Column(DateTime, index=True)
+action = Column(String, index=True)
+user_id = Column(Integer, index=True)
+
+In Project model:
+
+owner_id = Column(Integer, index=True)

@@ -1,3 +1,4 @@
-from .project import Project
 from .user import User
-from .activity_log import ActivityLog
+from .project import Project
+from .log import Log
+from .log import Log

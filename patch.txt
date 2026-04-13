@@ -1,0 +1,7 @@
+Replace this line in dashboard.py:
+
+.order_by(func.count(models.Log.id).desc())
+
+WITH:
+
+.order_by(func.count(models.Log.id).desc(), models.Log.action)

@@ -1,44 +1,27 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Optional
-
+from pydantic import BaseModel
+from datetime import datetime
 
 class ProjectBase(BaseModel):
     name: str
-    description: Optional[str] = None
-
+    description: str
+    surface: str
+    theme: str
 
 class ProjectCreate(ProjectBase):
     pass
 
+class ProjectUpdate(ProjectBase):
+    pass
 
-class ProjectUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ProjectOut(ProjectBase):
-    id: int
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ProjectPagination(BaseModel):
-    total: int
-    skip: int
-    limit: int
-    items: list[ProjectOut]
-
-    model_config = ConfigDict(from_attributes=True)
-class ProjectUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-
-# Correct ProjectOut with owner_id
 class ProjectOut(ProjectBase):
     id: int
     owner_id: int
+    created_at: datetime
+    updated_at: datetime | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
 
+class ProjectList(BaseModel):
+    items: list[ProjectOut]
+    total: int

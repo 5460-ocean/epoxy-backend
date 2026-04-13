@@ -1,0 +1,10 @@
+    total = query.count()
+
+    projects = query.offset(skip).limit(limit).all()
+
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "items": projects
+    }

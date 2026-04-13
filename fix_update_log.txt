@@ -1,0 +1,6 @@
+log_action(
+    db,
+    "UPDATE_PROJECT",
+    current_user.email,
+    f"Updated project '{project.name}'"
+)

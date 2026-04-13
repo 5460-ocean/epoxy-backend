@@ -1,0 +1,22 @@
+    # ✅ Safe sorting (whitelist)
+    allowed_sorts = {
+        "created_at": models.Project.created_at,
+        "updated_at": models.Project.updated_at,
+        "name": models.Project.name,
+        "surface": models.Project.surface
+    }
+
+    if sort:
+        direction = "asc"
+
+        if sort.startswith("-"):
+            sort = sort[1:]
+            direction = "desc"
+
+        column = allowed_sorts.get(sort)
+
+        if column:
+            if direction == "desc":
+                query = query.order_by(column.desc())
+            else:
+                query = query.order_by(column.asc())

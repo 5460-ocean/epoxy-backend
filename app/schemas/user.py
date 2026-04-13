@@ -1,23 +1,13 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
+class UserBase(BaseModel):
+    email: str
 
-class UserCreate(BaseModel):
-    email: EmailStr
+class UserCreate(UserBase):
     password: str
 
-
-class UserOut(BaseModel):
+class UserOut(UserBase):
     id: int
-    email: EmailStr
-    role: str
 
     class Config:
         from_attributes = True
-
-from pydantic import BaseModel, EmailStr
-
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
