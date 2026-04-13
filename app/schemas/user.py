@@ -4,7 +4,7 @@ class UserBase(BaseModel):
     email: str
 
 class UserCreate(UserBase):
-    password: str   # ❌ no role here
+    password: str   # ✅ ONLY password
 
 class UserOut(UserBase):
     id: int
