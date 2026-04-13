@@ -1,11 +1,10 @@
 from fastapi import FastAPI
 from app.database import Base, engine
 
-# 🔥 FORCE recreate tables
-Base.metadata.drop_all(bind=engine)
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
+
+# ✅ CREATE TABLES (safe)
+Base.metadata.create_all(bind=engine)
 
 from app.routers import auth, project, admin, logs, analytics
 

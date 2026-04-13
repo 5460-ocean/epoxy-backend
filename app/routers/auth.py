@@ -19,7 +19,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     new_user = models.User(
         email=user.email,
         hashed_password=hash_password(user.password),
-        role=user.role   # ✅ now supports admin
+        role="user"   # ✅ FORCE user
     )
 
     db.add(new_user)
@@ -38,7 +38,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
     token = create_access_token({
         "sub": user.email,
-        "role": user.role   # ✅ include role
+        "role": user.role
     })
 
     return {
