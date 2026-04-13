@@ -3,8 +3,7 @@ from app.database import Base, engine
 
 app = FastAPI()
 
-# 🔥 TEMP: reset DB to include role column
-Base.metadata.drop_all(bind=engine)
+# ✅ Create tables on startup
 Base.metadata.create_all(bind=engine)
 
 from app.routers import auth, project, admin, logs, analytics
