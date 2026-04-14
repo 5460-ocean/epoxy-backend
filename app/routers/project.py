@@ -150,3 +150,38 @@ def restore_project(project_id: int, db: Session = Depends(get_db), current_user
     create_log(db, current_user.id, "RESTORE_PROJECT")
 
     return {"message": "Project restored"}
+
+# ✅ FIXED UPDATE PROJECT (manual return)
+@router.put("/{project_id}")
+def update_project(
+    project_id: int,
+    updated: schemas.ProjectUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    project = db.query(models.Project).filter(
+        models.Project.id == project_id,
+        models.Project.owner_id == current_user.id
+    ).first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    for key, value in updated.dict(exclude_unset=True).items():
+        setattr(project, key, value)
+
+    db.commit()
+    db.refresh(project)
+
+    create_log(db, current_user.id, "UPDATE_PROJECT")
+
+    return {
+        "id": project.id,
+        "name": project.name,
+        "description": project.description,
+        "surface": project.surface,
+        "theme": project.theme,
+        "owner_id": project.owner_id,
+        "is_deleted": project.is_deleted,
+        "created_at": str(project.created_at)
+    }
