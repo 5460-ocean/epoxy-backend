@@ -9,13 +9,13 @@ from app.dependencies import get_current_user
 router = APIRouter(prefix="/project", tags=["Project"])
 
 
-# ✅ GET PROJECTS
 @router.get("/")
 def get_projects(
     skip: int = 0,
     limit: int = 10,
     search: str = Query(None),
     name: str = Query(None),
+    surface: str = Query(None),   # ✅ NEW
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
@@ -24,6 +24,7 @@ def get_projects(
         models.Project.is_deleted == False
     )
 
+    # 🔍 global search
     if search:
         query = query.filter(
             or_(
@@ -32,8 +33,13 @@ def get_projects(
             )
         )
 
+    # 🎯 name filter
     if name:
         query = query.filter(models.Project.name.ilike(f"%{name}%"))
+
+    # 🧱 surface filter (NEW)
+    if surface:
+        query = query.filter(models.Project.surface.ilike(f"%{surface}%"))
 
     total = query.count()
     projects = query.offset(skip).limit(limit).all()
@@ -46,7 +52,8 @@ def get_projects(
     }
 
 
-# ✅ CREATE PROJECT
+# ✅ KEEP OTHER ENDPOINTS (unchanged)
+
 @router.post("/")
 def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     new_project = models.Project(
@@ -61,7 +68,6 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)
     return new_project
 
 
-# ✅ UPDATE PROJECT
 @router.put("/{project_id}")
 def update_project(project_id: int, updated: schemas.ProjectUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     project = db.query(models.Project).filter(
@@ -81,7 +87,6 @@ def update_project(project_id: int, updated: schemas.ProjectUpdate, db: Session 
     return project
 
 
-# ✅ DELETE (soft delete)
 @router.delete("/{project_id}")
 def delete_project(project_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     project = db.query(models.Project).filter(
