@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from app.database import Base, engine
 
-# ✅ IMPORT MODELS FIRST (CRITICAL)
+# ✅ IMPORT MODELS FIRST
 from app import models
 
 app = FastAPI()
 
-# ✅ NOW tables will be created properly
+# 🔥 TEMP: recreate tables
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 from app.routers import auth, project, admin, logs, analytics
