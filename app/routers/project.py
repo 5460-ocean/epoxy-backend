@@ -101,3 +101,22 @@ def delete_project(project_id: int, db: Session = Depends(get_db), current_user=
     db.commit()
 
     return {"message": "Project deleted"}
+
+@router.put("/restore/{project_id}")
+def restore_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    project = db.query(models.Project).filter(
+        models.Project.id == project_id,
+        models.Project.owner_id == current_user.id
+    ).first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    project.is_deleted = False
+    db.commit()
+
+    return {"message": "Project restored"}
