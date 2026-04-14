@@ -10,7 +10,7 @@ from app.utils.logger import create_log
 router = APIRouter(prefix="/project", tags=["Project"])
 
 
-# ✅ GET PROJECTS (SAFE)
+# ✅ GET PROJECTS
 @router.get("/")
 def get_projects(
     skip: int = 0,
@@ -64,7 +64,7 @@ def get_projects(
     }
 
 
-# ✅ CREATE PROJECT
+# ✅ FIXED CREATE PROJECT (manual return)
 @router.post("/")
 def create_project(
     project: schemas.ProjectCreate,
@@ -82,17 +82,21 @@ def create_project(
 
     create_log(db, current_user.id, "CREATE_PROJECT")
 
-    return new_project
+    return {
+        "id": new_project.id,
+        "name": new_project.name,
+        "description": new_project.description,
+        "surface": new_project.surface,
+        "theme": new_project.theme,
+        "owner_id": new_project.owner_id,
+        "is_deleted": new_project.is_deleted,
+        "created_at": str(new_project.created_at)
+    }
 
 
-# ✅ UPDATE PROJECT
+# (KEEP REST SAME — DO NOT TOUCH)
 @router.put("/{project_id}")
-def update_project(
-    project_id: int,
-    updated: schemas.ProjectUpdate,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
+def update_project(project_id: int, updated: schemas.ProjectUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     project = db.query(models.Project).filter(
         models.Project.id == project_id,
         models.Project.owner_id == current_user.id
@@ -112,13 +116,8 @@ def update_project(
     return project
 
 
-# ❌ DELETE PROJECT
 @router.delete("/{project_id}")
-def delete_project(
-    project_id: int,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
+def delete_project(project_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     project = db.query(models.Project).filter(
         models.Project.id == project_id,
         models.Project.owner_id == current_user.id
@@ -135,13 +134,8 @@ def delete_project(
     return {"message": "Project deleted"}
 
 
-# ♻️ RESTORE PROJECT
 @router.put("/restore/{project_id}")
-def restore_project(
-    project_id: int,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
+def restore_project(project_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     project = db.query(models.Project).filter(
         models.Project.id == project_id,
         models.Project.owner_id == current_user.id
