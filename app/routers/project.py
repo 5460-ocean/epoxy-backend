@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
 from app.database import get_db
 from app import models, schemas
@@ -10,8 +9,7 @@ from app.utils.logger import create_log
 router = APIRouter(prefix="/project", tags=["Project"])
 
 
-# ✅ CREATE PROJECT (FIXED)
-@router.post("/")
+@router.post("/", response_model=schemas.ProjectOut)  # ✅ FIX
 def create_project(
     project: schemas.ProjectCreate,
     db: Session = Depends(get_db),
@@ -26,7 +24,6 @@ def create_project(
     db.commit()
     db.refresh(new_project)
 
-    # 🔥 LOG
     create_log(db, current_user.id, "CREATE_PROJECT")
 
-    return new_project  # ✅ THIS IS THE KEY
+    return new_project
