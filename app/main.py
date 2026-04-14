@@ -1,22 +1,26 @@
 from fastapi import FastAPI
 from app.database import Base, engine
 
-# ✅ IMPORT MODELS FIRST
+# ✅ IMPORTANT: import models FIRST
 from app import models
+
+# ✅ EXPLICIT router imports (fix)
+from app.routers.auth import router as auth_router
+from app.routers.project import router as project_router
+from app.routers.admin import router as admin_router
+from app.routers.logs import router as logs_router
+from app.routers.analytics import router as analytics_router
 
 app = FastAPI()
 
-# 🔥 TEMP: recreate tables
-Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
-from app.routers import auth, project, admin, logs, analytics
-
-app.include_router(auth.router)
-app.include_router(project.router)
-app.include_router(admin.router)
-app.include_router(logs.router)
-app.include_router(analytics.router)
+# ✅ INCLUDE routers
+app.include_router(auth_router)
+app.include_router(project_router)
+app.include_router(admin_router)
+app.include_router(logs_router)
+app.include_router(analytics_router)
 
 
 @app.get("/")
