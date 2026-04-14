@@ -1,17 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from typing import List
 
 from app.database import get_db
-from app import models, schemas
+from app import models
 from app.dependencies import get_current_user
 from app.utils.logger import create_log
 
 router = APIRouter(prefix="/project", tags=["Project"])
 
 
-# ✅ FIXED GET PROJECTS
+# ✅ SAFE GET PROJECTS (manual serialization)
 @router.get("/")
 def get_projects(
     skip: int = 0,
@@ -44,9 +43,22 @@ def get_projects(
     total = query.count()
     projects = query.offset(skip).limit(limit).all()
 
-    # ✅ CONVERT TO DICT USING SCHEMA
+    # 🔥 MANUAL SERIALIZATION (guaranteed safe)
+    items = []
+    for p in projects:
+        items.append({
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "surface": p.surface,
+            "theme": p.theme,
+            "owner_id": p.owner_id,
+            "is_deleted": p.is_deleted,
+            "created_at": str(p.created_at)
+        })
+
     return {
-        "items": [schemas.ProjectOut.model_validate(p) for p in projects],
+        "items": items,
         "total": total,
         "skip": skip,
         "limit": limit
