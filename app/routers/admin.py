@@ -1,20 +1,20 @@
-# (keep everything else the same above)
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app import models
+from app.dependencies import get_current_user
+
+router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def check_admin(user):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
 
 @router.get("/projects")
 def get_projects(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     check_admin(current_user)
 
-    projects = db.query(models.Project).all()
-
-    result = []
-    for p in projects:
-        user = db.query(models.User).filter(models.User.id == p.owner_id).first()
-
-        result.append({
-            "id": p.id,
-            "name": p.name,
-            "status": "deleted" if p.is_deleted else "active",
-            "creator": user.email if user else None   # ✅ renamed
-        })
-
-    return result
+    return {"message": "NEW CODE DEPLOYED"}  # 🔥 obvious change
