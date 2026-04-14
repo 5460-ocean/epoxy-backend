@@ -5,17 +5,19 @@ from sqlalchemy import or_
 from app.database import get_db
 from app import models, schemas
 from app.dependencies import get_current_user
+from app.utils.logger import create_log   # ✅ NEW
 
 router = APIRouter(prefix="/project", tags=["Project"])
 
 
+# ✅ GET PROJECTS
 @router.get("/")
 def get_projects(
     skip: int = 0,
     limit: int = 10,
     search: str = Query(None),
     name: str = Query(None),
-    surface: str = Query(None),   # ✅ NEW
+    surface: str = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
@@ -24,7 +26,6 @@ def get_projects(
         models.Project.is_deleted == False
     )
 
-    # 🔍 global search
     if search:
         query = query.filter(
             or_(
@@ -33,11 +34,9 @@ def get_projects(
             )
         )
 
-    # 🎯 name filter
     if name:
         query = query.filter(models.Project.name.ilike(f"%{name}%"))
 
-    # 🧱 surface filter (NEW)
     if surface:
         query = query.filter(models.Project.surface.ilike(f"%{surface}%"))
 
@@ -52,10 +51,13 @@ def get_projects(
     }
 
 
-# ✅ KEEP OTHER ENDPOINTS (unchanged)
-
+# ✅ CREATE PROJECT
 @router.post("/")
-def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def create_project(
+    project: schemas.ProjectCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     new_project = models.Project(
         **project.dict(),
         owner_id=current_user.id
@@ -65,11 +67,20 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(new_project)
 
+    # 🔥 LOG
+    create_log(db, current_user.id, "CREATE_PROJECT")
+
     return new_project
 
 
+# ✅ UPDATE PROJECT
 @router.put("/{project_id}")
-def update_project(project_id: int, updated: schemas.ProjectUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def update_project(
+    project_id: int,
+    updated: schemas.ProjectUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     project = db.query(models.Project).filter(
         models.Project.id == project_id,
         models.Project.owner_id == current_user.id
@@ -84,11 +95,19 @@ def update_project(project_id: int, updated: schemas.ProjectUpdate, db: Session 
     db.commit()
     db.refresh(project)
 
+    # 🔥 LOG
+    create_log(db, current_user.id, "UPDATE_PROJECT")
+
     return project
 
 
+# ❌ DELETE PROJECT (soft)
 @router.delete("/{project_id}")
-def delete_project(project_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     project = db.query(models.Project).filter(
         models.Project.id == project_id,
         models.Project.owner_id == current_user.id
@@ -100,8 +119,13 @@ def delete_project(project_id: int, db: Session = Depends(get_db), current_user=
     project.is_deleted = True
     db.commit()
 
+    # 🔥 LOG
+    create_log(db, current_user.id, "DELETE_PROJECT")
+
     return {"message": "Project deleted"}
 
+
+# ♻️ RESTORE PROJECT
 @router.put("/restore/{project_id}")
 def restore_project(
     project_id: int,
@@ -118,5 +142,8 @@ def restore_project(
 
     project.is_deleted = False
     db.commit()
+
+    # 🔥 LOG
+    create_log(db, current_user.id, "RESTORE_PROJECT")
 
     return {"message": "Project restored"}
