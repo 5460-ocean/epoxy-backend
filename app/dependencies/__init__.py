@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 
@@ -7,14 +7,16 @@ from app.database import get_db
 from app import models
 from app.auth import SECRET_KEY, ALGORITHM
 
-# 🔥 This enables Swagger Authorize button
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+# 🔥 Use Bearer instead of OAuth2
+security = HTTPBearer()
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
+    token = credentials.credentials
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("user_id")
