@@ -1,51 +1,48 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
+from datetime import datetime, timedelta
+from jose import jwt
 
 from app.database import get_db
 from app import models, schemas
-from app.auth import verify_password, hash_password, create_access_token
+from app.auth import verify_password, hash_password
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
 
-# ✅ REGISTER
+
 @router.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    existing_user = db.query(models.User).filter(models.User.email == user.email).first()
+    existing = db.query(models.User).filter(models.User.email == user.email).first()
 
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    role = "admin" if user.email == "admin@test.com" else "user"
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already exists")
 
     new_user = models.User(
         email=user.email,
         hashed_password=hash_password(user.password),
-        role=role
+        role="user"
     )
 
     db.add(new_user)
     db.commit()
-    db.refresh(new_user)
 
-    return {"message": f"{role} created successfully"}
+    return {"message": "User created"}
 
 
-# ✅ LOGIN (RESTORED)
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
 
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
+    if not db_user or not verify_password(user.password, db_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    token = create_access_token({
-        "sub": user.email,
-        "role": user.role
-    })
+    token = jwt.encode(
+        {"user_id": db_user.id},
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
 
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
+    return {"access_token": token, "token_type": "bearer"}
