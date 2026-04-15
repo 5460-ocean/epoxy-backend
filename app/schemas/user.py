@@ -12,3 +12,9 @@ class UserOut(UserBase):
 
     class Config:
         from_attributes = True
+
+from pydantic import BaseModel
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
