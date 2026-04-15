@@ -1,22 +1,26 @@
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models
 
-# 🔥 FIX: add leading slash
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
     db: Session = Depends(get_db)
 ):
+    # 🔥 Get Authorization header manually
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Missing Authorization header")
+
     try:
-        user_id = int(token)  # simple token = user id
+        # Expect: "Bearer 1"
+        token = auth_header.split(" ")[1]
+        user_id = int(token)
     except:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token format")
 
     user = db.query(models.User).filter(models.User.id == user_id).first()
 
