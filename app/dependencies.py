@@ -9,18 +9,17 @@ def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    # 🔥 Get Authorization header manually
     auth_header = request.headers.get("Authorization")
 
     if not auth_header:
         raise HTTPException(status_code=401, detail="Missing Authorization header")
 
     try:
-        # Expect: "Bearer 1"
+        # Expect: Bearer 1
         token = auth_header.split(" ")[1]
         user_id = int(token)
     except:
-        raise HTTPException(status_code=401, detail="Invalid token format")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     user = db.query(models.User).filter(models.User.id == user_id).first()
 
