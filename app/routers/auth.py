@@ -15,16 +15,21 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Email already exists")
 
+    # 🔥 AUTO ADMIN LOGIC
+    role = "admin" if user.email == "admin@test.com" else "user"
+
     new_user = models.User(
         email=user.email,
         hashed_password=hash_password(user.password),
-        role="user"
+        role=role
     )
 
     db.add(new_user)
     db.commit()
 
-    return {"message": "User created"}
+    return {
+        "message": f"{role} created successfully"
+    }
 
 
 @router.post("/login")
@@ -35,6 +40,6 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     return {
-        "access_token": str(db_user.id),   # 🔥 simple token
+        "access_token": str(db_user.id),
         "token_type": "bearer"
     }
