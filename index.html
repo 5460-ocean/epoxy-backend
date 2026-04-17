@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Epoxy App</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+<h1>Epoxy Projects</h1>
+
+<input id="token" placeholder="Paste JWT token" style="width:100%" />
+<button onclick="loadProjects()">Load Projects</button>
+
+<p id="status"></p>
+<pre id="debug"></pre>
+
+<div id="projects"></div>
+
+<script>
+const API = "";
+
+async function loadProjects() {
+  const token = document.getElementById("token").value;
+  const status = document.getElementById("status");
+  const debug = document.getElementById("debug");
+
+  try {
+    status.innerText = "Loading...";
+
+    const res = await axios.get(API + "/project/", {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    status.innerText = "Loaded successfully ✅";
+    debug.innerText = JSON.stringify(res.data, null, 2);
+
+    const container = document.getElementById("projects");
+    container.innerHTML = "";
+
+    if (res.data.items.length === 0) {
+      container.innerHTML = "<p>No projects found ❌</p>";
+      return;
+    }
+
+    res.data.items.forEach(p => {
+      const div = document.createElement("div");
+      div.innerHTML = `<h3>${p.name}</h3><p>${p.description}</p>`;
+      container.appendChild(div);
+    });
+
+  } catch (err) {
+    status.innerText = "Error: " + err;
+  }
+}
+</script>
+
+</body>
+</html>

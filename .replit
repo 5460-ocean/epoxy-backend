@@ -13,4 +13,4 @@ externalPort = 9000
 expertMode = true
 
 [nix]
-packages = ["libxcrypt", "lsof"]
+packages = ["cacert", "cargo", "libffi", "libiconv", "libxcrypt", "lsof", "nodejs-12_x", "openssl", "pkg-config", "rustc"]

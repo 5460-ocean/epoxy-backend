@@ -23,3 +23,28 @@ app.include_router(analytics_router)
 @app.get("/")
 def root():
     return {"message": "API is running"}
+
+from fastapi.responses import FileResponse
+
+@app.get("/app")
+def serve_frontend():
+    return FileResponse("index.html")
+
+
+from fastapi.responses import FileResponse
+
+@app.get("/app")
+def serve_frontend():
+    return FileResponse("index.html")
+
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
