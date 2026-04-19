@@ -1,15 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# 👇 your existing routers (keep these if you had them)
-from app.routes import auth, project, admin, logs, analytics
+# ✅ import your existing routers (based on your working app)
+from app.auth import router as auth_router
+from app.project import router as project_router
+from app.admin import router as admin_router
+from app.logs import router as logs_router
+from app.analytics import router as analytics_router
 
-# 👇 NEW AI ROUTER
+# ✅ import AI router
 from app.ai import router as ai_router
 
 app = FastAPI()
 
-# ✅ CORS (important for frontend)
+# ✅ CORS (frontend needs this)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,14 +22,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 👇 existing routes
-app.include_router(auth.router)
-app.include_router(project.router)
-app.include_router(admin.router)
-app.include_router(logs.router)
-app.include_router(analytics.router)
+# ✅ existing routes (these match your Swagger)
+app.include_router(auth_router)
+app.include_router(project_router)
+app.include_router(admin_router)
+app.include_router(logs_router)
+app.include_router(analytics_router)
 
-# 👇 🚀 ADD THIS LINE (THIS IS THE FIX)
+# 🚀 NEW AI route
 app.include_router(ai_router)
 
 
