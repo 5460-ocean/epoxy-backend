@@ -3,36 +3,13 @@
 <head>
   <title>Epoxy AI Studio</title>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    body {
-      font-family: Arial;
-      background: #0f172a;
-      color: white;
-      padding: 10px;
-    }
+    body { font-family: Arial; background: #0f172a; color: white; padding: 10px; }
+    input, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: none; }
+    button { background: #2563eb; color: white; font-weight: bold; }
 
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: none;
-    }
-
-    button {
-      background: #2563eb;
-      color: white;
-      font-weight: bold;
-    }
-
-    .card {
-      background: #1e293b;
-      padding: 15px;
-      margin-top: 15px;
-      border-radius: 12px;
-    }
+    .card { background: #1e293b; padding: 15px; margin-top: 15px; border-radius: 12px; }
 
     .surface {
       width: 100%;
@@ -40,8 +17,8 @@
       margin-top: 12px;
       border-radius: 12px;
       transform: perspective(500px) rotateX(15deg);
-      position: relative;
       overflow: hidden;
+      position: relative;
     }
 
     .layer { position: absolute; width: 100%; height: 100%; }
@@ -56,21 +33,6 @@
     @keyframes pourDown {
       from { height: 0%; }
       to { height: 100%; }
-    }
-
-    .cured::after {
-      content: "";
-      position: absolute;
-      width: 200%;
-      height: 100%;
-      left: -100%;
-      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
-      animation: shine 2s forwards;
-    }
-
-    @keyframes shine {
-      from { left: -100%; }
-      to { left: 100%; }
     }
   </style>
 </head>
@@ -87,70 +49,29 @@
 <script>
 const API = "https://epoxy-backend-106r.onrender.com";
 
-function getStyleColors(style) {
-  if (!style) return ["#00c6ff", "#003366"];
-  style = style.toLowerCase();
-  let colors = [];
-
-  if (style.includes("ocean") || style.includes("water")) colors.push(["#00c6ff", "#003366"]);
-  if (style.includes("fire")) colors.push(["#ff512f", "#dd2476"]);
-  if (style.includes("sunset")) colors.push(["#ff9966", "#ff5e62"]);
-  if (style.includes("galaxy")) colors.push(["#8e2de2", "#000000"]);
-  if (style.includes("forest")) colors.push(["#134e5e", "#71b280"]);
-  if (style.includes("marble")) colors.push(["#eeeeee", "#777"]);
-
-  if (colors.length > 1) return colors[Math.floor(Math.random()*colors.length)];
-  if (colors.length === 1) return colors[0];
-
-  return ["#00c6ff", "#003366"];
-}
-
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-async function simulatePour(surface, style) {
+// 🔥 THIS USES AI COLORS ONLY
+async function simulatePourWithColors(surface, colors) {
   surface.innerHTML = "";
-  surface.classList.remove("cured");
-
-  const layers = [];
 
   for (let i = 0; i < 3; i++) {
-    const [c1, c2] = getStyleColors(style);
-
     const layer = document.createElement("div");
     layer.className = "layer";
-    layer.style.background = `linear-gradient(${c1}, ${c2})`;
+    layer.style.background = `linear-gradient(${colors[0]}, ${colors[1]})`;
 
     surface.appendChild(layer);
-    layers.push(layer);
-  }
 
-  for (let l of layers) {
     const pour = document.createElement("div");
     pour.className = "pour";
-    pour.style.background = l.style.background;
-    l.appendChild(pour);
-    await sleep(600);
+    pour.style.background = layer.style.background;
+
+    layer.appendChild(pour);
+
+    await sleep(500);
   }
-
-  surface.classList.add("cured");
-}
-
-async function saveTheme(id, theme, token) {
-  await axios.put(API + "/project/" + id, {
-    theme: theme
-  }, {
-    headers: { Authorization: "Bearer " + token }
-  });
-}
-
-async function downloadImage(el) {
-  const canvas = await html2canvas(el);
-  const link = document.createElement("a");
-  link.download = "epoxy.png";
-  link.href = canvas.toDataURL();
-  link.click();
 }
 
 async function loadProjects() {
@@ -169,30 +90,35 @@ async function loadProjects() {
     const surface = document.createElement("div");
     surface.className = "surface";
 
-    simulatePour(surface, p.theme);
-
     const input = document.createElement("input");
-    input.placeholder = "Describe design (sunset ocean, galaxy fire...)";
+    input.placeholder = "Describe design (desert dunes, galaxy, etc)";
 
-    const generate = document.createElement("button");
-    generate.innerText = "✨ Generate Design";
-    generate.onclick = async () => {
-      const style = input.value;
+    const btn = document.createElement("button");
+    btn.innerText = "✨ Generate (AI)";
 
-      await simulatePour(surface, style);
-      await saveTheme(p.id, style, token);
+    btn.onclick = async () => {
+      const prompt = input.value;
+
+      const res = await axios.post(API + "/ai/generate-style", {
+        text: prompt
+      });
+
+      console.log("AI RESPONSE:", res.data); // 👈 DEBUG
+
+      let colors = res.data.colors;
+
+      // fallback safety
+      if (!colors) {
+        colors = ["#00c6ff", "#003366"];
+      }
+
+      await simulatePourWithColors(surface, colors);
     };
 
-    const download = document.createElement("button");
-    download.innerText = "📥 Download";
-    download.onclick = () => downloadImage(surface);
-
-    div.innerHTML = `<h3>${p.name}</h3><small>Saved theme: ${p.theme}</small>`;
-
+    div.innerHTML = `<h3>${p.name}</h3>`;
     div.appendChild(surface);
     div.appendChild(input);
-    div.appendChild(generate);
-    div.appendChild(download);
+    div.appendChild(btn);
 
     container.appendChild(div);
   });
