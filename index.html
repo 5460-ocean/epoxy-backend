@@ -28,7 +28,7 @@
 
     .surface {
       width: 100%;
-      height: 150px;
+      height: 160px;
       margin-top: 12px;
       border-radius: 12px;
       transform: perspective(500px) rotateX(18deg) rotateY(8deg);
@@ -42,9 +42,25 @@
       width: 100%;
       height: 100%;
       border-radius: 12px;
-      opacity: 0.85;
+      opacity: 0.9;
     }
 
+    .pour {
+      position: absolute;
+      width: 100%;
+      height: 0%;
+      top: 0;
+      left: 0;
+      border-radius: 12px;
+      animation: pourDown 1s ease forwards;
+    }
+
+    @keyframes pourDown {
+      from { height: 0%; }
+      to { height: 100%; }
+    }
+
+    /* 🌊 swirl */
     .layer::before {
       content: "";
       position: absolute;
@@ -57,35 +73,21 @@
       animation: swirl 6s infinite linear;
     }
 
-    .layer::after {
+    @keyframes swirl {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* ✨ curing shine */
+    .cured::after {
       content: "";
       position: absolute;
       top: 0;
       left: -100%;
       width: 200%;
       height: 100%;
-      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
-      animation: shine 3s infinite;
-    }
-
-    .pour {
-      position: absolute;
-      width: 100%;
-      height: 0%;
-      top: 0;
-      left: 0;
-      border-radius: 12px;
-      animation: pourDown 1.5s ease forwards;
-    }
-
-    @keyframes pourDown {
-      from { height: 0%; }
-      to { height: 100%; }
-    }
-
-    @keyframes swirl {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent);
+      animation: shine 2s forwards;
     }
 
     @keyframes shine {
@@ -114,6 +116,8 @@
 const API = "https://epoxy-backend-106r.onrender.com";
 
 function getStyleColors(style) {
+  if (!style) return ["#00c6ff", "#003366"];
+
   style = style.toLowerCase();
 
   if (style.includes("ocean")) return ["#00c6ff", "#003366"];
@@ -122,11 +126,17 @@ function getStyleColors(style) {
   if (style.includes("forest")) return ["#134e5e", "#71b280"];
   if (style.includes("marble")) return ["#eeeeee", "#777777"];
 
-  return ["#00c6ff", "#003366"]; // default
+  return ["#00c6ff", "#003366"];
 }
 
-function createSurface(surfaceContainer, style="default") {
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function simulatePour(surfaceContainer, style) {
   surfaceContainer.innerHTML = "";
+
+  const layers = [];
 
   for (let i = 0; i < 3; i++) {
     const [c1, c2] = getStyleColors(style);
@@ -134,16 +144,27 @@ function createSurface(surfaceContainer, style="default") {
     const layer = document.createElement("div");
     layer.className = "layer";
     layer.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
-    layer.style.transform = `translateY(${i * 5}px)`;
-    layer.style.opacity = 0.8 - i * 0.2;
+    layer.style.transform = `translateY(${i * 6}px)`;
+    layer.style.opacity = 0.9 - i * 0.2;
 
+    surfaceContainer.appendChild(layer);
+    layers.push(layer);
+  }
+
+  // 🫗 pour layers one by one
+  for (let i = 0; i < layers.length; i++) {
     const pour = document.createElement("div");
     pour.className = "pour";
-    pour.style.background = layer.style.background;
+    pour.style.background = layers[i].style.background;
 
-    layer.appendChild(pour);
-    surfaceContainer.appendChild(layer);
+    layers[i].appendChild(pour);
+
+    await sleep(800); // delay between pours
   }
+
+  // 🧊 curing effect
+  await sleep(500);
+  surfaceContainer.classList.add("cured");
 }
 
 async function loadProjects() {
@@ -175,26 +196,19 @@ async function loadProjects() {
       const surface = document.createElement("div");
       surface.className = "surface";
 
-      createSurface(surface);
-
-      const input = document.createElement("input");
-      input.placeholder = "Enter style (ocean, galaxy, fire...)";
+      simulatePour(surface, p.theme);
 
       const btn = document.createElement("button");
-      btn.innerText = "🧠 Generate from Style";
-      btn.onclick = () => {
-        const style = input.value;
-        createSurface(surface, style);
-      };
+      btn.innerText = "🫗 Replay Pour";
+      btn.onclick = () => simulatePour(surface, p.theme);
 
       div.innerHTML = `
         <h3>${p.name}</h3>
         <p>${p.description}</p>
-        <small>Surface: ${p.surface}</small>
+        <small>Theme: ${p.theme}</small>
       `;
 
       div.appendChild(surface);
-      div.appendChild(input);
       div.appendChild(btn);
 
       container.appendChild(div);
