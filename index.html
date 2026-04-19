@@ -37,7 +37,6 @@
       box-shadow: 0 15px 25px rgba(0,0,0,0.4);
     }
 
-    /* 🧊 Layer base */
     .layer {
       position: absolute;
       width: 100%;
@@ -46,7 +45,6 @@
       opacity: 0.85;
     }
 
-    /* 🌊 Swirl animation */
     .layer::before {
       content: "";
       position: absolute;
@@ -59,7 +57,6 @@
       animation: swirl 6s infinite linear;
     }
 
-    /* ✨ Shine */
     .layer::after {
       content: "";
       position: absolute;
@@ -71,7 +68,6 @@
       animation: shine 3s infinite;
     }
 
-    /* 🫗 Pour animation */
     .pour {
       position: absolute;
       width: 100%;
@@ -122,9 +118,32 @@ function randomColor() {
     ["#00c6ff", "#003366"],
     ["#ff7e5f", "#2b5876"],
     ["#8e2de2", "#4a00e0"],
-    ["#f7971e", "#ffd200"]
+    ["#f7971e", "#ffd200"],
+    ["#00ff87", "#60efff"],
+    ["#fc466b", "#3f5efb"]
   ];
   return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function createSurface(surfaceContainer) {
+  surfaceContainer.innerHTML = "";
+
+  for (let i = 0; i < 3; i++) {
+    const [c1, c2] = randomColor();
+
+    const layer = document.createElement("div");
+    layer.className = "layer";
+    layer.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+    layer.style.transform = `translateY(${i * 5}px)`;
+    layer.style.opacity = 0.8 - i * 0.2;
+
+    const pour = document.createElement("div");
+    pour.className = "pour";
+    pour.style.background = layer.style.background;
+
+    layer.appendChild(pour);
+    surfaceContainer.appendChild(layer);
+  }
 }
 
 async function loadProjects() {
@@ -156,24 +175,11 @@ async function loadProjects() {
       const surface = document.createElement("div");
       surface.className = "surface";
 
-      // create 3 layers (depth illusion)
-      for (let i = 0; i < 3; i++) {
-        const [c1, c2] = randomColor();
+      createSurface(surface);
 
-        const layer = document.createElement("div");
-        layer.className = "layer";
-        layer.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
-        layer.style.transform = `translateY(${i * 5}px)`;
-        layer.style.opacity = 0.8 - i * 0.2;
-
-        // pouring effect
-        const pour = document.createElement("div");
-        pour.className = "pour";
-        pour.style.background = layer.style.background;
-
-        layer.appendChild(pour);
-        surface.appendChild(layer);
-      }
+      const btn = document.createElement("button");
+      btn.innerText = "🎨 Generate Epoxy Design";
+      btn.onclick = () => createSurface(surface);
 
       div.innerHTML = `
         <h3>${p.name}</h3>
@@ -182,6 +188,7 @@ async function loadProjects() {
       `;
 
       div.appendChild(surface);
+      div.appendChild(btn);
       container.appendChild(div);
     });
 
