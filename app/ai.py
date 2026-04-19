@@ -15,33 +15,20 @@ class Prompt(BaseModel):
 async def generate_style(prompt: Prompt):
     user_input = prompt.text.lower()
 
+    # fallback for safety (WORKS EVEN WITHOUT AI)
+    if "desert" in user_input or "dune" in user_input or "sand" in user_input:
+        return {
+            "colors": ["#c2a477", "#8b6f47"],
+            "style": "desert"
+        }
+
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         response_format={"type": "json_object"},
         messages=[
             {
                 "role": "system",
-                "content": """
-You are an epoxy design engine.
-
-Return ONLY JSON:
-{
-  "colors": ["#hex1", "#hex2"],
-  "style": "name"
-}
-
-Strict mapping rules:
-- desert, sand, dunes → brown, beige, gold (#c2a477, #8b6f47)
-- ocean, water → blue tones
-- fire → red/orange
-- galaxy → purple/black
-- forest → green
-- marble → white/gray
-
-IMPORTANT:
-- NEVER return blue for desert
-- ALWAYS follow mappings strictly
-"""
+                "content": "Return JSON with colors only"
             },
             {
                 "role": "user",
@@ -50,7 +37,6 @@ IMPORTANT:
         ]
     )
 
-    # ✅ Parse JSON safely
     try:
         data = json.loads(response.choices[0].message.content)
     except:
@@ -58,10 +44,5 @@ IMPORTANT:
             "colors": ["#00c6ff", "#003366"],
             "style": "default"
         }
-
-    # ✅ HARD OVERRIDE (guarantee correctness)
-    if "desert" in user_input or "dune" in user_input or "sand" in user_input:
-        data["colors"] = ["#c2a477", "#8b6f47"]
-        data["style"] = "desert"
 
     return data
