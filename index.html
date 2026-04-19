@@ -3,6 +3,7 @@
 <head>
   <title>Epoxy App</title>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
     body {
@@ -60,7 +61,6 @@
       to { height: 100%; }
     }
 
-    /* 🌊 swirl */
     .layer::before {
       content: "";
       position: absolute;
@@ -78,7 +78,6 @@
       to { transform: rotate(360deg); }
     }
 
-    /* ✨ curing shine */
     .cured::after {
       content: "";
       position: absolute;
@@ -135,6 +134,7 @@ function sleep(ms) {
 
 async function simulatePour(surfaceContainer, style) {
   surfaceContainer.innerHTML = "";
+  surfaceContainer.classList.remove("cured");
 
   const layers = [];
 
@@ -151,20 +151,25 @@ async function simulatePour(surfaceContainer, style) {
     layers.push(layer);
   }
 
-  // 🫗 pour layers one by one
   for (let i = 0; i < layers.length; i++) {
     const pour = document.createElement("div");
     pour.className = "pour";
     pour.style.background = layers[i].style.background;
 
     layers[i].appendChild(pour);
-
-    await sleep(800); // delay between pours
+    await sleep(800);
   }
 
-  // 🧊 curing effect
   await sleep(500);
   surfaceContainer.classList.add("cured");
+}
+
+async function downloadImage(element) {
+  const canvas = await html2canvas(element);
+  const link = document.createElement("a");
+  link.download = "epoxy-design.png";
+  link.href = canvas.toDataURL();
+  link.click();
 }
 
 async function loadProjects() {
@@ -198,9 +203,13 @@ async function loadProjects() {
 
       simulatePour(surface, p.theme);
 
-      const btn = document.createElement("button");
-      btn.innerText = "🫗 Replay Pour";
-      btn.onclick = () => simulatePour(surface, p.theme);
+      const replay = document.createElement("button");
+      replay.innerText = "🫗 Replay Pour";
+      replay.onclick = () => simulatePour(surface, p.theme);
+
+      const download = document.createElement("button");
+      download.innerText = "📥 Download Design";
+      download.onclick = () => downloadImage(surface);
 
       div.innerHTML = `
         <h3>${p.name}</h3>
@@ -209,7 +218,8 @@ async function loadProjects() {
       `;
 
       div.appendChild(surface);
-      div.appendChild(btn);
+      div.appendChild(replay);
+      div.appendChild(download);
 
       container.appendChild(div);
     });
