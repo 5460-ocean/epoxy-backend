@@ -1,184 +1,41 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Epoxy App</title>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
-  <style>
-    body { font-family: Arial; padding: 10px; background: #f0f2f5; }
-    input, button { width: 100%; padding: 10px; margin-top: 10px; }
-
-    .card {
-      background: white;
-      padding: 15px;
-      margin-top: 15px;
-      border-radius: 12px;
-    }
-
-    .surface {
-      width: 100%;
-      height: 160px;
-      margin-top: 12px;
-      border-radius: 12px;
-      transform: perspective(500px) rotateX(18deg);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .layer { position: absolute; width: 100%; height: 100%; }
-
-    .pour {
-      position: absolute;
-      width: 100%;
-      height: 0%;
-      animation: pourDown 1s forwards;
-    }
-
-    @keyframes pourDown {
-      from { height: 0%; }
-      to { height: 100%; }
-    }
-
-    .cured::after {
-      content: "";
-      position: absolute;
-      width: 200%;
-      height: 100%;
-      left: -100%;
-      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent);
-      animation: shine 2s forwards;
-    }
-
-    @keyframes shine {
-      from { left: -100%; }
-      to { left: 100%; }
-    }
-  </style>
-</head>
-
-<body>
-
-<h2>Epoxy Projects</h2>
-
-<input id="token" placeholder="Paste JWT token" />
-<button onclick="loadProjects()">Load Projects</button>
-
-<div id="projects"></div>
-
-<script>
-const API = "https://epoxy-backend-106r.onrender.com";
-
 function getStyleColors(style) {
   if (!style) return ["#00c6ff", "#003366"];
 
   style = style.toLowerCase();
 
-  if (style.includes("ocean")) return ["#00c6ff", "#003366"];
-  if (style.includes("galaxy")) return ["#8e2de2", "#000000"];
-  if (style.includes("fire")) return ["#ff512f", "#dd2476"];
-  if (style.includes("marble")) return ["#eeeeee", "#777"];
+  let colors = [];
+
+  if (style.includes("ocean") || style.includes("water") || style.includes("sea")) {
+    colors.push(["#00c6ff", "#003366"]);
+  }
+
+  if (style.includes("fire") || style.includes("lava")) {
+    colors.push(["#ff512f", "#dd2476"]);
+  }
+
+  if (style.includes("sunset") || style.includes("sunrise")) {
+    colors.push(["#ff9966", "#ff5e62"]);
+  }
+
+  if (style.includes("galaxy") || style.includes("space")) {
+    colors.push(["#8e2de2", "#000000"]);
+  }
+
+  if (style.includes("forest") || style.includes("nature")) {
+    colors.push(["#134e5e", "#71b280"]);
+  }
+
+  if (style.includes("marble") || style.includes("stone")) {
+    colors.push(["#eeeeee", "#777777"]);
+  }
+
+  if (colors.length > 1) {
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  if (colors.length === 1) {
+    return colors[0];
+  }
 
   return ["#00c6ff", "#003366"];
 }
-
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
-
-async function simulatePour(surface, style) {
-  surface.innerHTML = "";
-  surface.classList.remove("cured");
-
-  const layers = [];
-
-  for (let i = 0; i < 3; i++) {
-    const [c1, c2] = getStyleColors(style);
-
-    const layer = document.createElement("div");
-    layer.className = "layer";
-    layer.style.background = `linear-gradient(${c1}, ${c2})`;
-
-    surface.appendChild(layer);
-    layers.push(layer);
-  }
-
-  for (let l of layers) {
-    const pour = document.createElement("div");
-    pour.className = "pour";
-    pour.style.background = l.style.background;
-
-    l.appendChild(pour);
-    await sleep(600);
-  }
-
-  surface.classList.add("cured");
-}
-
-async function saveTheme(projectId, theme, token) {
-  await axios.put(API + "/project/" + projectId, {
-    theme: theme
-  }, {
-    headers: {
-      Authorization: "Bearer " + token
-    }
-  });
-}
-
-async function downloadImage(el) {
-  const canvas = await html2canvas(el);
-  const link = document.createElement("a");
-  link.download = "epoxy.png";
-  link.href = canvas.toDataURL();
-  link.click();
-}
-
-async function loadProjects() {
-  const token = document.getElementById("token").value.trim();
-  const container = document.getElementById("projects");
-  container.innerHTML = "";
-
-  const res = await axios.get(API + "/project/", {
-    headers: { Authorization: "Bearer " + token }
-  });
-
-  res.data.items.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "card";
-
-    const surface = document.createElement("div");
-    surface.className = "surface";
-
-    simulatePour(surface, p.theme);
-
-    const input = document.createElement("input");
-    input.placeholder = "Enter style (ocean, fire...)";
-
-    const generate = document.createElement("button");
-    generate.innerText = "🎨 Generate & Save";
-    generate.onclick = async () => {
-      const style = input.value;
-
-      await simulatePour(surface, style);
-      await saveTheme(p.id, style, token);
-
-      alert("Saved ✅");
-    };
-
-    const download = document.createElement("button");
-    download.innerText = "📥 Download";
-    download.onclick = () => downloadImage(surface);
-
-    div.innerHTML = `<h3>${p.name}</h3>`;
-    div.appendChild(surface);
-    div.appendChild(input);
-    div.appendChild(generate);
-    div.appendChild(download);
-
-    container.appendChild(div);
-  });
-}
-</script>
-
-</body>
-</html>
