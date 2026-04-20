@@ -48,3 +48,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ===== FRONTEND ROUTE =====
+from fastapi.responses import FileResponse
+
+@app.get("/app")
+def serve_app():
+    return FileResponse("app/static/index.html")
+
+
+# ===== AI ROUTE =====
+from fastapi import Body
+import os, json
+from openai import OpenAI
+
+api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key) if api_key else None
+
+@app.post("/ai/generate-style")
+async def generate_style(data: dict = Body(...)):
+    text = data.get("text", "").lower()
+
+    # force desert colors
+    if "desert" in text or "dune" in text or "sand" in text:
+        return {
+            "colors": ["#c2a477", "#8b6f47"],
+            "style": "desert"
+        }
+
+    if client is None:
+        return {
+            "colors": ["#00c6ff", "#003366"],
+            "style": "default"
+        }
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": "Return JSON with two hex colors"},
+                {"role": "user", "content": text}
+            ]
+        )
+
+        return json.loads(response.choices[0].message.content)
+
+    except:
+        return {
+            "colors": ["#00c6ff", "#003366"],
+            "style": "default"
+        }
