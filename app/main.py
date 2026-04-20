@@ -98,3 +98,15 @@ async def generate_style(data: dict = Body(...)):
             "colors": ["#00c6ff", "#003366"],
             "style": "default"
         }
+# ===== CLEAN FRONTEND ROUTE =====
+from fastapi.responses import FileResponse
+import os
+
+@app.get("/app")
+def serve_app():
+    file_path = "app/static/index.html"
+
+    if not os.path.exists(file_path):
+        return {"error": "index.html not found", "path": file_path}
+
+    return FileResponse(file_path)
