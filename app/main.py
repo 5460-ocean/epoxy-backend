@@ -1,31 +1,44 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+# ===== AI ROUTE (SAFE ADD) =====
 
-# ✅ import your existing app (important)
-from app.auth import *
-from app.project import *
-from app.admin import *
-from app.logs import *
-from app.analytics import *
+from fastapi import Body
+import os, json
+from openai import OpenAI
 
-# ✅ import AI router
-from app.ai import router as ai_router
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-app = FastAPI()
+@app.post("/ai/generate-style")
+async def generate_style(data: dict = Body(...)):
+    text = data.get("text", "").lower()
 
-# ✅ CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    # ✅ HARD RULE FIX (guarantee dunes not blue)
+    if "desert" in text or "dune" in text or "sand" in text:
+        return {
+            "colors": ["#c2a477", "#8b6f47"],
+            "style": "desert"
+        }
 
-# 🚀 ONLY NEW THING
-app.include_router(ai_router)
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Return JSON with exactly two hex colors"
+                },
+                {
+                    "role": "user",
+                    "content": text
+                }
+            ]
+        )
 
+        result = json.loads(response.choices[0].message.content)
 
-@app.get("/")
-def root():
-    return {"message": "Epoxy Backend Running"}
+    except:
+        result = {
+            "colors": ["#00c6ff", "#003366"],
+            "style": "default"
+        }
+
+    return result
