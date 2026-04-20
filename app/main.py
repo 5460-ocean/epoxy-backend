@@ -70,3 +70,8 @@ async def generate_style(data: dict = Body(...)):
         }
 
     return result
+from fastapi.responses import FileResponse
+
+@app.get("/app")
+def serve_app():
+    return FileResponse("index.html")
