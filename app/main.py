@@ -99,3 +99,8 @@ from fastapi.responses import FileResponse
 @app.get("/app")
 def serve_app():
     return FileResponse("index.html")
+from fastapi.responses import FileResponse
+
+@app.get("/app")
+def serve_app():
+    return FileResponse("app/static/index.html")
