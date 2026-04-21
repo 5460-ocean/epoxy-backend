@@ -57,3 +57,16 @@ from fastapi.responses import FileResponse
 @app.get("/app")
 def serve_app():
     return FileResponse("app/static/index.html")
+# ===== FIX FRONTEND PATH =====
+from fastapi.responses import FileResponse
+import os
+
+@app.get("/app")
+def serve_app():
+    base_dir = os.path.dirname(__file__)
+    file_path = os.path.join(base_dir, "static", "index.html")
+
+    if not os.path.exists(file_path):
+        return {"error": "file not found", "path": file_path}
+
+    return FileResponse(file_path)
