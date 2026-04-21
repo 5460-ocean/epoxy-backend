@@ -4,8 +4,8 @@ from fastapi.responses import FileResponse
 import os, json
 from openai import OpenAI
 
-# ✅ IMPORT YOUR EXISTING ROUTERS (DO NOT CHANGE NAMES)
-from app.routes import auth, project, admin, logs, analytics
+# ✅ CORRECT IMPORT
+from app.routers import auth, project, admin, logs, analytics
 
 app = FastAPI()
 
@@ -25,7 +25,7 @@ app.include_router(admin.router)
 app.include_router(logs.router)
 app.include_router(analytics.router)
 
-# ===== FRONTEND (ONLY ONE ROUTE) =====
+# ===== FRONTEND =====
 @app.get("/app")
 def serve_app():
     return FileResponse("app/static/index.html")
@@ -43,6 +43,7 @@ client = OpenAI(api_key=api_key) if api_key else None
 async def generate_style(data: dict = Body(...)):
     text = data.get("text", "").lower()
 
+    # fix dunes
     if "desert" in text or "dune" in text or "sand" in text:
         return {"colors": ["#c2a477", "#8b6f47"]}
 
