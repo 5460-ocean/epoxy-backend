@@ -1,45 +1,15 @@
-from fastapi import FastAPI
-from app.database import Base, engine
-
-from app import models
-
-from app.routers.auth import router as auth_router
-from app.routers.project import router as project_router
-from app.routers.admin import router as admin_router
-from app.routers.logs import router as logs_router
-from app.routers.analytics import router as analytics_router
-
-app = FastAPI(openapi_tags=[])
-
-Base.metadata.create_all(bind=engine)
-
-app.include_router(auth_router)
-app.include_router(project_router)
-app.include_router(admin_router)
-app.include_router(logs_router)
-app.include_router(analytics_router)
-
-
-@app.get("/")
-def root():
-    return {"message": "API is running"}
-
-from fastapi.responses import FileResponse
-
-@app.get("/app")
-def serve_frontend():
-    return FileResponse("index.html")
-
-
-from fastapi.responses import FileResponse
-
-@app.get("/app")
-def serve_frontend():
-    return FileResponse("index.html")
-
-
+from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+import os, json
+from openai import OpenAI
 
+# ✅ IMPORT YOUR EXISTING ROUTERS (DO NOT CHANGE NAMES)
+from app.routes import auth, project, admin, logs, analytics
+
+app = FastAPI()
+
+# ✅ CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -48,19 +18,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ===== FRONTEND ROUTE =====
-from fastapi.responses import FileResponse
+# ✅ EXISTING ROUTES
+app.include_router(auth.router)
+app.include_router(project.router)
+app.include_router(admin.router)
+app.include_router(logs.router)
+app.include_router(analytics.router)
 
+# ===== FRONTEND (ONLY ONE ROUTE) =====
 @app.get("/app")
 def serve_app():
     return FileResponse("app/static/index.html")
 
+# ===== ROOT =====
+@app.get("/")
+def root():
+    return {"message": "Backend running"}
 
-# ===== AI ROUTE =====
-from fastapi import Body
-import os, json
-from openai import OpenAI
-
+# ===== AI =====
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key) if api_key else None
 
@@ -68,18 +43,11 @@ client = OpenAI(api_key=api_key) if api_key else None
 async def generate_style(data: dict = Body(...)):
     text = data.get("text", "").lower()
 
-    # force desert colors
     if "desert" in text or "dune" in text or "sand" in text:
-        return {
-            "colors": ["#c2a477", "#8b6f47"],
-            "style": "desert"
-        }
+        return {"colors": ["#c2a477", "#8b6f47"]}
 
     if client is None:
-        return {
-            "colors": ["#00c6ff", "#003366"],
-            "style": "default"
-        }
+        return {"colors": ["#00c6ff", "#003366"]}
 
     try:
         response = client.chat.completions.create(
@@ -90,23 +58,6 @@ async def generate_style(data: dict = Body(...)):
                 {"role": "user", "content": text}
             ]
         )
-
         return json.loads(response.choices[0].message.content)
-
     except:
-        return {
-            "colors": ["#00c6ff", "#003366"],
-            "style": "default"
-        }
-# ===== CLEAN FRONTEND ROUTE =====
-from fastapi.responses import FileResponse
-import os
-
-@app.get("/app")
-def serve_app():
-    file_path = "app/static/index.html"
-
-    if not os.path.exists(file_path):
-        return {"error": "index.html not found", "path": file_path}
-
-    return FileResponse(file_path)
+        return {"colors": ["#00c6ff", "#003366"]}
