@@ -48,3 +48,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ===== ADD AI ROUTER =====
+from app.ai import router as ai_router
+app.include_router(ai_router)
+# ===== SERVE FRONTEND =====
+from fastapi.responses import FileResponse
+
+@app.get("/app")
+def serve_app():
+    return FileResponse("app/static/index.html")

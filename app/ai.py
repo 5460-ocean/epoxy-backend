@@ -1,48 +1,18 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
-import os
-import json
-from openai import OpenAI
+from fastapi import APIRouter, Body
 
-router = APIRouter()
+router = APIRouter(prefix="/ai", tags=["AI"])
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+@router.post("/generate-style")
+async def generate_style(data: dict = Body(...)):
+    text = data.get("text", "").lower()
 
-class Prompt(BaseModel):
-    text: str
+    if "desert" in text or "dune" in text or "sand" in text:
+        return {"colors": ["#c2a477", "#8b6f47"]}
 
-@router.post("/ai/generate-style")
-async def generate_style(prompt: Prompt):
-    user_input = prompt.text.lower()
+    if "ocean" in text:
+        return {"colors": ["#00c6ff", "#003366"]}
 
-    # fallback for safety (WORKS EVEN WITHOUT AI)
-    if "desert" in user_input or "dune" in user_input or "sand" in user_input:
-        return {
-            "colors": ["#c2a477", "#8b6f47"],
-            "style": "desert"
-        }
+    if "fire" in text:
+        return {"colors": ["#ff512f", "#dd2476"]}
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        response_format={"type": "json_object"},
-        messages=[
-            {
-                "role": "system",
-                "content": "Return JSON with colors only"
-            },
-            {
-                "role": "user",
-                "content": user_input
-            }
-        ]
-    )
-
-    try:
-        data = json.loads(response.choices[0].message.content)
-    except:
-        data = {
-            "colors": ["#00c6ff", "#003366"],
-            "style": "default"
-        }
-
-    return data
+    return {"colors": ["#00c6ff", "#003366"]}
