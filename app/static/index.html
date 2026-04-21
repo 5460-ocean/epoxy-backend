@@ -1,126 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Epoxy AI Studio</title>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <title>Epoxy Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- For CSS capture -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
   <style>
-    body { font-family: Arial; background: #0f172a; color: white; padding: 10px; }
-    input, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: none; }
-    button { background: #2563eb; color: white; font-weight: bold; }
-
-    .card { background: #1e293b; padding: 15px; margin-top: 15px; border-radius: 12px; }
-
-    .surface {
-      width: 100%;
-      height: 160px;
-      margin-top: 12px;
-      border-radius: 12px;
-      transform: perspective(500px) rotateX(15deg);
-      overflow: hidden;
-      position: relative;
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #0a0a0a;
+      color: white;
     }
 
-    .layer { position: absolute; width: 100%; height: 100%; }
-
-    .pour {
-      position: absolute;
-      width: 100%;
-      height: 0%;
-      animation: pourDown 1s forwards;
+    #canvas {
+      width: 300px;
+      height: 300px;
+      margin: 20px auto;
+      border-radius: 20px;
+      background: linear-gradient(45deg, #00c6ff, #003366);
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
     }
 
-    @keyframes pourDown {
-      from { height: 0%; }
-      to { height: 100%; }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      cursor: pointer;
+      background: #00c6ff;
+      color: black;
     }
   </style>
 </head>
 
 <body>
 
-<h2>🎨 Epoxy AI Studio</h2>
+<h2>Epoxy Generator</h2>
 
-<input id="token" placeholder="Paste JWT token" />
-<button onclick="loadProjects()">Load Projects</button>
+<input id="prompt" placeholder="e.g. ocean, fire, desert dunes" />
 
-<div id="projects"></div>
+<br>
+
+<button onclick="generate()">Generate Epoxy Design</button>
+<button onclick="downloadDesign()">Download Design</button>
+
+<div id="canvas"></div>
 
 <script>
 const API = "https://epoxy-backend-106r.onrender.com";
 
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
+async function generate() {
+  const text = document.getElementById("prompt").value;
 
-// 🔥 THIS USES AI COLORS ONLY
-async function simulatePourWithColors(surface, colors) {
-  surface.innerHTML = "";
-
-  for (let i = 0; i < 3; i++) {
-    const layer = document.createElement("div");
-    layer.className = "layer";
-    layer.style.background = `linear-gradient(${colors[0]}, ${colors[1]})`;
-
-    surface.appendChild(layer);
-
-    const pour = document.createElement("div");
-    pour.className = "pour";
-    pour.style.background = layer.style.background;
-
-    layer.appendChild(pour);
-
-    await sleep(500);
-  }
-}
-
-async function loadProjects() {
-  const token = document.getElementById("token").value.trim();
-  const container = document.getElementById("projects");
-  container.innerHTML = "";
-
-  const res = await axios.get(API + "/project/", {
-    headers: { Authorization: "Bearer " + token }
+  const res = await fetch(API + "/ai/generate-style", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ text })
   });
 
-  res.data.items.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "card";
+  const data = await res.json();
+  const colors = data.colors;
 
-    const surface = document.createElement("div");
-    surface.className = "surface";
+  const el = document.getElementById("canvas");
 
-    const input = document.createElement("input");
-    input.placeholder = "Describe design (desert dunes, galaxy, etc)";
+  el.style.background = `
+    linear-gradient(45deg, ${colors[0]}, ${colors[1]})
+  `;
+}
 
-    const btn = document.createElement("button");
-    btn.innerText = "✨ Generate (AI)";
+function downloadDesign() {
+  const el = document.getElementById("canvas");
 
-    btn.onclick = async () => {
-      const prompt = input.value;
-
-      const res = await axios.post(API + "/ai/generate-style", {
-        text: prompt
-      });
-
-      console.log("AI RESPONSE:", res.data); // 👈 DEBUG
-
-      let colors = res.data.colors;
-
-      // fallback safety
-      if (!colors) {
-        colors = ["#00c6ff", "#003366"];
-      }
-
-      await simulatePourWithColors(surface, colors);
-    };
-
-    div.innerHTML = `<h3>${p.name}</h3>`;
-    div.appendChild(surface);
-    div.appendChild(input);
-    div.appendChild(btn);
-
-    container.appendChild(div);
+  html2canvas(el).then(canvas => {
+    const link = document.createElement("a");
+    link.download = "epoxy-design.png";
+    link.href = canvas.toDataURL();
+    link.click();
   });
 }
 </script>
