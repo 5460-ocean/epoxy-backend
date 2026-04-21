@@ -41,3 +41,7 @@ def serve_app():
     base_dir = os.path.dirname(__file__)
     file_path = os.path.join(base_dir, "static", "index.html")
     return FileResponse(file_path)
+# ===== CREATE DATABASE TABLES =====
+from app.database import Base, engine
+
+Base.metadata.create_all(bind=engine)
