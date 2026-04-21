@@ -48,3 +48,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ===== ADD AI ROUTER =====
+from app.ai import router as ai_router
+app.include_router(ai_router)
