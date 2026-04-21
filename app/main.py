@@ -1,5 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+import os
+
+# ✅ Import routers
+from app.routers import auth, project, admin, logs, analytics
+from app.ai import router as ai_router
 
 app = FastAPI(
     servers=[
@@ -7,7 +13,7 @@ app = FastAPI(
     ]
 )
 
-# CORS
+# ✅ CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,4 +22,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# keep EVERYTHING ELSE below exactly as it was
+# ✅ Include routers
+app.include_router(auth.router)
+app.include_router(project.router)
+app.include_router(admin.router)
+app.include_router(logs.router)
+app.include_router(analytics.router)
+app.include_router(ai_router)
+
+# ✅ Root
+@app.get("/")
+def root():
+    return {"message": "API is running"}
+
+# ✅ Frontend
+@app.get("/app")
+def serve_app():
+    base_dir = os.path.dirname(__file__)
+    file_path = os.path.join(base_dir, "static", "index.html")
+    return FileResponse(file_path)
