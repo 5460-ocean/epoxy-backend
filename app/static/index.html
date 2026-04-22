@@ -3,6 +3,8 @@
 <head>
   <title>Epoxy Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- html2canvas -->
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
   <style>
@@ -33,8 +35,10 @@
 <button onclick="downloadDesign()">Download</button>
 
 <div id="canvas"></div>
-
 <div id="projects"></div>
+
+<!-- ✅ NEW: epoxy renderer -->
+<script src="/static/epoxy.js"></script>
 
 <script>
 const API = "https://epoxy-backend-106r.onrender.com";
@@ -49,12 +53,9 @@ async function generate() {
   });
 
   const data = await res.json();
-  applyColors(data.colors);
-}
 
-function applyColors(colors) {
-  const el = document.getElementById("canvas");
-  el.style.background = `linear-gradient(45deg, ${colors[0]}, ${colors[1]})`;
+  // 👇 uses epoxy.js now
+  applyColors(data.colors);
 }
 
 async function saveProject() {
