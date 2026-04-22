@@ -45,3 +45,7 @@ def serve_app():
 from app.database import Base, engine
 
 Base.metadata.create_all(bind=engine)
+# ===== FIX STATIC FILES =====
+from fastapi.staticfiles import StaticFiles
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
