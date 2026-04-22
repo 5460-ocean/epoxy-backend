@@ -4,20 +4,43 @@
   <title>Epoxy Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- html2canvas -->
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
   <style>
     body { font-family: Arial; text-align: center; background: #0a0a0a; color: white; }
-    #canvas {
-      width: 300px; height: 300px; margin: 20px auto;
+
+    canvas {
+      width: 300px;
+      height: 300px;
+      margin: 20px auto;
       border-radius: 20px;
-      background: linear-gradient(45deg, #00c6ff, #003366);
+      display: block;
+      background: black;
     }
-    button, input { padding: 10px; margin: 5px; border-radius: 8px; border: none; }
-    button { cursor: pointer; background: #00c6ff; }
-    #projects { margin-top: 20px; }
-    .project { cursor: pointer; padding: 8px; background: #222; margin: 5px; border-radius: 8px; }
+
+    button, input {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      cursor: pointer;
+      background: #00c6ff;
+    }
+
+    #projects {
+      margin-top: 20px;
+    }
+
+    .project {
+      cursor: pointer;
+      padding: 8px;
+      background: #222;
+      margin: 5px;
+      border-radius: 8px;
+    }
   </style>
 </head>
 
@@ -25,7 +48,7 @@
 
 <h2>Epoxy Generator</h2>
 
-<input id="prompt" placeholder="e.g. ocean, fire, desert dunes" />
+<input id="prompt" placeholder="e.g. ocean, fire, space" />
 
 <br>
 
@@ -34,10 +57,11 @@
 <button onclick="loadProjects()">Load Projects</button>
 <button onclick="downloadDesign()">Download</button>
 
-<div id="canvas"></div>
+<!-- ✅ REAL CANVAS -->
+<canvas id="canvas" width="300" height="300"></canvas>
+
 <div id="projects"></div>
 
-<!-- ✅ NEW: epoxy renderer -->
 <script src="/static/epoxy.js"></script>
 
 <script>
@@ -53,8 +77,6 @@ async function generate() {
   });
 
   const data = await res.json();
-
-  // 👇 uses epoxy.js now
   applyColors(data.colors);
 }
 
@@ -107,14 +129,12 @@ async function loadProjects() {
 }
 
 function downloadDesign() {
-  const el = document.getElementById("canvas");
+  const canvas = document.getElementById("canvas");
 
-  html2canvas(el).then(canvas => {
-    const link = document.createElement("a");
-    link.download = "epoxy.png";
-    link.href = canvas.toDataURL();
-    link.click();
-  });
+  const link = document.createElement("a");
+  link.download = "epoxy.png";
+  link.href = canvas.toDataURL();
+  link.click();
 }
 </script>
 
