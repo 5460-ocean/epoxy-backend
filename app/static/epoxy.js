@@ -1,24 +1,32 @@
 function applyColors(colors) {
   const el = document.getElementById("canvas");
 
-  // fallback safety
   if (!colors || colors.length < 2) {
-    colors = ["#00c6ff", "#003366"];
+    colors = ["#000000", "#222222"];
   }
 
-  // build multiple layers
-  let layers = "";
+  // Base dark background (space)
+  let base = "linear-gradient(180deg, #000000, #050505)";
 
-  colors.forEach((c, i) => {
+  // Color clouds
+  let layers = colors.map(c => {
     const x = Math.random() * 100;
     const y = Math.random() * 100;
+    return `radial-gradient(circle at ${x}% ${y}%, ${c}, transparent 60%)`;
+  }).join(",");
 
-    layers += `radial-gradient(circle at ${x}% ${y}%, ${c}, transparent 60%),`;
-  });
+  // ⭐ Star layer
+  let stars = "";
+  for (let i = 0; i < 40; i++) {
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    stars += `radial-gradient(circle at ${x}% ${y}%, white 1px, transparent 2px),`;
+  }
 
   el.style.background = `
-    ${layers}
-    linear-gradient(135deg, ${colors[0]}, ${colors[1]})
+    ${stars}
+    ${layers},
+    ${base}
   `;
 
   el.style.backgroundBlendMode = "screen";
