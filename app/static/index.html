@@ -3,39 +3,19 @@
 <head>
   <title>Epoxy Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- For CSS capture -->
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
   <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      background: #0a0a0a;
-      color: white;
-    }
-
+    body { font-family: Arial; text-align: center; background: #0a0a0a; color: white; }
     #canvas {
-      width: 300px;
-      height: 300px;
-      margin: 20px auto;
+      width: 300px; height: 300px; margin: 20px auto;
       border-radius: 20px;
       background: linear-gradient(45deg, #00c6ff, #003366);
-      box-shadow: 0 0 30px rgba(0,0,0,0.5);
     }
-
-    input, button {
-      padding: 10px;
-      margin: 5px;
-      border-radius: 8px;
-      border: none;
-    }
-
-    button {
-      cursor: pointer;
-      background: #00c6ff;
-      color: black;
-    }
+    button, input { padding: 10px; margin: 5px; border-radius: 8px; border: none; }
+    button { cursor: pointer; background: #00c6ff; }
+    #projects { margin-top: 20px; }
+    .project { cursor: pointer; padding: 8px; background: #222; margin: 5px; border-radius: 8px; }
   </style>
 </head>
 
@@ -47,10 +27,14 @@
 
 <br>
 
-<button onclick="generate()">Generate Epoxy Design</button>
-<button onclick="downloadDesign()">Download Design</button>
+<button onclick="generate()">Generate</button>
+<button onclick="saveProject()">Save</button>
+<button onclick="loadProjects()">Load Projects</button>
+<button onclick="downloadDesign()">Download</button>
 
 <div id="canvas"></div>
+
+<div id="projects"></div>
 
 <script>
 const API = "https://epoxy-backend-106r.onrender.com";
@@ -65,13 +49,60 @@ async function generate() {
   });
 
   const data = await res.json();
-  const colors = data.colors;
+  applyColors(data.colors);
+}
 
+function applyColors(colors) {
   const el = document.getElementById("canvas");
+  el.style.background = `linear-gradient(45deg, ${colors[0]}, ${colors[1]})`;
+}
 
-  el.style.background = `
-    linear-gradient(45deg, ${colors[0]}, ${colors[1]})
-  `;
+async function saveProject() {
+  const token = localStorage.getItem("token");
+  const theme = document.getElementById("prompt").value;
+
+  await fetch(API + "/project/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify({
+      name: "My Design",
+      description: "Epoxy",
+      surface: "Table",
+      theme: theme
+    })
+  });
+
+  alert("Saved!");
+}
+
+async function loadProjects() {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(API + "/project/", {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  });
+
+  const data = await res.json();
+  const container = document.getElementById("projects");
+  container.innerHTML = "";
+
+  data.items.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "project";
+    div.innerText = p.theme;
+
+    div.onclick = () => {
+      document.getElementById("prompt").value = p.theme;
+      generate();
+    };
+
+    container.appendChild(div);
+  });
 }
 
 function downloadDesign() {
@@ -79,7 +110,7 @@ function downloadDesign() {
 
   html2canvas(el).then(canvas => {
     const link = document.createElement("a");
-    link.download = "epoxy-design.png";
+    link.download = "epoxy.png";
     link.href = canvas.toDataURL();
     link.click();
   });
