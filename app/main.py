@@ -49,3 +49,7 @@ Base.metadata.create_all(bind=engine)
 from fastapi.staticfiles import StaticFiles
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# ===== AUTO CREATE DB TABLES =====
+from app.database import Base, engine
+
+Base.metadata.create_all(bind=engine)
