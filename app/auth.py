@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt
 
@@ -12,13 +12,24 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 def create_token(data: dict):
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
-# ✅ FIXED LOGIN (OAuth2 compatible)
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    email = form_data.username
-    password = form_data.password
+async def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends()
+):
+    try:
+        # ✅ Try OAuth2 form first
+        email = form_data.username
+        password = form_data.password
+    except:
+        # ✅ Fallback to JSON
+        body = await request.json()
+        email = body.get("email")
+        password = body.get("password")
 
-    # (for now, accept any login)
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Missing credentials")
+
     token = create_token({"sub": email})
 
     return {
@@ -26,7 +37,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "token_type": "bearer"
     }
 
-# 🔐 PROTECTED ROUTE
 @router.get("/me")
 def get_me(token: str = Depends(oauth2_scheme)):
     try:
