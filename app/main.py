@@ -29,3 +29,7 @@ def root():
 @app.get("/app")
 def serve_app():
     return FileResponse("app/static/index.html")
+
+from app.project import router as project_router
+app.include_router(project_router)
+
