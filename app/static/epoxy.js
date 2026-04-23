@@ -16,17 +16,26 @@ function applyColors(colors, theme = "") {
   function draw() {
     ctx.clearRect(0, 0, w, h);
 
+    // base
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, w, h);
 
-    // 🌊 OCEAN MODE
+    // 🌊 OCEAN MODE (SMOOTHED)
     if (theme.includes("ocean") || theme.includes("wave") || theme.includes("water")) {
-      colors.forEach((color, i) => {
-        for (let y = 0; y < h; y += 20) {
-          const wave = Math.sin((y + time * 50) * 0.02 + i) * 20;
 
-          ctx.fillStyle = color;
-          ctx.globalAlpha = 0.2;
+      ctx.filter = "blur(8px)"; // 👈 soft edges
+
+      colors.forEach((color, i) => {
+        for (let y = 0; y < h; y += 15) {
+
+          const wave = Math.sin((y * 0.03) + time * 2 + i) * 20;
+
+          const gradient = ctx.createLinearGradient(0, y, 0, y + 40);
+          gradient.addColorStop(0, color);
+          gradient.addColorStop(1, "transparent");
+
+          ctx.fillStyle = gradient;
+          ctx.globalAlpha = 0.3;
 
           ctx.beginPath();
           ctx.moveTo(0, y + wave);
@@ -37,10 +46,15 @@ function applyColors(colors, theme = "") {
           ctx.fill();
         }
       });
+
+      ctx.filter = "none"; // reset
     }
 
     // 🌌 GALAXY MODE
     else if (theme.includes("space") || theme.includes("galaxy")) {
+
+      ctx.filter = "blur(12px)";
+
       colors.forEach((color, index) => {
         for (let i = 0; i < 4; i++) {
           const x = w / 2 + Math.sin(time + i + index) * 100;
@@ -60,6 +74,8 @@ function applyColors(colors, theme = "") {
         }
       });
 
+      ctx.filter = "none";
+
       // stars
       for (let i = 0; i < 60; i++) {
         const x = (i * 37) % w;
@@ -72,7 +88,8 @@ function applyColors(colors, theme = "") {
     }
 
     ctx.globalAlpha = 1;
-    time += 0.02;
+
+    time += 0.015;
     animationId = requestAnimationFrame(draw);
   }
 
