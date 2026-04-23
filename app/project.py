@@ -1,10 +1,18 @@
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/project", tags=["Project"])
 
+# ✅ SCHEMA
+class ProjectCreate(BaseModel):
+    name: str
+    description: str
+    surface: str
+    theme: str
+
 projects = []
 
-# GET ALL (only active)
+# GET ALL
 @router.get("/")
 def get_projects():
     active = [p for p in projects if not p.get("deleted")]
@@ -15,13 +23,15 @@ def get_projects():
         "limit": 5
     }
 
-# CREATE
+# CREATE (now typed)
 @router.post("/")
-def create_project(project: dict):
-    project["id"] = len(projects) + 1
-    project["deleted"] = False
-    projects.append(project)
-    return project
+def create_project(project: ProjectCreate):
+    new_project = project.dict()
+    new_project["id"] = len(projects) + 1
+    new_project["deleted"] = False
+
+    projects.append(new_project)
+    return new_project
 
 # UPDATE
 @router.put("/{project_id}")
@@ -32,7 +42,7 @@ def update_project(project_id: int, updated: dict):
             return p
     raise HTTPException(status_code=404, detail="Project not found")
 
-# DELETE (soft delete)
+# DELETE
 @router.delete("/{project_id}")
 def delete_project(project_id: int):
     for p in projects:
@@ -41,7 +51,7 @@ def delete_project(project_id: int):
             return {"message": "project deleted"}
     raise HTTPException(status_code=404, detail="Project not found")
 
-# 🔥 RESTORE
+# RESTORE
 @router.put("/restore/{project_id}")
 def restore_project(project_id: int):
     for p in projects:
