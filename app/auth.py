@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt
 
 SECRET_KEY = "secret"
@@ -10,23 +9,24 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-class UserCreate(BaseModel):
-    email: str
-    password: str
-
 def create_token(data: dict):
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
-@router.post("/register")
-def register(user: UserCreate):
-    return {"message": "user registered"}
-
+# ✅ FIXED LOGIN (OAuth2 compatible)
 @router.post("/login")
-def login(user: UserCreate):
-    token = create_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    email = form_data.username
+    password = form_data.password
 
-# 🔐 PROTECTED EXAMPLE
+    # (for now, accept any login)
+    token = create_token({"sub": email})
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
+
+# 🔐 PROTECTED ROUTE
 @router.get("/me")
 def get_me(token: str = Depends(oauth2_scheme)):
     try:
