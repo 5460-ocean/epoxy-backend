@@ -53,3 +53,16 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 from app.database import Base, engine
 
 Base.metadata.create_all(bind=engine)
+# ===== FIX /app ROUTE =====
+from fastapi.responses import FileResponse
+import os
+
+@app.get("/app")
+def serve_app():
+    base_dir = os.path.dirname(__file__)
+    file_path = os.path.join(base_dir, "static", "index.html")
+
+    if not os.path.exists(file_path):
+        return {"error": "index.html not found"}
+
+    return FileResponse(file_path)
