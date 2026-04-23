@@ -1,19 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import os
 
-# ✅ Import routers
-from app.routers import auth, project, admin, logs, analytics
-from app.ai import router as ai_router
+app = FastAPI()
 
-app = FastAPI(
-    servers=[
-        {"url": "https://epoxy-backend-106r.onrender.com"}
-    ]
-)
-
-# ✅ CORS
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,47 +15,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Include routers
-app.include_router(auth.router)
-app.include_router(project.router)
-app.include_router(admin.router)
-app.include_router(logs.router)
-app.include_router(analytics.router)
+# ===== ROUTES IMPORT =====
+from app.auth import router as auth_router
+from app.project import router as project_router
+from app.admin import router as admin_router
+from app.logs import router as logs_router
+from app.analytics import router as analytics_router
+from app.ai import router as ai_router
+
+app.include_router(auth_router)
+app.include_router(project_router)
+app.include_router(admin_router)
+app.include_router(logs_router)
+app.include_router(analytics_router)
 app.include_router(ai_router)
 
-# ✅ Root
+# ===== STATIC =====
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# ===== ROOT =====
 @app.get("/")
 def root():
     return {"message": "API is running"}
 
-# ✅ Frontend
+# ===== FRONTEND =====
 @app.get("/app")
 def serve_app():
-    base_dir = os.path.dirname(__file__)
-    file_path = os.path.join(base_dir, "static", "index.html")
-    return FileResponse(file_path)
-# ===== CREATE DATABASE TABLES =====
-from app.database import Base, engine
-
-Base.metadata.create_all(bind=engine)
-# ===== FIX STATIC FILES =====
-from fastapi.staticfiles import StaticFiles
-
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-# ===== AUTO CREATE DB TABLES =====
-from app.database import Base, engine
-
-Base.metadata.create_all(bind=engine)
-# ===== FIX /app ROUTE =====
-from fastapi.responses import FileResponse
-import os
-
-@app.get("/app")
-def serve_app():
-    base_dir = os.path.dirname(__file__)
-    file_path = os.path.join(base_dir, "static", "index.html")
-
-    if not os.path.exists(file_path):
-        return {"error": "index.html not found"}
-
-    return FileResponse(file_path)
+    return FileResponse("app/static/index.html")
+# ===== SAFE STARTUP DB INIT =====
+@app.on_event("startup")
+def startup():
+    try:
+        from app.database import Base, engine
+        Base.metadata.create_all(bind=engine)
+        print("DB ready")
+    except Exception as e:
+        print("DB init failed:", e)
