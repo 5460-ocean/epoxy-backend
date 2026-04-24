@@ -13,27 +13,38 @@ let amplitude = 20;
 
 const API_URL = "https://epoxy-backend-106r.onrender.com";
 
-// ===== GENERATE =====
+// 🔥 DEBUG ELEMENT
+let debug = document.createElement("div");
+debug.style.color = "white";
+document.body.appendChild(debug);
+
 async function generate() {
     const prompt = document.getElementById("prompt").value;
 
-    const res = await fetch(API_URL + "/ai/generate-style", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
-    });
+    debug.innerText = "Clicked Generate: " + prompt;
 
-    const data = await res.json();
+    try {
+        const res = await fetch(API_URL + "/ai/generate-style", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt })
+        });
 
-    colors = data.colors || colors;
-    style = data.style || style;
-    speed = data.speed || speed;
-    amplitude = data.amplitude || amplitude;
+        const data = await res.json();
 
-    console.log("STYLE:", data);
+        debug.innerText += "\nResponse: " + JSON.stringify(data);
+
+        // 🔥 FORCE CHANGE (no condition)
+        colors = data.colors;
+        style = data.style;
+        speed = data.speed;
+        amplitude = data.amplitude;
+
+    } catch (e) {
+        debug.innerText += "\nERROR: " + e;
+    }
 }
 
-// ===== DRAW =====
 function draw() {
     const w = canvas.width;
     const h = canvas.height;
@@ -47,43 +58,24 @@ function draw() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
 
-    // 🌊 WAVES
     if (style === "waves") {
         for (let i = 0; i < 3; i++) {
             ctx.beginPath();
             for (let x = 0; x < w; x++) {
-                let y =
-                    h / 2 +
-                    Math.sin(x * 0.02 + t + i) * amplitude;
-
+                let y = h / 2 + Math.sin(x * 0.02 + t + i) * amplitude;
                 ctx.lineTo(x, y);
             }
-            ctx.strokeStyle = "rgba(255,255,255,0.2)";
+            ctx.strokeStyle = "white";
             ctx.stroke();
         }
     }
 
-    // 🌌 SWIRL
     if (style === "swirl") {
         for (let i = 0; i < 200; i++) {
             let angle = i * 0.1 + t;
-            let radius = i * 0.5;
-
-            let x = w / 2 + Math.cos(angle) * radius;
-            let y = h / 2 + Math.sin(angle) * radius;
-
-            ctx.fillStyle = "white";
-            ctx.fillRect(x, y, 2, 2);
-        }
-    }
-
-    // 🔥 CHAOS
-    if (style === "chaos") {
-        for (let i = 0; i < 200; i++) {
-            let x = Math.random() * w;
-            let y = Math.random() * h;
-
-            ctx.fillStyle = "rgba(255,255,255,0.2)";
+            let r = i * 0.5;
+            let x = w / 2 + Math.cos(angle) * r;
+            let y = h / 2 + Math.sin(angle) * r;
             ctx.fillRect(x, y, 2, 2);
         }
     }
@@ -94,5 +86,5 @@ function draw() {
 
 draw();
 
-// expose
+// 🔥 MAKE SURE BUTTON WORKS
 window.generate = generate;
