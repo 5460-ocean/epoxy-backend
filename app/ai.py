@@ -13,28 +13,34 @@ def generate_style(data: Prompt):
     # 🌊 OCEAN
     if "ocean" in text or "wave" in text:
         return {
-            "colors": ["#00c6ff", "#003366"]
+            "colors": ["#00c6ff", "#003366"],
+            "style": "waves",
+            "speed": 0.05,
+            "amplitude": 30
         }
 
     # 🌌 GALAXY
     if "galaxy" in text or "space" in text:
         return {
-            "colors": ["#8e2de2", "#000000"]
+            "colors": ["#8e2de2", "#000000"],
+            "style": "swirl",
+            "speed": 0.02,
+            "amplitude": 50
         }
 
-    # 🔥 FIRE / LAVA
-    if "fire" in text or "lava" in text:
+    # 🔥 FIRE
+    if "fire" in text:
         return {
-            "colors": ["#ff512f", "#dd2476"]
+            "colors": ["#ff512f", "#dd2476"],
+            "style": "chaos",
+            "speed": 0.08,
+            "amplitude": 40
         }
 
-    # 🌲 NATURE
-    if "forest" in text or "nature" in text:
-        return {
-            "colors": ["#134e5e", "#71b280"]
-        }
-
-    # DEFAULT (better than black)
+    # DEFAULT
     return {
-        "colors": ["#0077ff", "#001f3f"]
+        "colors": ["#0077ff", "#001f3f"],
+        "style": "waves",
+        "speed": 0.04,
+        "amplitude": 20
     }
