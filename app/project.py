@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+from typing import Optional
 
 router = APIRouter(prefix="/project", tags=["Project"])
 
-# ✅ SCHEMA
 class ProjectCreate(BaseModel):
     name: str
     description: str
@@ -12,28 +12,46 @@ class ProjectCreate(BaseModel):
 
 projects = []
 
-# GET ALL
+# ✅ RESTORED FILTERS
 @router.get("/")
-def get_projects():
-    active = [p for p in projects if not p.get("deleted")]
+def get_projects(
+    skip: int = 0,
+    limit: int = 5,
+    search: Optional[str] = None,
+    name: Optional[str] = None,
+    surface: Optional[str] = None,
+):
+    results = [p for p in projects if not p.get("deleted")]
+
+    # 🔍 search
+    if search:
+        results = [
+            p for p in results
+            if search.lower() in p["name"].lower()
+        ]
+
+    # 🎯 filters
+    if name:
+        results = [p for p in results if p["name"] == name]
+
+    if surface:
+        results = [p for p in results if p["surface"] == surface]
+
     return {
-        "items": active,
-        "total": len(active),
-        "skip": 0,
-        "limit": 5
+        "items": results[skip: skip + limit],
+        "total": len(results),
+        "skip": skip,
+        "limit": limit
     }
 
-# CREATE (now typed)
 @router.post("/")
 def create_project(project: ProjectCreate):
     new_project = project.dict()
     new_project["id"] = len(projects) + 1
     new_project["deleted"] = False
-
     projects.append(new_project)
     return new_project
 
-# UPDATE
 @router.put("/{project_id}")
 def update_project(project_id: int, updated: dict):
     for p in projects:
@@ -42,7 +60,6 @@ def update_project(project_id: int, updated: dict):
             return p
     raise HTTPException(status_code=404, detail="Project not found")
 
-# DELETE
 @router.delete("/{project_id}")
 def delete_project(project_id: int):
     for p in projects:
@@ -51,7 +68,6 @@ def delete_project(project_id: int):
             return {"message": "project deleted"}
     raise HTTPException(status_code=404, detail="Project not found")
 
-# RESTORE
 @router.put("/restore/{project_id}")
 def restore_project(project_id: int):
     for p in projects:
