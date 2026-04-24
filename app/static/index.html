@@ -1,140 +1,111 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Epoxy Generator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epoxy Generator</title>
+    <style>
+        body {
+            margin: 0;
+            background: #111;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+        }
 
-  <style>
-    body { font-family: Arial; text-align: center; background: #0a0a0a; color: white; }
+        #controls {
+            padding: 10px;
+        }
 
-    canvas {
-      width: 300px;
-      height: 300px;
-      margin: 20px auto;
-      border-radius: 20px;
-      display: block;
-      background: black;
-    }
-
-    button, input {
-      padding: 10px;
-      margin: 5px;
-      border-radius: 8px;
-      border: none;
-    }
-
-    button {
-      cursor: pointer;
-      background: #00c6ff;
-    }
-
-    #projects {
-      margin-top: 20px;
-    }
-
-    .project {
-      cursor: pointer;
-      padding: 8px;
-      background: #222;
-      margin: 5px;
-      border-radius: 8px;
-    }
-  </style>
+        canvas {
+            width: 100vw;
+            height: 80vh;
+            display: block;
+            margin: auto;
+            background: black;
+        }
+    </style>
 </head>
-
 <body>
 
-<h2>Epoxy Generator</h2>
+<div id="controls">
+    <input id="prompt" placeholder="Enter style (e.g. Ocean Waves)" />
+    <button onclick="generate()">Generate</button>
+</div>
 
-<input id="prompt" placeholder="e.g. ocean waves, space" />
-
-<br>
-
-<button onclick="generate()">Generate</button>
-<button onclick="saveProject()">Save</button>
-<button onclick="loadProjects()">Load Projects</button>
-<button onclick="downloadDesign()">Download</button>
-
-<canvas id="canvas" width="300" height="300"></canvas>
-
-<div id="projects"></div>
-
-<!-- ✅ FIXED: absolute path -->
-<script src="https://epoxy-backend-106r.onrender.com/static/epoxy.js"></script>
+<canvas id="canvas"></canvas>
 
 <script>
-const API = "https://epoxy-backend-106r.onrender.com";
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
-async function generate() {
-  const text = document.getElementById("prompt").value;
-
-  const res = await fetch(API + "/ai/generate-style", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ text })
-  });
-
-  const data = await res.json();
-
-  applyColors(data.colors, text);
-}
-
-async function saveProject() {
-  const token = localStorage.getItem("token");
-  const theme = document.getElementById("prompt").value;
-
-  await fetch(API + "/project/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + token
-    },
-    body: JSON.stringify({
-      name: "My Design",
-      description: "Epoxy",
-      surface: "Table",
-      theme: theme
-    })
-  });
-
-  alert("Saved!");
-}
-
-async function loadProjects() {
-  const token = localStorage.getItem("token");
-
-  const res = await fetch(API + "/project/", {
-    headers: {
-      "Authorization": "Bearer " + token
+    // 🔥 FIX: REAL SIZE (CRITICAL)
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight * 0.8;
     }
-  });
 
-  const data = await res.json();
-  const container = document.getElementById("projects");
-  container.innerHTML = "";
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
 
-  data.items.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "project";
-    div.innerText = p.theme;
+    let t = 0;
+    let colors = ["#0077ff", "#001f3f"];
 
-    div.onclick = () => {
-      document.getElementById("prompt").value = p.theme;
-      generate();
-    };
+    const API_URL = "https://epoxy-backend-106r.onrender.com";
 
-    container.appendChild(div);
-  });
-}
+    async function generateStyle(prompt) {
+        try {
+            const res = await fetch(API_URL + "/ai/generate-style", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ prompt })
+            });
 
-function downloadDesign() {
-  const canvas = document.getElementById("canvas");
+            const data = await res.json();
+            console.log("AI:", data);
 
-  const link = document.createElement("a");
-  link.download = "epoxy.png";
-  link.href = canvas.toDataURL();
-  link.click();
-}
+            if (data.colors && data.colors.length >= 2) {
+                colors = data.colors;
+            }
+
+        } catch (e) {
+            console.error(e);
+            colors = ["#ff0000", "#000000"]; // error = red
+        }
+    }
+
+    function draw() {
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        let gradient = ctx.createLinearGradient(0, 0, 0, h);
+        gradient.addColorStop(0, colors[0]);
+        gradient.addColorStop(1, colors[1]);
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, w, h);
+
+        // 🌊 visible wave
+        ctx.beginPath();
+        for (let x = 0; x < w; x++) {
+            let y = h / 2 + Math.sin(x * 0.02 + t) * 30;
+            ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = "white";
+        ctx.stroke();
+
+        t += 0.05;
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+
+    function generate() {
+        const input = document.getElementById("prompt").value;
+        generateStyle(input);
+    }
 </script>
 
 </body>
