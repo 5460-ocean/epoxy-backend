@@ -2,62 +2,63 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 let t = 0;
+let colors = ["#000000", "#111111"]; // default fallback
 
+// 🔥 FETCH STYLE FROM API
+async function generateStyle(prompt) {
+    try {
+        const res = await fetch("/ai/generate-style", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ prompt })
+        });
+
+        const data = await res.json();
+
+        if (data.colors && data.colors.length >= 2) {
+            colors = data.colors;
+        }
+
+    } catch (e) {
+        console.error("AI error", e);
+    }
+}
+
+// 🎨 DRAW LOOP
 function draw() {
     const w = canvas.width;
     const h = canvas.height;
 
     ctx.clearRect(0, 0, w, h);
 
-    // 🌊 Deep ocean gradient (depth)
+    // 🌈 USE API COLORS
     let gradient = ctx.createLinearGradient(0, 0, 0, h);
-    gradient.addColorStop(0, "#001a33");
-    gradient.addColorStop(0.5, "#005f99");
-    gradient.addColorStop(1, "#66ccff");
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(1, colors[1]);
 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
 
-    // 🌊 MULTI-LAYER WAVES (depth illusion)
-    for (let layer = 0; layer < 3; layer++) {
-        ctx.beginPath();
-
-        for (let x = 0; x < w; x++) {
-            let y =
-                h / 2 +
-                Math.sin(x * 0.015 + t * (0.5 + layer * 0.3)) * (20 + layer * 10) +
-                Math.cos(x * 0.01 + t * 0.3) * 10;
-
-            ctx.lineTo(x, y);
-        }
-
-        ctx.strokeStyle = `rgba(255,255,255,${0.05 + layer * 0.05})`;
-        ctx.lineWidth = 1 + layer;
-        ctx.stroke();
+    // 🌊 SIMPLE MOTION
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+        let y = h / 2 + Math.sin(x * 0.02 + t) * 20;
+        ctx.lineTo(x, y);
     }
 
-    // ✨ FOAM HIGHLIGHTS (makes it realistic)
-    for (let i = 0; i < 200; i++) {
-        let x = Math.random() * w;
-        let y =
-            h / 2 +
-            Math.sin(x * 0.02 + t) * 25 +
-            (Math.random() - 0.5) * 20;
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.stroke();
 
-        ctx.fillStyle = "rgba(255,255,255,0.08)";
-        ctx.beginPath();
-        ctx.arc(x, y, Math.random() * 1.5, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    // 🌪 subtle turbulence blur
-    ctx.globalAlpha = 0.1;
-    ctx.drawImage(canvas, Math.sin(t) * 2, Math.cos(t) * 2);
-    ctx.globalAlpha = 1;
-
-    t += 0.06;
-
+    t += 0.05;
     requestAnimationFrame(draw);
 }
 
 draw();
+
+// 🔥 CONNECT INPUT (IMPORTANT)
+window.generate = function () {
+    const input = document.getElementById("prompt").value;
+    generateStyle(input);
+};
