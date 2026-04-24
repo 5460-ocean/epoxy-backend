@@ -1,31 +1,40 @@
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
+class Prompt(BaseModel):
+    prompt: str
+
 @router.post("/generate-style")
-def generate_style(data: dict):
-    text = data.get("text", "").lower()
+def generate_style(data: Prompt):
+    text = data.prompt.lower()
 
-    if "space" in text or "galaxy" in text:
+    # 🌊 OCEAN
+    if "ocean" in text or "wave" in text:
         return {
-            "colors": ["#000000", "#8e2de2", "#4facfe", "#ff00cc"]
+            "colors": ["#00c6ff", "#003366"]
         }
 
-    if "desert" in text or "dunes" in text:
+    # 🌌 GALAXY
+    if "galaxy" in text or "space" in text:
         return {
-            "colors": ["#c2a679", "#a67c52", "#8c6239"]
+            "colors": ["#8e2de2", "#000000"]
         }
 
-    if "ocean" in text:
+    # 🔥 FIRE / LAVA
+    if "fire" in text or "lava" in text:
         return {
-            "colors": ["#001f3f", "#0074D9", "#00c6ff"]
+            "colors": ["#ff512f", "#dd2476"]
         }
 
-    if "fire" in text:
+    # 🌲 NATURE
+    if "forest" in text or "nature" in text:
         return {
-            "colors": ["#ff512f", "#ff0000", "#ffff00"]
+            "colors": ["#134e5e", "#71b280"]
         }
 
+    # DEFAULT (better than black)
     return {
-        "colors": ["#222222", "#555555"]
+        "colors": ["#0077ff", "#001f3f"]
     }
