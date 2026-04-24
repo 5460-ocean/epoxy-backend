@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import Optional
 from pydantic import BaseModel
 
@@ -23,18 +24,35 @@ class ProjectCreate(BaseModel):
     surface: str
     theme: str
 
-# ===== GET =====
+# ===== GET PROJECTS (FIXED) =====
 @router.get("/")
 def get_projects(
     skip: int = 0,
     limit: int = 5,
     search: Optional[str] = None,
+    name: Optional[str] = None,
+    surface: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
+    # Base query
     query = db.query(Project).filter(Project.deleted == False)
 
+    # 🔍 SEARCH across multiple fields
     if search:
-        query = query.filter(Project.name.contains(search))
+        query = query.filter(
+            or_(
+                Project.name.contains(search),
+                Project.surface.contains(search),
+                Project.theme.contains(search)
+            )
+        )
+
+    # 🎯 FILTERS (restored)
+    if name:
+        query = query.filter(Project.name == name)
+
+    if surface:
+        query = query.filter(Project.surface == surface)
 
     total = query.count()
     items = query.offset(skip).limit(limit).all()
