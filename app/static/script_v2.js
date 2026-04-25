@@ -6,8 +6,8 @@ let t = 0;
 let colors = ["#00c6ff", "#003366"];
 let amplitude = 20;
 let speed = 0.05;
+let type = "waves";
 
-// 🔥 FIX: bind button properly
 document.getElementById("generateBtn").addEventListener("click", generate);
 
 async function generate() {
@@ -21,10 +21,10 @@ async function generate() {
 
     const data = await res.json();
 
-    // 🔥 APPLY RESULT
-    colors = data.colors || ["#00c6ff", "#003366"];
-    amplitude = data.amplitude || 20;
-    speed = data.speed || 0.05;
+    colors = data.colors;
+    amplitude = data.amplitude;
+    speed = data.speed;
+    type = data.type;
 }
 
 function draw() {
@@ -33,61 +33,65 @@ function draw() {
 
     ctx.clearRect(0, 0, w, h);
 
-    let gradient = ctx.createLinearGradient(0, 0, 0, h);
+    // 🔥 MULTI-LAYER GRADIENT (depth)
+    let gradient = ctx.createLinearGradient(0, 0, w, h);
     gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, "#111");
     gradient.addColorStop(1, colors[1]);
 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
 
-    // 🌊 Smooth waves (not sharp lines)
-    for (let i = 0; i < 3; i++) {
-        ctx.beginPath();
-        ctx.lineWidth = 2;
+    // 🌊 WAVES (soft epoxy flow)
+    if (type === "waves") {
+        for (let i = 0; i < 6; i++) {
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = `rgba(255,255,255,${0.05 * i})`;
 
-        for (let x = 0; x < w; x++) {
-            let y = h/2 + Math.sin(x * 0.02 + t + i) * amplitude;
-            ctx.lineTo(x, y);
+            for (let x = 0; x < w; x++) {
+                let y = h/2 +
+                    Math.sin(x * 0.01 + t + i) * amplitude +
+                    Math.cos(x * 0.02 + t) * 10;
+
+                ctx.lineTo(x, y);
+            }
+
+            ctx.stroke();
         }
-
-        ctx.strokeStyle = "rgba(255,255,255,0.3)";
-        ctx.stroke();
     }
+
+    // 🌌 SWIRL (galaxy epoxy)
+    if (type === "swirl") {
+        for (let i = 0; i < 300; i++) {
+            let angle = i * 0.1 + t;
+            let r = i * 0.6;
+
+            let x = w/2 + Math.cos(angle) * r;
+            let y = h/2 + Math.sin(angle) * r;
+
+            ctx.fillStyle = `rgba(255,255,255,0.3)`;
+            ctx.fillRect(x, y, 2, 2);
+        }
+    }
+
+    // 🔥 CHAOS (fire epoxy)
+    if (type === "chaos") {
+        for (let i = 0; i < 200; i++) {
+            let x = Math.random() * w;
+            let y = Math.random() * h;
+
+            ctx.fillStyle = colors[i % 2];
+            ctx.fillRect(x, y, 2, 2);
+        }
+    }
+
+    // ✨ SOFT BLUR overlay (epoxy feel)
+    ctx.fillStyle = "rgba(255,255,255,0.02)";
+    ctx.fillRect(0, 0, w, h);
 
     t += speed;
     requestAnimationFrame(draw);
 }
 
 draw();
-
-// 🟢 SAVE
-async function saveProject() {
-    await fetch("/project/", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            name: "Project",
-            description: "Generated",
-            surface: "Floor",
-            theme: document.getElementById("prompt").value
-        })
-    });
-
-    alert("Saved!");
-}
-
-// 🟢 LOAD
-async function loadProjects() {
-    const res = await fetch("/project/");
-    const data = await res.json();
-
-    alert(JSON.stringify(data.items, null, 2));
-}
-
-// 🟢 DOWNLOAD
-function downloadImage() {
-    const link = document.createElement("a");
-    link.download = "epoxy.png";
-    link.href = canvas.toDataURL();
-    link.click();
-}

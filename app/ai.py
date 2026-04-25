@@ -1,46 +1,38 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
-class Prompt(BaseModel):
-    prompt: str
-
 @router.post("/generate-style")
-def generate_style(data: Prompt):
-    text = data.prompt.lower()
+async def generate_style(data: dict):
+    prompt = data.get("prompt", "").lower()
 
-    # 🌊 OCEAN
-    if "ocean" in text or "wave" in text:
+    if "ocean" in prompt:
         return {
-            "colors": ["#00c6ff", "#003366"],
-            "style": "waves",
-            "speed": 0.05,
-            "amplitude": 30
-        }
-
-    # 🌌 GALAXY
-    if "galaxy" in text or "space" in text:
-        return {
-            "colors": ["#8e2de2", "#000000"],
-            "style": "swirl",
-            "speed": 0.02,
-            "amplitude": 50
-        }
-
-    # 🔥 FIRE
-    if "fire" in text:
-        return {
-            "colors": ["#ff512f", "#dd2476"],
-            "style": "chaos",
+            "colors": ["#1CA7EC", "#023E8A"],
+            "amplitude": 25,
             "speed": 0.08,
-            "amplitude": 40
+            "type": "waves"
         }
 
-    # DEFAULT
+    if "galaxy" in prompt:
+        return {
+            "colors": ["#ff00cc", "#3333ff"],
+            "amplitude": 10,
+            "speed": 0.03,
+            "type": "swirl"
+        }
+
+    if "fire" in prompt:
+        return {
+            "colors": ["#ff4d00", "#000000"],
+            "amplitude": 40,
+            "speed": 0.12,
+            "type": "chaos"
+        }
+
     return {
-        "colors": ["#0077ff", "#001f3f"],
-        "style": "waves",
-        "speed": 0.04,
-        "amplitude": 20
+        "colors": ["#00c6ff", "#003366"],
+        "amplitude": 20,
+        "speed": 0.05,
+        "type": "waves"
     }
