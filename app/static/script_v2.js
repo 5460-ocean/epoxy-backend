@@ -13,36 +13,29 @@ let amplitude = 20;
 
 const API_URL = "https://epoxy-backend-106r.onrender.com";
 
-// 🔥 DEBUG ELEMENT
-let debug = document.createElement("div");
-debug.style.color = "white";
-document.body.appendChild(debug);
+// ✅ PROPER BUTTON BINDING
+document.getElementById("generateBtn").addEventListener("click", generate);
 
 async function generate() {
     const prompt = document.getElementById("prompt").value;
 
-    debug.innerText = "Clicked Generate: " + prompt;
+    console.log("CLICKED:", prompt);
 
-    try {
-        const res = await fetch(API_URL + "/ai/generate-style", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt })
-        });
+    const res = await fetch(API_URL + "/ai/generate-style", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+    });
 
-        const data = await res.json();
+    const data = await res.json();
 
-        debug.innerText += "\nResponse: " + JSON.stringify(data);
+    console.log("RESPONSE:", data);
 
-        // 🔥 FORCE CHANGE (no condition)
-        colors = data.colors;
-        style = data.style;
-        speed = data.speed;
-        amplitude = data.amplitude;
-
-    } catch (e) {
-        debug.innerText += "\nERROR: " + e;
-    }
+    // 🔥 FORCE UPDATE
+    colors = data.colors;
+    style = data.style;
+    speed = data.speed;
+    amplitude = data.amplitude;
 }
 
 function draw() {
@@ -58,6 +51,7 @@ function draw() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
 
+    // 🌊 WAVES
     if (style === "waves") {
         for (let i = 0; i < 3; i++) {
             ctx.beginPath();
@@ -70,6 +64,7 @@ function draw() {
         }
     }
 
+    // 🌌 SWIRL
     if (style === "swirl") {
         for (let i = 0; i < 200; i++) {
             let angle = i * 0.1 + t;
@@ -85,6 +80,3 @@ function draw() {
 }
 
 draw();
-
-// 🔥 MAKE SURE BUTTON WORKS
-window.generate = generate;
