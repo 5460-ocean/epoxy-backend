@@ -1,41 +1,30 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 300;
-canvas.height = 300;
-
 let t = 0;
 
 let colors = ["#00c6ff", "#003366"];
-let style = "waves";
-let speed = 0.05;
 let amplitude = 20;
+let speed = 0.05;
 
-const API_URL = "https://epoxy-backend-106r.onrender.com";
-
-// ✅ PROPER BUTTON BINDING
+// 🔥 FIX: bind button properly
 document.getElementById("generateBtn").addEventListener("click", generate);
 
 async function generate() {
     const prompt = document.getElementById("prompt").value;
 
-    console.log("CLICKED:", prompt);
-
-    const res = await fetch(API_URL + "/ai/generate-style", {
+    const res = await fetch("/ai/generate-style", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ prompt })
     });
 
     const data = await res.json();
 
-    console.log("RESPONSE:", data);
-
-    // 🔥 FORCE UPDATE
-    colors = data.colors;
-    style = data.style;
-    speed = data.speed;
-    amplitude = data.amplitude;
+    // 🔥 APPLY RESULT
+    colors = data.colors || ["#00c6ff", "#003366"];
+    amplitude = data.amplitude || 20;
+    speed = data.speed || 0.05;
 }
 
 function draw() {
@@ -51,28 +40,18 @@ function draw() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
 
-    // 🌊 WAVES
-    if (style === "waves") {
-        for (let i = 0; i < 3; i++) {
-            ctx.beginPath();
-            for (let x = 0; x < w; x++) {
-                let y = h / 2 + Math.sin(x * 0.02 + t + i) * amplitude;
-                ctx.lineTo(x, y);
-            }
-            ctx.strokeStyle = "white";
-            ctx.stroke();
-        }
-    }
+    // 🌊 Smooth waves (not sharp lines)
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.lineWidth = 2;
 
-    // 🌌 SWIRL
-    if (style === "swirl") {
-        for (let i = 0; i < 200; i++) {
-            let angle = i * 0.1 + t;
-            let r = i * 0.5;
-            let x = w / 2 + Math.cos(angle) * r;
-            let y = h / 2 + Math.sin(angle) * r;
-            ctx.fillRect(x, y, 2, 2);
+        for (let x = 0; x < w; x++) {
+            let y = h/2 + Math.sin(x * 0.02 + t + i) * amplitude;
+            ctx.lineTo(x, y);
         }
+
+        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+        ctx.stroke();
     }
 
     t += speed;
@@ -80,3 +59,35 @@ function draw() {
 }
 
 draw();
+
+// 🟢 SAVE
+async function saveProject() {
+    await fetch("/project/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            name: "Project",
+            description: "Generated",
+            surface: "Floor",
+            theme: document.getElementById("prompt").value
+        })
+    });
+
+    alert("Saved!");
+}
+
+// 🟢 LOAD
+async function loadProjects() {
+    const res = await fetch("/project/");
+    const data = await res.json();
+
+    alert(JSON.stringify(data.items, null, 2));
+}
+
+// 🟢 DOWNLOAD
+function downloadImage() {
+    const link = document.createElement("a");
+    link.download = "epoxy.png";
+    link.href = canvas.toDataURL();
+    link.click();
+}
