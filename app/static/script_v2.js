@@ -4,14 +4,9 @@ const ctx = canvas.getContext("2d");
 let t = 0;
 
 let colors = ["#1CA7EC", "#023E8A"];
-let flowIntensity = 0.03;
-let glow = 0.2;
+let type = "ocean";
 
-// stronger animated noise
-function noise(x, y, t) {
-    return Math.sin(x * 0.02 + t) + Math.cos(y * 0.02 + t);
-}
-
+// ===== GENERATE =====
 document.getElementById("generateBtn").addEventListener("click", generate);
 
 async function generate() {
@@ -25,36 +20,56 @@ async function generate() {
 
     const data = await res.json();
 
-    colors = data.colors || colors;
-
-    if (prompt.includes("ocean")) {
-        flowIntensity = 0.03;
-        glow = 0.15;
-    } else if (prompt.includes("galaxy")) {
-        flowIntensity = 0.05;
-        glow = 0.25;
-    } else if (prompt.includes("fire")) {
-        flowIntensity = 0.08;
-        glow = 0.4;
-    }
+    colors = data.colors;
+    type = data.type;
 }
 
+// ===== NOISE =====
+function noise(x, y, t) {
+    return Math.sin(x * 0.01 + t) + Math.cos(y * 0.01 + t);
+}
+
+// ===== DRAW =====
 function draw() {
     const w = canvas.width;
     const h = canvas.height;
 
-    let image = ctx.createImageData(w, h);
+    let img = ctx.createImageData(w, h);
 
     for (let x = 0; x < w; x++) {
         for (let y = 0; y < h; y++) {
 
-            // 🔥 animated flow
-            let n = noise(x, y, t);
+            let nx = x;
+            let ny = y;
 
-            let nx = x + n * 30;   // bigger distortion
-            let ny = y + n * 30;
+            // ===== STYLE PHYSICS =====
 
-            let mix = (Math.sin(nx * flowIntensity + t * 2) + 1) / 2;
+            // 🌊 OCEAN
+            if (type === "waves") {
+                ny += Math.sin(x * 0.02 + t) * 20;
+                nx += noise(x, y, t) * 10;
+            }
+
+            // 🔥 FIRE
+            if (type === "chaos") {
+                ny -= t * 30; // upward motion
+                nx += noise(x, y, t) * 15;
+            }
+
+            // 🌌 GALAXY
+            if (type === "swirl") {
+                let dx = x - w/2;
+                let dy = y - h/2;
+
+                let angle = Math.atan2(dy, dx) + t * 0.2;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+
+                nx = w/2 + Math.cos(angle) * dist;
+                ny = h/2 + Math.sin(angle) * dist;
+            }
+
+            // ===== COLOR BLEND =====
+            let mix = (Math.sin(nx * 0.02 + ny * 0.02) + 1) / 2;
 
             let r1 = parseInt(colors[0].substring(1,3),16);
             let g1 = parseInt(colors[0].substring(3,5),16);
@@ -68,24 +83,35 @@ function draw() {
             let g = g1 * mix + g2 * (1-mix);
             let b = b1 * mix + b2 * (1-mix);
 
-            // ✨ moving highlight
-            let highlight = Math.pow(Math.max(0, Math.sin(nx * 0.05 + t * 3)), 8);
+            // ===== DEPTH LAYER (epoxy thickness) =====
+            let depth = Math.sin((nx + ny) * 0.01 + t) * 0.5 + 0.5;
+            r *= 0.7 + depth * 0.6;
+            g *= 0.7 + depth * 0.6;
+            b *= 0.7 + depth * 0.6;
 
-            r += highlight * 255 * glow;
-            g += highlight * 255 * glow;
-            b += highlight * 255 * glow;
+            // ===== LIGHT REFLECTION =====
+            let light = Math.pow(Math.max(0, Math.sin(nx * 0.05 + t)), 6);
+            r += light * 200;
+            g += light * 200;
+            b += light * 200;
 
             let i = (y * w + x) * 4;
-            image.data[i] = r;
-            image.data[i+1] = g;
-            image.data[i+2] = b;
-            image.data[i+3] = 255;
+            img.data[i] = r;
+            img.data[i+1] = g;
+            img.data[i+2] = b;
+            img.data[i+3] = 255;
         }
     }
 
-    ctx.putImageData(image, 0, 0);
+    ctx.putImageData(img, 0, 0);
 
-    t += 0.08;  // 🔥 MUCH faster animation
+    // ===== BLUR PASS (epoxy softness) =====
+    ctx.globalAlpha = 0.08;
+    ctx.drawImage(canvas, 1, 1);
+    ctx.drawImage(canvas, -1, -1);
+    ctx.globalAlpha = 1;
+
+    t += 0.05;
     requestAnimationFrame(draw);
 }
 
