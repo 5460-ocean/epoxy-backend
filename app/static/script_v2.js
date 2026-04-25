@@ -2,11 +2,10 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 let t = 0;
-
-let colors = ["#1CA7EC", "#023E8A"];
 let type = "ocean";
 
-// ===== GENERATE =====
+let colors = ["#1CA7EC", "#023E8A"];
+
 document.getElementById("generateBtn").addEventListener("click", generate);
 
 async function generate() {
@@ -24,92 +23,77 @@ async function generate() {
     type = data.type;
 }
 
-// ===== NOISE =====
-function noise(x, y, t) {
-    return Math.sin(x * 0.01 + t) + Math.cos(y * 0.01 + t);
-}
-
 // ===== DRAW =====
 function draw() {
     const w = canvas.width;
     const h = canvas.height;
 
-    let img = ctx.createImageData(w, h);
+    ctx.clearRect(0, 0, w, h);
 
-    for (let x = 0; x < w; x++) {
-        for (let y = 0; y < h; y++) {
+    // ===== BASE GRADIENT =====
+    let gradient = ctx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(1, colors[1]);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
 
-            let nx = x;
-            let ny = y;
+    // ===== OCEAN =====
+    if (type === "waves") {
+        for (let i = 0; i < 6; i++) {
+            ctx.beginPath();
+            ctx.lineWidth = 8 - i;
 
-            // ===== STYLE PHYSICS =====
+            for (let x = 0; x < w; x++) {
+                let y =
+                    h/2 +
+                    Math.sin(x * 0.02 + t + i) * (20 + i * 5);
 
-            // 🌊 OCEAN
-            if (type === "waves") {
-                ny += Math.sin(x * 0.02 + t) * 20;
-                nx += noise(x, y, t) * 10;
+                ctx.lineTo(x, y);
             }
 
-            // 🔥 FIRE
-            if (type === "chaos") {
-                ny -= t * 30; // upward motion
-                nx += noise(x, y, t) * 15;
-            }
-
-            // 🌌 GALAXY
-            if (type === "swirl") {
-                let dx = x - w/2;
-                let dy = y - h/2;
-
-                let angle = Math.atan2(dy, dx) + t * 0.2;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-
-                nx = w/2 + Math.cos(angle) * dist;
-                ny = h/2 + Math.sin(angle) * dist;
-            }
-
-            // ===== COLOR BLEND =====
-            let mix = (Math.sin(nx * 0.02 + ny * 0.02) + 1) / 2;
-
-            let r1 = parseInt(colors[0].substring(1,3),16);
-            let g1 = parseInt(colors[0].substring(3,5),16);
-            let b1 = parseInt(colors[0].substring(5,7),16);
-
-            let r2 = parseInt(colors[1].substring(1,3),16);
-            let g2 = parseInt(colors[1].substring(3,5),16);
-            let b2 = parseInt(colors[1].substring(5,7),16);
-
-            let r = r1 * mix + r2 * (1-mix);
-            let g = g1 * mix + g2 * (1-mix);
-            let b = b1 * mix + b2 * (1-mix);
-
-            // ===== DEPTH LAYER (epoxy thickness) =====
-            let depth = Math.sin((nx + ny) * 0.01 + t) * 0.5 + 0.5;
-            r *= 0.7 + depth * 0.6;
-            g *= 0.7 + depth * 0.6;
-            b *= 0.7 + depth * 0.6;
-
-            // ===== LIGHT REFLECTION =====
-            let light = Math.pow(Math.max(0, Math.sin(nx * 0.05 + t)), 6);
-            r += light * 200;
-            g += light * 200;
-            b += light * 200;
-
-            let i = (y * w + x) * 4;
-            img.data[i] = r;
-            img.data[i+1] = g;
-            img.data[i+2] = b;
-            img.data[i+3] = 255;
+            ctx.strokeStyle = `rgba(255,255,255,${0.08 + i*0.05})`;
+            ctx.stroke();
         }
     }
 
-    ctx.putImageData(img, 0, 0);
+    // ===== FIRE =====
+    if (type === "chaos") {
+        for (let i = 0; i < 40; i++) {
+            let x = Math.random() * w;
+            let y = h - Math.random() * h;
 
-    // ===== BLUR PASS (epoxy softness) =====
-    ctx.globalAlpha = 0.08;
-    ctx.drawImage(canvas, 1, 1);
-    ctx.drawImage(canvas, -1, -1);
-    ctx.globalAlpha = 1;
+            let size = Math.random() * 20;
+
+            ctx.beginPath();
+            ctx.arc(x, y - t * 50 % h, size, 0, Math.PI * 2);
+
+            ctx.fillStyle = `rgba(255,100,0,0.2)`;
+            ctx.fill();
+        }
+    }
+
+    // ===== GALAXY =====
+    if (type === "swirl") {
+        for (let i = 0; i < 200; i++) {
+            let angle = i * 0.1 + t * 0.5;
+            let r = i * 0.8;
+
+            let x = w/2 + Math.cos(angle) * r;
+            let y = h/2 + Math.sin(angle) * r;
+
+            ctx.fillStyle = "white";
+            ctx.fillRect(x, y, 2, 2);
+        }
+    }
+
+    // ===== GLOSS OVERLAY =====
+    let gloss = ctx.createLinearGradient(0, 0, w, h);
+    gloss.addColorStop(0, "rgba(255,255,255,0.15)");
+    gloss.addColorStop(0.5, "rgba(255,255,255,0)");
+    gloss.addColorStop(1, "rgba(255,255,255,0.1)");
+
+    ctx.fillStyle = gloss;
+    ctx.fillRect(0, 0, w, h);
 
     t += 0.05;
     requestAnimationFrame(draw);
