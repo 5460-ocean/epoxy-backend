@@ -3,15 +3,21 @@ const ctx = canvas.getContext("2d");
 
 let t = 0;
 
-let colors = ["#00c6ff", "#003366"];
-let amplitude = 20;
-let speed = 0.05;
-let type = "waves";
+// dynamic settings
+let colors = ["#1CA7EC", "#023E8A"];
+let flowIntensity = 0.02;
+let glow = 0.2;
 
+// simple smooth noise
+function noise(x, y) {
+    return Math.sin(x * 0.01 + y * 0.01 + t) * Math.cos(y * 0.01 + t);
+}
+
+// generate button
 document.getElementById("generateBtn").addEventListener("click", generate);
 
 async function generate() {
-    const prompt = document.getElementById("prompt").value;
+    const prompt = document.getElementById("prompt").value.toLowerCase();
 
     const res = await fetch("/ai/generate-style", {
         method: "POST",
@@ -21,76 +27,67 @@ async function generate() {
 
     const data = await res.json();
 
-    colors = data.colors;
-    amplitude = data.amplitude;
-    speed = data.speed;
-    type = data.type;
+    colors = data.colors || colors;
+
+    // tweak realism per style
+    if (prompt.includes("ocean")) {
+        flowIntensity = 0.02;
+        glow = 0.15;
+    } else if (prompt.includes("galaxy")) {
+        flowIntensity = 0.03;
+        glow = 0.25;
+    } else if (prompt.includes("fire")) {
+        flowIntensity = 0.05;
+        glow = 0.4;
+    }
 }
 
+// 🔥 REAL epoxy renderer
 function draw() {
     const w = canvas.width;
     const h = canvas.height;
 
-    ctx.clearRect(0, 0, w, h);
+    let image = ctx.createImageData(w, h);
 
-    // 🔥 MULTI-LAYER GRADIENT (depth)
-    let gradient = ctx.createLinearGradient(0, 0, w, h);
-    gradient.addColorStop(0, colors[0]);
-    gradient.addColorStop(0.5, "#111");
-    gradient.addColorStop(1, colors[1]);
+    for (let x = 0; x < w; x++) {
+        for (let y = 0; y < h; y++) {
 
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, w, h);
+            let n = noise(x, y);
 
-    // 🌊 WAVES (soft epoxy flow)
-    if (type === "waves") {
-        for (let i = 0; i < 6; i++) {
-            ctx.beginPath();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = `rgba(255,255,255,${0.05 * i})`;
+            // fluid distortion
+            let nx = x + n * 20;
+            let ny = y + n * 20;
 
-            for (let x = 0; x < w; x++) {
-                let y = h/2 +
-                    Math.sin(x * 0.01 + t + i) * amplitude +
-                    Math.cos(x * 0.02 + t) * 10;
+            let mix = (Math.sin(nx * flowIntensity + t) + 1) / 2;
 
-                ctx.lineTo(x, y);
-            }
+            // color blend
+            let r = parseInt(colors[0].substring(1,3),16) * mix +
+                    parseInt(colors[1].substring(1,3),16) * (1-mix);
 
-            ctx.stroke();
+            let g = parseInt(colors[0].substring(3,5),16) * mix +
+                    parseInt(colors[1].substring(3,5),16) * (1-mix);
+
+            let b = parseInt(colors[0].substring(5,7),16) * mix +
+                    parseInt(colors[1].substring(5,7),16) * (1-mix);
+
+            // gloss highlight
+            let highlight = Math.pow(Math.max(0, Math.sin(nx * 0.02 + t)), 10);
+
+            r += highlight * 255 * glow;
+            g += highlight * 255 * glow;
+            b += highlight * 255 * glow;
+
+            let i = (y * w + x) * 4;
+            image.data[i] = r;
+            image.data[i+1] = g;
+            image.data[i+2] = b;
+            image.data[i+3] = 255;
         }
     }
 
-    // 🌌 SWIRL (galaxy epoxy)
-    if (type === "swirl") {
-        for (let i = 0; i < 300; i++) {
-            let angle = i * 0.1 + t;
-            let r = i * 0.6;
+    ctx.putImageData(image, 0, 0);
 
-            let x = w/2 + Math.cos(angle) * r;
-            let y = h/2 + Math.sin(angle) * r;
-
-            ctx.fillStyle = `rgba(255,255,255,0.3)`;
-            ctx.fillRect(x, y, 2, 2);
-        }
-    }
-
-    // 🔥 CHAOS (fire epoxy)
-    if (type === "chaos") {
-        for (let i = 0; i < 200; i++) {
-            let x = Math.random() * w;
-            let y = Math.random() * h;
-
-            ctx.fillStyle = colors[i % 2];
-            ctx.fillRect(x, y, 2, 2);
-        }
-    }
-
-    // ✨ SOFT BLUR overlay (epoxy feel)
-    ctx.fillStyle = "rgba(255,255,255,0.02)";
-    ctx.fillRect(0, 0, w, h);
-
-    t += speed;
+    t += 0.02;
     requestAnimationFrame(draw);
 }
 
