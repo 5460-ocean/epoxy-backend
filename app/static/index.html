@@ -1,59 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Epoxy Generator</title>
-    <style>
-        body {
-            background: black;
-            color: white;
-            text-align: center;
-            font-family: Arial;
-        }
-
-        input {
-            padding: 10px;
-            width: 250px;
-            background: #111;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 6px;
-        }
-
-        button {
-            padding: 10px 15px;
-            margin: 5px;
-            border: none;
-            border-radius: 6px;
-            background: #00c6ff;
-            color: black;
-            font-weight: bold;
-        }
-
-        canvas {
-            margin-top: 20px;
-            border-radius: 12px;
-        }
-    </style>
 </head>
-
 <body>
 
-<h1>Epoxy Generator</h1>
+    <canvas id="canvas"></canvas>
 
-<input id="prompt" placeholder="Ocean Waves / Galaxy / Fire" />
+    <button id="generateBtn">Generate</button>
 
-<br><br>
-
-<button id="generateBtn">Generate</button>
-<button onclick="saveProject()">Save</button>
-<button onclick="loadProjects()">Load Projects</button>
-<button onclick="downloadImage()">Download</button>
-
-<br><br>
-
-<canvas id="canvas" width="300" height="300"></canvas>
-
-<script src="/static/script_v2.js"></script>
+    <!-- Cache buster -->
+    <script src="/static/script_v2.js?v=99"></script>
 
 </body>
 </html>
