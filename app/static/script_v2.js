@@ -1,113 +1,98 @@
-alert("SCRIPT V2 RUNNING");
+alert("REAL RENDER ACTIVE");
 
-// Canvas setup
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = 300;
 
-// State
 let t = 0;
-let currentStyle = {
-    colors: ["#0a1aff", "#00cfff", "#ffffff"],
-    intensity: 1
-};
 
-// 🎯 Step 2: Generate button → call backend
-document.getElementById("generateBtn").onclick = async () => {
-    const prompt = document.getElementById("promptInput").value;
-    const theme = document.getElementById("themeSelect").value;
+// 🎨 Better default epoxy palette
+let palette = [
+    [10, 20, 80],    // deep blue
+    [0, 180, 255],   // cyan
+    [255, 255, 255]  // white highlight
+];
 
-    try {
-        const res = await fetch("/ai/generate-style", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ prompt, theme })
-        });
-
-        const data = await res.json();
-
-        applyStyle(data);
-    } catch (e) {
-        console.log("AI route failed, using fallback theme");
-        applyTheme(theme);
-    }
-};
-
-// 🎯 Step 4: Theme fallback system
-function applyTheme(theme) {
-    if (theme === "ocean") {
-        currentStyle.colors = ["#001f3f", "#0074D9", "#7FDBFF"];
-    }
-    else if (theme === "fire") {
-        currentStyle.colors = ["#ff0000", "#ff6600", "#ffff00"];
-    }
-    else if (theme === "galaxy") {
-        currentStyle.colors = ["#2c003e", "#6a00ff", "#ff00cc"];
-    }
-    else if (theme === "marble") {
-        currentStyle.colors = ["#eeeeee", "#bbbbbb", "#777777"];
-    }
-}
-
-// Apply AI style
-function applyStyle(data) {
-    if (data.colors) currentStyle.colors = data.colors;
-    if (data.intensity) currentStyle.intensity = data.intensity;
-}
-
-// 🎯 Step 3: Better fluid renderer
+// 🔥 Multi-layer noise (THIS is the key difference)
 function noise(x, y, t) {
-    return Math.sin(x * 0.01 + t) +
-           Math.cos(y * 0.01 + t) +
-           Math.sin((x + y) * 0.005 + t * 0.5);
+    let n = 0;
+
+    n += Math.sin(x * 0.01 + t);
+    n += Math.cos(y * 0.01 - t * 0.7);
+    n += Math.sin((x + y) * 0.008 + t * 0.5);
+    n += Math.cos(Math.sqrt(x*x + y*y) * 0.02 - t);
+
+    return n;
+}
+
+// 🎨 Color blending (more contrast)
+function getColor(v) {
+    const c1 = palette[0];
+    const c2 = palette[1];
+    const c3 = palette[2];
+
+    // normalize value
+    const n = (Math.sin(v) + 1) / 2;
+
+    if (n < 0.5) {
+        const t = n * 2;
+        return [
+            lerp(c1[0], c2[0], t),
+            lerp(c1[1], c2[1], t),
+            lerp(c1[2], c2[2], t)
+        ];
+    } else {
+        const t = (n - 0.5) * 2;
+        return [
+            lerp(c2[0], c3[0], t),
+            lerp(c2[1], c3[1], t),
+            lerp(c2[2], c3[2], t)
+        ];
+    }
+}
+
+// ✨ Subtle swirl distortion (adds realism)
+function distort(x, y, t) {
+    return {
+        x: x + Math.sin(y * 0.02 + t) * 10,
+        y: y + Math.cos(x * 0.02 - t) * 10
+    };
 }
 
 function draw() {
     const img = ctx.createImageData(canvas.width, canvas.height);
 
-    const c1 = hexToRgb(currentStyle.colors[0]);
-    const c2 = hexToRgb(currentStyle.colors[1]);
-    const c3 = hexToRgb(currentStyle.colors[2]);
-
     for (let x = 0; x < canvas.width; x++) {
         for (let y = 0; y < canvas.height; y++) {
+
             const i = (x + y * canvas.width) * 4;
 
-            const n = noise(x, y, t * currentStyle.intensity);
+            // apply distortion
+            const d = distort(x, y, t);
 
-            const mix = (Math.sin(n) + 1) / 2;
+            // layered noise
+            const n = noise(d.x, d.y, t * 0.4);
 
-            const r = lerp(c1.r, c2.r, mix);
-            const g = lerp(c2.g, c3.g, mix);
-            const b = lerp(c1.b, c3.b, mix);
+            const color = getColor(n);
 
-            img.data[i] = r;
-            img.data[i + 1] = g;
-            img.data[i + 2] = b;
+            img.data[i]     = color[0];
+            img.data[i + 1] = color[1];
+            img.data[i + 2] = color[2];
             img.data[i + 3] = 255;
         }
     }
 
     ctx.putImageData(img, 0, 0);
-    t += 0.02;
+
+    t += 0.01; // slower = thicker fluid feel
     requestAnimationFrame(draw);
 }
 
-// Helpers
+// helper
 function lerp(a, b, t) {
     return a + (b - a) * t;
 }
 
-function hexToRgb(hex) {
-    const bigint = parseInt(hex.replace("#", ""), 16);
-    return {
-        r: (bigint >> 16) & 255,
-        g: (bigint >> 8) & 255,
-        b: bigint & 255
-    };
-}
-
-// Start animation
 draw();
