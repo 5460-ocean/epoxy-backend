@@ -1,4 +1,4 @@
-alert("ANIMATION ACTIVE");
+alert("EPOXY REALISM V1");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -7,55 +7,108 @@ canvas.width = window.innerWidth;
 canvas.height = 300;
 
 let t = 0;
+let theme = "ocean";
 
-// 🎨 palette (will change later with themes)
-let palette = [
-    [10, 20, 80],
-    [0, 180, 255],
-    [255, 255, 255]
-];
+// 🎨 THEMES
+const themes = {
+    ocean: [
+        [10, 30, 120],
+        [0, 200, 255],
+        [255, 255, 255]
+    ],
+    fire: [
+        [120, 10, 0],
+        [255, 80, 0],
+        [255, 220, 0]
+    ],
+    galaxy: [
+        [20, 0, 40],
+        [120, 0, 255],
+        [255, 0, 200]
+    ],
+    marble: [
+        [230, 230, 230],
+        [180, 180, 180],
+        [80, 80, 80]
+    ]
+};
 
-// 🔥 layered noise = motion
+// 🔥 multi-layer noise (depth)
 function noise(x, y, t) {
-    return Math.sin(x * 0.02 + t) +
-           Math.cos(y * 0.02 - t) +
-           Math.sin((x + y) * 0.01 + t);
+    let n = 0;
+    n += Math.sin(x * 0.02 + t);
+    n += Math.cos(y * 0.02 - t * 0.7);
+    n += Math.sin((x + y) * 0.01 + t * 0.5);
+    n += Math.cos(Math.sqrt(x*x + y*y) * 0.02 - t);
+    return n;
+}
+
+// 🧱 layer blending (simulates poured resin layers)
+function layeredNoise(x, y, t) {
+    return (
+        noise(x, y, t) * 0.6 +
+        noise(x * 1.5, y * 1.5, t * 1.2) * 0.3 +
+        noise(x * 3, y * 3, t * 2) * 0.1
+    );
+}
+
+// 🪨 marble veins (sharp contrast lines)
+function veins(x, y, t) {
+    const v = Math.sin((x + noise(x, y, t) * 20) * 0.05);
+    return Math.abs(v);
+}
+
+// ✨ glossy highlight
+function highlight(x, y) {
+    const dx = x - canvas.width / 2;
+    const dy = y - canvas.height / 2;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    return Math.max(0, 1 - dist / 400);
 }
 
 // 🎨 color blending
-function getColor(v) {
-    const n = (Math.sin(v) + 1) / 2;
+function getColor(v, vein, light) {
+    const p = themes[theme];
 
-    const c1 = palette[0];
-    const c2 = palette[1];
-    const c3 = palette[2];
+    const base = (Math.sin(v) + 1) / 2;
 
-    if (n < 0.5) {
-        const k = n * 2;
-        return [
-            lerp(c1[0], c2[0], k),
-            lerp(c1[1], c2[1], k),
-            lerp(c1[2], c2[2], k)
-        ];
+    let r, g, b;
+
+    if (base < 0.5) {
+        const t = base * 2;
+        r = lerp(p[0][0], p[1][0], t);
+        g = lerp(p[0][1], p[1][1], t);
+        b = lerp(p[0][2], p[1][2], t);
     } else {
-        const k = (n - 0.5) * 2;
-        return [
-            lerp(c2[0], c3[0], k),
-            lerp(c2[1], c3[1], k),
-            lerp(c2[2], c3[2], k)
-        ];
+        const t = (base - 0.5) * 2;
+        r = lerp(p[1][0], p[2][0], t);
+        g = lerp(p[1][1], p[2][1], t);
+        b = lerp(p[1][2], p[2][2], t);
     }
+
+    // 🪨 apply veins (dark streaks)
+    r *= (1 - vein * 0.5);
+    g *= (1 - vein * 0.5);
+    b *= (1 - vein * 0.5);
+
+    // ✨ apply glossy highlight
+    r += 255 * light * 0.2;
+    g += 255 * light * 0.2;
+    b += 255 * light * 0.2;
+
+    return [r, g, b];
 }
 
-// ✨ swirl distortion (this creates flow)
+// ✨ swirl distortion (fluid motion)
 function distort(x, y, t) {
     return {
-        x: x + Math.sin(y * 0.05 + t) * 20,
-        y: y + Math.cos(x * 0.05 - t) * 20
+        x: x + Math.sin(y * 0.04 + t) * 25,
+        y: y + Math.cos(x * 0.04 - t) * 25
     };
 }
 
-// 🎬 animation loop (THIS was missing before)
+// 🎬 render
 function draw() {
     const img = ctx.createImageData(canvas.width, canvas.height);
 
@@ -65,20 +118,23 @@ function draw() {
             const i = (x + y * canvas.width) * 4;
 
             const d = distort(x, y, t);
-            const n = noise(d.x, d.y, t);
 
-            const color = getColor(n);
+            const n = layeredNoise(d.x, d.y, t);
+            const v = veins(d.x, d.y, t);
+            const l = highlight(x, y);
 
-            img.data[i]     = color[0];
-            img.data[i + 1] = color[1];
-            img.data[i + 2] = color[2];
+            const c = getColor(n, v, l);
+
+            img.data[i]     = c[0];
+            img.data[i + 1] = c[1];
+            img.data[i + 2] = c[2];
             img.data[i + 3] = 255;
         }
     }
 
     ctx.putImageData(img, 0, 0);
 
-    t += 0.03; // speed of motion
+    t += 0.015;
     requestAnimationFrame(draw);
 }
 
@@ -87,15 +143,10 @@ function lerp(a, b, t) {
     return a + (b - a) * t;
 }
 
-// 🚀 START animation
-draw();
-
-// 🎯 Hook generate button (basic test)
+// 🎯 button = switch themes (for now)
 document.getElementById("generateBtn").onclick = () => {
-    // change palette randomly so you SEE change
-    palette = [
-        [Math.random()*255, Math.random()*255, Math.random()*255],
-        [Math.random()*255, Math.random()*255, Math.random()*255],
-        [Math.random()*255, Math.random()*255, Math.random()*255]
-    ];
+    const keys = Object.keys(themes);
+    theme = keys[Math.floor(Math.random() * keys.length)];
 };
+
+draw();
