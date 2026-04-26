@@ -10,14 +10,22 @@
     <canvas id="canvas"></canvas>
 
     <div>
+        <input id="promptInput" placeholder="Describe style (e.g. blue ocean epoxy)" />
+
+        <select id="themeSelect">
+            <option value="ocean">Ocean</option>
+            <option value="fire">Fire</option>
+            <option value="galaxy">Galaxy</option>
+            <option value="marble">Marble</option>
+        </select>
+
         <button id="generateBtn">Generate</button>
         <button id="saveBtn">Save</button>
         <button id="loadBtn">Load</button>
         <button id="downloadBtn">Download</button>
     </div>
 
-    <!-- ✅ Cache buster added -->
-    <script src="/static/script_v2.js?v=101"></script>
+    <script src="/static/script_v2.js?v=102"></script>
 
 </body>
 </html>
