@@ -1,4 +1,4 @@
-alert("EPOXY V6 SHARP");
+alert("EPOXY V7 PARTICLE ENGINE");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -6,16 +6,17 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = 300;
 
-let t = 0;
 let theme = "ocean";
 
+// 🎨 THEMES
 const themes = {
-    ocean: [[0,80,200],[0,150,255],[200,240,255]],
-    fire: [[180,20,0],[255,100,0],[255,200,0]],
-    galaxy: [[20,0,50],[120,0,200],[255,0,180]],
-    marble: [[240,240,240],[200,200,200],[100,100,100]]
+    ocean: ["#0055ff", "#00ccff", "#aaffff"],
+    fire: ["#ff2200", "#ff8800", "#ffee00"],
+    galaxy: ["#220044", "#8800ff", "#ff00cc"],
+    marble: ["#eeeeee", "#bbbbbb", "#666666"]
 };
 
+// 🧠 prompt → theme
 function detectTheme(prompt){
     const p = prompt.toLowerCase();
     if(p.includes("fire")) return "fire";
@@ -25,94 +26,64 @@ function detectTheme(prompt){
     return "ocean";
 }
 
-// 🔥 sharper noise (less blur)
-function noise(x,y,t){
-    return Math.sin(x*0.05+t*1.5)+Math.cos(y*0.05-t*1.2);
-}
+// 💧 PARTICLES (resin blobs)
+let particles = [];
 
-// 🪨 STRONG veins (clear structure)
-function veins(x,y,t){
-    return Math.abs(Math.sin((x+y)*0.03 + noise(x,y,t)*2));
-}
-
-// 🎨 color
-function getColor(v, vein){
-    const p = themes[theme];
-
-    let n = (v+2)/4;
-    n = Math.max(0,Math.min(1,n));
-
-    let c;
-    if(n<0.5){
-        const k=n*2;
-        c = [
-            p[0][0]+(p[1][0]-p[0][0])*k,
-            p[0][1]+(p[1][1]-p[0][1])*k,
-            p[0][2]+(p[1][2]-p[0][2])*k
-        ];
-    } else {
-        const k=(n-0.5)*2;
-        c = [
-            p[1][0]+(p[2][0]-p[1][0])*k,
-            p[1][1]+(p[2][1]-p[1][1])*k,
-            p[1][2]+(p[2][2]-p[1][2])*k
-        ];
+function createParticles() {
+    particles = [];
+    for(let i=0;i<40;i++){
+        particles.push({
+            x: Math.random()*canvas.width,
+            y: Math.random()*canvas.height,
+            vx: (Math.random()-0.5)*1.5,
+            vy: (Math.random()-0.5)*1.5,
+            size: 50 + Math.random()*80,
+            color: themes[theme][Math.floor(Math.random()*3)]
+        });
     }
-
-    // 🪨 apply strong veins (visible lines)
-    const veinStrength = 0.6;
-    c[0] *= (1 - vein * veinStrength);
-    c[1] *= (1 - vein * veinStrength);
-    c[2] *= (1 - vein * veinStrength);
-
-    return c;
 }
 
-// 💎 SHARP highlight streak (not blur)
-function highlight(x,y,t){
-    const line = Math.sin(x*0.1 + t*3);
-    return Math.abs(line) > 0.95 ? 1 : 0;
-}
+createParticles();
 
-// 🎬 render
+// 🎬 draw blobs
 function draw(){
-    const img = ctx.createImageData(canvas.width, canvas.height);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    for(let x=0;x<canvas.width;x++){
-        for(let y=0;y<canvas.height;y++){
+    ctx.globalCompositeOperation = "lighter"; // blending
 
-            const i=(x+y*canvas.width)*4;
+    particles.forEach(p => {
 
-            const v = noise(x,y,t);
-            const vein = veins(x,y,t);
+        // move
+        p.x += p.vx;
+        p.y += p.vy;
 
-            const c = getColor(v, vein);
+        // bounce
+        if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
-            // 💎 add sharp reflection line
-            const h = highlight(x,y,t);
-            if(h > 0){
-                c[0] = 255;
-                c[1] = 255;
-                c[2] = 255;
-            }
+        // draw blob
+        const gradient = ctx.createRadialGradient(
+            p.x, p.y, 0,
+            p.x, p.y, p.size
+        );
 
-            img.data[i] = c[0];
-            img.data[i+1] = c[1];
-            img.data[i+2] = c[2];
-            img.data[i+3] = 255;
-        }
-    }
+        gradient.addColorStop(0, p.color);
+        gradient.addColorStop(1, "transparent");
 
-    ctx.putImageData(img,0,0);
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fill();
+    });
 
-    t += 0.06; // faster visible motion
     requestAnimationFrame(draw);
 }
 
-// 🎯 input → theme
+// 🎯 generate button
 document.getElementById("generateBtn").onclick = ()=>{
     const prompt = document.getElementById("promptInput").value;
     theme = detectTheme(prompt);
+    createParticles();
 };
 
 draw();
