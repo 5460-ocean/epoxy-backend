@@ -1,4 +1,4 @@
-alert("EPOXY V3 COLOR FIX");
+alert("EPOXY V4 INPUT FIX");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -9,7 +9,7 @@ canvas.height = 300;
 let t = 0;
 let theme = "ocean";
 
-// 🎨 STRICT palettes (no weird mixes)
+// 🎨 THEMES
 const themes = {
     ocean: [
         [0, 80, 200],
@@ -33,27 +33,34 @@ const themes = {
     ]
 };
 
-// 🔥 STRUCTURE ONLY (not color)
+// 🧠 SIMPLE prompt → theme mapping
+function detectTheme(prompt) {
+    const p = prompt.toLowerCase();
+
+    if (p.includes("fire") || p.includes("lava")) return "fire";
+    if (p.includes("ocean") || p.includes("water") || p.includes("blue")) return "ocean";
+    if (p.includes("galaxy") || p.includes("space")) return "galaxy";
+    if (p.includes("marble") || p.includes("stone")) return "marble";
+
+    return "ocean"; // default
+}
+
+// 🔥 noise
 function noise(x, y, t) {
     return Math.sin(x * 0.03 + t) +
            Math.cos(y * 0.03 - t) +
            Math.sin((x + y) * 0.02 + t);
 }
 
-// 🧱 layered structure
 function layered(x, y, t) {
-    return (
-        noise(x, y, t) * 0.6 +
-        noise(x * 2, y * 2, t * 1.5) * 0.4
-    );
+    return noise(x, y, t) * 0.6 +
+           noise(x * 2, y * 2, t * 1.5) * 0.4;
 }
 
-// 🪨 veins
 function veins(x, y, t) {
     return Math.abs(Math.sin(x * 0.05 + noise(x,y,t)));
 }
 
-// ✨ highlight (reduced)
 function highlight(x, y) {
     const dx = x - canvas.width / 2;
     const dy = y - canvas.height / 2;
@@ -61,18 +68,14 @@ function highlight(x, y) {
     return Math.max(0, 1 - d / 600);
 }
 
-// 🎨 HARD palette mapping (this fixes color issue)
+// 🎨 palette-locked color
 function getColor(v, vein, light) {
     const p = themes[theme];
 
-    // normalize noise
-    let n = (v + 3) / 6; // normalize approx range
-
-    if (n < 0) n = 0;
-    if (n > 1) n = 1;
+    let n = (v + 3) / 6;
+    n = Math.max(0, Math.min(1, n));
 
     let c;
-
     if (n < 0.5) {
         const t = n * 2;
         c = [
@@ -89,27 +92,23 @@ function getColor(v, vein, light) {
         ];
     }
 
-    // veins (controlled)
     const veinStrength = 0.25;
     c[0] *= (1 - vein * veinStrength);
     c[1] *= (1 - vein * veinStrength);
     c[2] *= (1 - vein * veinStrength);
 
-    // highlight (subtle)
     const h = light * 40;
     c[0] += h;
     c[1] += h;
     c[2] += h;
 
-    // clamp (VERY IMPORTANT)
-    c[0] = Math.min(255, Math.max(0, c[0]));
-    c[1] = Math.min(255, Math.max(0, c[1]));
-    c[2] = Math.min(255, Math.max(0, c[2]));
-
-    return c;
+    return [
+        Math.min(255, Math.max(0, c[0])),
+        Math.min(255, Math.max(0, c[1])),
+        Math.min(255, Math.max(0, c[2]))
+    ];
 }
 
-// 🔥 motion
 function distort(x, y, t) {
     return {
         x: x + Math.sin(y * 0.05 + t * 2) * 40,
@@ -117,7 +116,6 @@ function distort(x, y, t) {
     };
 }
 
-// 🎬 render
 function draw() {
     const img = ctx.createImageData(canvas.width, canvas.height);
 
@@ -147,10 +145,13 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
-// 🎯 switch themes
+// 🎯 FIXED generate button
 document.getElementById("generateBtn").onclick = () => {
-    const keys = Object.keys(themes);
-    theme = keys[Math.floor(Math.random() * keys.length)];
+    const prompt = document.getElementById("promptInput").value;
+
+    theme = detectTheme(prompt);
+
+    console.log("Selected theme:", theme);
 };
 
 draw();
