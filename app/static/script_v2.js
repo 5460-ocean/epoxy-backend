@@ -1,9 +1,8 @@
-alert("EPOXY V10 FIELD ENGINE");
+alert("EPOXY V11 THEME STRUCTURES");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// 🔥 LOW RES buffer (key for speed)
 const w = 120;
 const h = 60;
 
@@ -18,7 +17,6 @@ canvas.height = 300;
 let t = 0;
 let theme = "ocean";
 
-// 🎨 THEMES
 const themes = {
     ocean: [[0,80,200],[0,150,255],[180,230,255]],
     fire: [[180,20,0],[255,100,0],[255,200,0]],
@@ -35,9 +33,29 @@ function detectTheme(p){
     return "ocean";
 }
 
-// 🌊 FLOW FIELD
-function flow(x,y,t){
-    return Math.sin(x*0.08+t) + Math.cos(y*0.08-t);
+// 🌊 DIFFERENT FLOW PER THEME
+function getValue(x,y,t){
+
+    if(theme === "ocean"){
+        return Math.sin(x*0.08 + t) + Math.cos(y*0.08 - t);
+    }
+
+    if(theme === "fire"){
+        return Math.sin((x+y)*0.12 + t*2) * Math.cos(y*0.1 - t);
+    }
+
+    if(theme === "galaxy"){
+        const dx = x - w/2;
+        const dy = y - h/2;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        return Math.sin(dist*0.15 - t) + Math.cos((dx+dy)*0.05);
+    }
+
+    if(theme === "marble"){
+        return Math.sin(x*0.15 + Math.sin(y*0.1 + t)*5);
+    }
+
+    return 0;
 }
 
 // 🎨 COLOR
@@ -74,10 +92,7 @@ function draw(){
 
             const i = (x + y*w)*4;
 
-            const fx = x + flow(x,y,t)*5;
-            const fy = y + flow(y,x,t)*5;
-
-            const v = Math.sin(fx*0.1 + t) + Math.cos(fy*0.1 - t);
+            const v = getValue(x,y,t);
 
             const c = getColor(v);
 
@@ -90,7 +105,6 @@ function draw(){
 
     bctx.putImageData(img, 0, 0);
 
-    // 🔥 scale up to full canvas
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(buffer, 0, 0, canvas.width, canvas.height);
 
