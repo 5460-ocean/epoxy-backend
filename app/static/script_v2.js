@@ -1,4 +1,4 @@
-alert("EPOXY V12 FINAL");
+alert("EPOXY V13 NO MORE WAVES");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -33,62 +33,71 @@ function detectTheme(p){
     return "ocean";
 }
 
-// 🌊 structure
-function getValue(x,y,t){
-    if(theme === "ocean"){
-        return Math.sin(x*0.08+t) + Math.cos(y*0.08-t);
-    }
-    if(theme === "fire"){
-        return Math.sin((x+y)*0.12+t*2)*Math.cos(y*0.1-t);
-    }
-    if(theme === "galaxy"){
-        const dx=x-w/2, dy=y-h/2;
-        const d=Math.sqrt(dx*dx+dy*dy);
-        return Math.sin(d*0.15-t)+Math.cos((dx+dy)*0.05);
-    }
-    if(theme === "marble"){
-        return Math.sin(x*0.15 + Math.sin(y*0.1+t)*5);
-    }
-    return 0;
+// 🔥 pseudo-random noise (breaks patterns)
+function noise(x,y){
+    return Math.sin(x*12.9898 + y*78.233) * 43758.5453 % 1;
 }
 
-// 🧪 cellular effect
-function cells(x,y,t){
-    return Math.abs(Math.sin(x*0.3 + Math.cos(y*0.3+t)*2));
+// 🌪 domain warping (THIS kills waves)
+function warp(x,y,t){
+    let nx = x + Math.sin(y*0.3 + t)*5;
+    let ny = y + Math.cos(x*0.3 - t)*5;
+
+    nx += noise(nx,ny)*10;
+    ny += noise(ny,nx)*10;
+
+    return [nx, ny];
+}
+
+// 🎨 theme-specific structure
+function getValue(x,y,t){
+
+    let [wx, wy] = warp(x,y,t);
+
+    if(theme === "ocean"){
+        return Math.sin(wx*0.1 + t) + Math.cos(wy*0.1);
+    }
+
+    if(theme === "fire"){
+        return Math.sin((wx+wy)*0.15 + t*2) * noise(wx,wy);
+    }
+
+    if(theme === "galaxy"){
+        const dx = wx - w/2;
+        const dy = wy - h/2;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        return Math.sin(d*0.2 - t) + noise(dx,dy)*2;
+    }
+
+    if(theme === "marble"){
+        return Math.sin(wx*0.2 + noise(wy,wx)*5);
+    }
+
+    return 0;
 }
 
 // 🎨 color
 function getColor(v){
     const p = themes[theme];
-    let n=(v+2)/4;
-    n=Math.max(0,Math.min(1,n));
 
-    if(n<0.5){
-        const k=n*2;
+    let n = (v+2)/4;
+    n = Math.max(0, Math.min(1, n));
+
+    if(n < 0.5){
+        const k = n*2;
         return [
             p[0][0]+(p[1][0]-p[0][0])*k,
             p[0][1]+(p[1][1]-p[0][1])*k,
             p[0][2]+(p[1][2]-p[0][2])*k
         ];
     } else {
-        const k=(n-0.5)*2;
+        const k = (n-0.5)*2;
         return [
             p[1][0]+(p[2][0]-p[1][0])*k,
             p[1][1]+(p[2][1]-p[1][1])*k,
             p[1][2]+(p[2][2]-p[1][2])*k
         ];
     }
-}
-
-// 💎 gloss highlight
-function gloss(x,y,t){
-    return Math.sin(x*0.15 + t*2) > 0.95 ? 1 : 0;
-}
-
-// 🎯 edge depth
-function edge(x,y){
-    const d = Math.min(x,y,w-x,h-y);
-    return Math.max(0, 1 - d/10);
 }
 
 // 🎬 draw
@@ -101,29 +110,12 @@ function draw(){
 
             const i=(x+y*w)*4;
 
-            let v = getValue(x,y,t);
-
-            // 🧪 apply cells
-            v += cells(x,y,t)*0.8;
-
+            const v = getValue(x,y,t);
             const c = getColor(v);
 
-            let r=c[0], g=c[1], b=c[2];
-
-            // 💎 gloss
-            if(gloss(x,y,t)){
-                r=255; g=255; b=255;
-            }
-
-            // 🎯 edge darkening
-            const e = edge(x,y);
-            r *= (1 - e*0.3);
-            g *= (1 - e*0.3);
-            b *= (1 - e*0.3);
-
-            img.data[i]=r;
-            img.data[i+1]=g;
-            img.data[i+2]=b;
+            img.data[i]=c[0];
+            img.data[i+1]=c[1];
+            img.data[i+2]=c[2];
             img.data[i+3]=255;
         }
     }
@@ -133,7 +125,7 @@ function draw(){
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(buffer,0,0,canvas.width,canvas.height);
 
-    t += 0.04;
+    t += 0.05;
     requestAnimationFrame(draw);
 }
 
