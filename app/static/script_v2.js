@@ -1,32 +1,29 @@
-alert("EPOXY V9 SURFACE FIX");
+alert("EPOXY V10 FIELD ENGINE");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+// 🔥 LOW RES buffer (key for speed)
+const w = 120;
+const h = 60;
+
+const buffer = document.createElement("canvas");
+buffer.width = w;
+buffer.height = h;
+const bctx = buffer.getContext("2d");
+
 canvas.width = window.innerWidth;
 canvas.height = 300;
 
-let particles = [];
+let t = 0;
 let theme = "ocean";
 
-// 🎨 themes with base color
+// 🎨 THEMES
 const themes = {
-    ocean: {
-        base: "#0A1F44",
-        colors: ["#0077BE", "#00AEEF", "#A7E0FF"]
-    },
-    fire: {
-        base: "#2a0a00",
-        colors: ["#8B0000", "#FF4500", "#FFD700"]
-    },
-    galaxy: {
-        base: "#0b001a",
-        colors: ["#6600cc", "#ff33cc", "#ffffff"]
-    },
-    marble: {
-        base: "#eeeeee",
-        colors: ["#cccccc", "#999999", "#666666"]
-    }
+    ocean: [[0,80,200],[0,150,255],[180,230,255]],
+    fire: [[180,20,0],[255,100,0],[255,200,0]],
+    galaxy: [[20,0,50],[120,0,200],[255,0,180]],
+    marble: [[240,240,240],[200,200,200],[100,100,100]]
 };
 
 function detectTheme(p){
@@ -38,79 +35,73 @@ function detectTheme(p){
     return "ocean";
 }
 
-// 🌊 flow field
-function flow(x, y, t) {
-    return Math.sin(x * 0.01 + t) + Math.cos(y * 0.01 - t);
+// 🌊 FLOW FIELD
+function flow(x,y,t){
+    return Math.sin(x*0.08+t) + Math.cos(y*0.08-t);
 }
 
-// 💧 particles (smaller + more)
-function initParticles() {
-    particles = [];
+// 🎨 COLOR
+function getColor(v){
+    const p = themes[theme];
 
-    for (let i = 0; i < 400; i++) {
-        particles.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            size: 3 + Math.random() * 6,
-            color: themes[theme].colors[Math.floor(Math.random()*3)]
-        });
+    let n = (v+2)/4;
+    n = Math.max(0, Math.min(1, n));
+
+    if(n < 0.5){
+        const k = n*2;
+        return [
+            p[0][0] + (p[1][0]-p[0][0])*k,
+            p[0][1] + (p[1][1]-p[0][1])*k,
+            p[0][2] + (p[1][2]-p[0][2])*k
+        ];
+    } else {
+        const k = (n-0.5)*2;
+        return [
+            p[1][0] + (p[2][0]-p[1][0])*k,
+            p[1][1] + (p[2][1]-p[1][1])*k,
+            p[1][2] + (p[2][2]-p[1][2])*k
+        ];
     }
 }
 
-initParticles();
+// 🎬 DRAW
+function draw(){
 
-let t = 0;
+    const img = bctx.createImageData(w, h);
 
-// 🎬 draw
-function draw() {
+    for(let x=0; x<w; x++){
+        for(let y=0; y<h; y++){
 
-    // 🎨 fill base surface (NO black)
-    ctx.fillStyle = themes[theme].base;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const i = (x + y*w)*4;
 
-    // ✨ blending mode (key for resin look)
-    ctx.globalCompositeOperation = "screen";
+            const fx = x + flow(x,y,t)*5;
+            const fy = y + flow(y,x,t)*5;
 
-    particles.forEach(p => {
+            const v = Math.sin(fx*0.1 + t) + Math.cos(fy*0.1 - t);
 
-        const angle = flow(p.x, p.y, t) * Math.PI;
+            const c = getColor(v);
 
-        p.x += Math.cos(angle) * 1.2;
-        p.y += Math.sin(angle) * 1.2;
+            img.data[i]     = c[0];
+            img.data[i + 1] = c[1];
+            img.data[i + 2] = c[2];
+            img.data[i + 3] = 255;
+        }
+    }
 
-        // wrap edges
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
+    bctx.putImageData(img, 0, 0);
 
-        // 💧 soft blob (not dot)
-        const g = ctx.createRadialGradient(
-            p.x, p.y, 0,
-            p.x, p.y, p.size
-        );
+    // 🔥 scale up to full canvas
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(buffer, 0, 0, canvas.width, canvas.height);
 
-        g.addColorStop(0, p.color);
-        g.addColorStop(1, "transparent");
-
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-    });
-
-    // reset blend mode
-    ctx.globalCompositeOperation = "source-over";
-
-    t += 0.01;
+    t += 0.04;
     requestAnimationFrame(draw);
 }
 
 // 🎯 generate
-document.getElementById("generateBtn").onclick = () => {
+document.getElementById("generateBtn").onclick = ()=>{
     const prompt = document.getElementById("promptInput").value;
     theme = detectTheme(prompt);
-    initParticles();
 };
 
 draw();
