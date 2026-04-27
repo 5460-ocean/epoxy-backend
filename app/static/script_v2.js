@@ -1,4 +1,4 @@
-alert("EPOXY V7 PARTICLE ENGINE");
+alert("EPOXY V8 FLOW ENGINE");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -6,84 +6,85 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = 300;
 
-let theme = "ocean";
+let particles = [];
+let theme = "fire";
 
-// 🎨 THEMES
+// 🎨 better palettes (less neon)
 const themes = {
-    ocean: ["#0055ff", "#00ccff", "#aaffff"],
-    fire: ["#ff2200", "#ff8800", "#ffee00"],
-    galaxy: ["#220044", "#8800ff", "#ff00cc"],
-    marble: ["#eeeeee", "#bbbbbb", "#666666"]
+    fire: ["#8B0000", "#FF4500", "#FFD700"],
+    ocean: ["#0A1F44", "#0077BE", "#A7E0FF"],
+    galaxy: ["#1a0033", "#6600cc", "#ff33cc"],
+    marble: ["#f5f5f5", "#cccccc", "#666666"]
 };
 
-// 🧠 prompt → theme
-function detectTheme(prompt){
-    const p = prompt.toLowerCase();
+function detectTheme(p){
+    p = p.toLowerCase();
     if(p.includes("fire")) return "fire";
-    if(p.includes("ocean")||p.includes("water")) return "ocean";
+    if(p.includes("ocean")) return "ocean";
     if(p.includes("galaxy")) return "galaxy";
     if(p.includes("marble")) return "marble";
-    return "ocean";
+    return "fire";
 }
 
-// 💧 PARTICLES (resin blobs)
-let particles = [];
+// 🌊 FLOW FIELD (this is key)
+function flow(x, y, t) {
+    return Math.sin(x * 0.01 + t) + Math.cos(y * 0.01 - t);
+}
 
-function createParticles() {
+// 💧 particles (many small, not few big)
+function initParticles() {
     particles = [];
-    for(let i=0;i<40;i++){
+
+    for (let i = 0; i < 250; i++) {
         particles.push({
-            x: Math.random()*canvas.width,
-            y: Math.random()*canvas.height,
-            vx: (Math.random()-0.5)*1.5,
-            vy: (Math.random()-0.5)*1.5,
-            size: 50 + Math.random()*80,
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: 2 + Math.random() * 4,
             color: themes[theme][Math.floor(Math.random()*3)]
         });
     }
 }
 
-createParticles();
+initParticles();
 
-// 🎬 draw blobs
-function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+let t = 0;
 
-    ctx.globalCompositeOperation = "lighter"; // blending
+// 🎬 draw
+function draw() {
+    ctx.fillStyle = "rgba(0,0,0,0.1)"; // fade trail
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     particles.forEach(p => {
 
-        // move
-        p.x += p.vx;
-        p.y += p.vy;
+        const angle = flow(p.x, p.y, t) * Math.PI;
 
-        // bounce
-        if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        // move with flow
+        p.x += Math.cos(angle) * 1.2;
+        p.y += Math.sin(angle) * 1.2;
 
-        // draw blob
-        const gradient = ctx.createRadialGradient(
-            p.x, p.y, 0,
-            p.x, p.y, p.size
-        );
+        // wrap around (continuous flow)
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
 
-        gradient.addColorStop(0, p.color);
-        gradient.addColorStop(1, "transparent");
-
-        ctx.fillStyle = gradient;
+        // draw particle
+        ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
     });
 
+    t += 0.01;
     requestAnimationFrame(draw);
 }
 
-// 🎯 generate button
-document.getElementById("generateBtn").onclick = ()=>{
+// 🎯 generate
+document.getElementById("generateBtn").onclick = () => {
     const prompt = document.getElementById("promptInput").value;
     theme = detectTheme(prompt);
-    createParticles();
+    initParticles();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 };
 
 draw();
