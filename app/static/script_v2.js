@@ -1,4 +1,4 @@
-alert("EPOXY V13 NO MORE WAVES");
+alert("EPOXY V14 BALANCED FLOW");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -33,44 +33,41 @@ function detectTheme(p){
     return "ocean";
 }
 
-// 🔥 pseudo-random noise (breaks patterns)
-function noise(x,y){
-    return Math.sin(x*12.9898 + y*78.233) * 43758.5453 % 1;
+// 🌊 smooth base flow
+function baseFlow(x,y,t){
+    return Math.sin(x*0.08 + t) + Math.cos(y*0.08 - t);
 }
 
-// 🌪 domain warping (THIS kills waves)
+// 🌪 gentle warp (NOT noise)
 function warp(x,y,t){
-    let nx = x + Math.sin(y*0.3 + t)*5;
-    let ny = y + Math.cos(x*0.3 - t)*5;
-
-    nx += noise(nx,ny)*10;
-    ny += noise(ny,nx)*10;
-
-    return [nx, ny];
+    return [
+        x + Math.sin(y*0.15 + t)*3,
+        y + Math.cos(x*0.15 - t)*3
+    ];
 }
 
-// 🎨 theme-specific structure
+// 🎨 theme structure (different behaviors)
 function getValue(x,y,t){
 
     let [wx, wy] = warp(x,y,t);
 
     if(theme === "ocean"){
-        return Math.sin(wx*0.1 + t) + Math.cos(wy*0.1);
+        return baseFlow(wx, wy, t);
     }
 
     if(theme === "fire"){
-        return Math.sin((wx+wy)*0.15 + t*2) * noise(wx,wy);
+        return baseFlow(wx, wy, t*2) + Math.sin((wx+wy)*0.1);
     }
 
     if(theme === "galaxy"){
         const dx = wx - w/2;
         const dy = wy - h/2;
         const d = Math.sqrt(dx*dx + dy*dy);
-        return Math.sin(d*0.2 - t) + noise(dx,dy)*2;
+        return Math.sin(d*0.15 - t) + baseFlow(wx, wy, t);
     }
 
     if(theme === "marble"){
-        return Math.sin(wx*0.2 + noise(wy,wx)*5);
+        return Math.sin(wx*0.15 + Math.sin(wy*0.1 + t)*3);
     }
 
     return 0;
@@ -125,11 +122,10 @@ function draw(){
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(buffer,0,0,canvas.width,canvas.height);
 
-    t += 0.05;
+    t += 0.04;
     requestAnimationFrame(draw);
 }
 
-// 🎯 generate
 document.getElementById("generateBtn").onclick = ()=>{
     const prompt = document.getElementById("promptInput").value;
     theme = detectTheme(prompt);
