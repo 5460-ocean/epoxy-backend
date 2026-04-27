@@ -1,4 +1,4 @@
-alert("EPOXY V15 MATERIAL");
+alert("EPOXY V16 PRO");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -16,7 +16,9 @@ canvas.height = 300;
 
 let t = 0;
 let theme = "galaxy";
+let direction = "flow";
 
+// 🎨 themes
 const themes = {
     ocean: [[0,80,200],[0,150,255],[180,230,255]],
     fire: [[180,20,0],[255,100,0],[255,200,0]],
@@ -33,42 +35,64 @@ function detectTheme(p){
     return "galaxy";
 }
 
-// 🌊 base field
-function base(x,y,t){
+// 🎯 direction control
+function detectDirection(p){
+    p = p.toLowerCase();
+    if(p.includes("left")) return "left";
+    if(p.includes("right")) return "right";
+    if(p.includes("up")) return "up";
+    if(p.includes("down")) return "down";
+    if(p.includes("swirl")) return "swirl";
+    return "flow";
+}
+
+// 🌊 base layer
+function layer1(x,y,t){
     return Math.sin(x*0.08+t) + Math.cos(y*0.08-t);
 }
 
-// 🌪 warp
-function warp(x,y,t){
-    return [
-        x + Math.sin(y*0.12+t)*3,
-        y + Math.cos(x*0.12-t)*3
-    ];
+// 🌊 secondary layer (adds depth)
+function layer2(x,y,t){
+    return Math.sin((x+y)*0.05 + t*0.7);
 }
 
-// 🎨 structure
+// 🌊 third layer (fine detail)
+function layer3(x,y,t){
+    return Math.cos(x*0.15 + y*0.15 + t*1.5);
+}
+
+// 🌪 direction warp
+function applyDirection(x,y,t){
+
+    if(direction === "left") return [x - t*10, y];
+    if(direction === "right") return [x + t*10, y];
+    if(direction === "up") return [x, y - t*10];
+    if(direction === "down") return [x, y + t*10];
+
+    if(direction === "swirl"){
+        const dx = x - w/2;
+        const dy = y - h/2;
+        const angle = Math.atan2(dy,dx) + t*0.5;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        return [
+            w/2 + Math.cos(angle)*dist,
+            h/2 + Math.sin(angle)*dist
+        ];
+    }
+
+    return [x,y];
+}
+
+// 🎨 combine layers
 function field(x,y,t){
-    let [wx,wy] = warp(x,y,t);
+    let [wx,wy] = applyDirection(x,y,t);
 
-    if(theme==="galaxy"){
-        let dx=wx-w/2, dy=wy-h/2;
-        let d=Math.sqrt(dx*dx+dy*dy);
-        return Math.sin(d*0.12 - t) + base(wx,wy,t);
-    }
+    let v =
+        layer1(wx,wy,t) +
+        layer2(wx,wy,t) * 0.7 +
+        layer3(wx,wy,t) * 0.4;
 
-    if(theme==="fire"){
-        return base(wx,wy,t*2) + Math.sin((wx+wy)*0.1);
-    }
-
-    if(theme==="ocean"){
-        return base(wx,wy,t);
-    }
-
-    if(theme==="marble"){
-        return Math.sin(wx*0.15 + Math.sin(wy*0.1+t)*3);
-    }
-
-    return 0;
+    return v;
 }
 
 // 🎨 color
@@ -99,22 +123,18 @@ function getColor(v){
     return c;
 }
 
-// 💎 specular light (based on gradient)
+// ✨ metallic shimmer (angle-based)
+function metallic(x,y,t){
+    return Math.sin((x+y)*0.2 + t*3);
+}
+
+// 💎 light
 function light(x,y,t){
     const v1 = field(x,y,t);
     const v2 = field(x+1,y,t);
     const v3 = field(x,y+1,t);
 
-    const dx = v2 - v1;
-    const dy = v3 - v1;
-
-    const intensity = Math.max(0, dx + dy);
-    return intensity;
-}
-
-// 🎯 edge / pigment boundary
-function edge(v){
-    return Math.abs(Math.sin(v*3));
+    return Math.max(0,(v2-v1)+(v3-v1));
 }
 
 // 🎬 draw
@@ -128,14 +148,13 @@ function draw(){
             const i=(x+y*w)*4;
 
             let v = field(x,y,t);
-
             let c = getColor(v);
 
-            // 🎯 pigment boundary
-            let e = edge(v);
-            c[0] *= (1 - e*0.3);
-            c[1] *= (1 - e*0.3);
-            c[2] *= (1 - e*0.3);
+            // ✨ metallic
+            let m = metallic(x,y,t);
+            c[0] += m*40;
+            c[1] += m*40;
+            c[2] += m*40;
 
             // 💎 gloss
             let l = light(x,y,t);
@@ -143,7 +162,7 @@ function draw(){
             c[1] += l*120;
             c[2] += l*120;
 
-            // 🎯 depth shading
+            // 🎯 depth
             c[0] *= 0.9 + v*0.1;
             c[1] *= 0.9 + v*0.1;
             c[2] *= 0.9 + v*0.1;
@@ -164,9 +183,12 @@ function draw(){
     requestAnimationFrame(draw);
 }
 
+// 🎯 generate
 document.getElementById("generateBtn").onclick = ()=>{
     const prompt = document.getElementById("promptInput").value;
+
     theme = detectTheme(prompt);
+    direction = detectDirection(prompt);
 };
 
 draw();
