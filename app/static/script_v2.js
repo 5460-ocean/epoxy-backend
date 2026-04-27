@@ -1,4 +1,4 @@
-alert("EPOXY REALISM V5");
+alert("EPOXY V6 SHARP");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -10,78 +10,71 @@ let t = 0;
 let theme = "ocean";
 
 const themes = {
-    ocean: [[0,80,200],[0,150,255],[180,230,255]],
+    ocean: [[0,80,200],[0,150,255],[200,240,255]],
     fire: [[180,20,0],[255,100,0],[255,200,0]],
-    galaxy: [[20,0,50],[100,0,180],[255,0,180]],
-    marble: [[240,240,240],[190,190,190],[100,100,100]]
+    galaxy: [[20,0,50],[120,0,200],[255,0,180]],
+    marble: [[240,240,240],[200,200,200],[100,100,100]]
 };
 
-function detectTheme(prompt) {
+function detectTheme(prompt){
     const p = prompt.toLowerCase();
-    if (p.includes("fire")) return "fire";
-    if (p.includes("ocean") || p.includes("water")) return "ocean";
-    if (p.includes("galaxy")) return "galaxy";
-    if (p.includes("marble")) return "marble";
+    if(p.includes("fire")) return "fire";
+    if(p.includes("ocean")||p.includes("water")) return "ocean";
+    if(p.includes("galaxy")) return "galaxy";
+    if(p.includes("marble")) return "marble";
     return "ocean";
 }
 
+// 🔥 sharper noise (less blur)
 function noise(x,y,t){
-    return Math.sin(x*0.03+t)+Math.cos(y*0.03-t)+Math.sin((x+y)*0.02+t);
+    return Math.sin(x*0.05+t*1.5)+Math.cos(y*0.05-t*1.2);
 }
 
-function layered(x,y,t){
-    return noise(x,y,t)*0.6 + noise(x*2,y*2,t*1.5)*0.4;
+// 🪨 STRONG veins (clear structure)
+function veins(x,y,t){
+    return Math.abs(Math.sin((x+y)*0.03 + noise(x,y,t)*2));
 }
 
-function distort(x,y,t){
-    return {
-        x:x+Math.sin(y*0.05+t*2)*40,
-        y:y+Math.cos(x*0.05-t*2)*40
-    };
-}
-
-function getBaseColor(v){
+// 🎨 color
+function getColor(v, vein){
     const p = themes[theme];
-    let n = (v+3)/6;
+
+    let n = (v+2)/4;
     n = Math.max(0,Math.min(1,n));
 
+    let c;
     if(n<0.5){
         const k=n*2;
-        return [
+        c = [
             p[0][0]+(p[1][0]-p[0][0])*k,
             p[0][1]+(p[1][1]-p[0][1])*k,
             p[0][2]+(p[1][2]-p[0][2])*k
         ];
     } else {
         const k=(n-0.5)*2;
-        return [
+        c = [
             p[1][0]+(p[2][0]-p[1][0])*k,
             p[1][1]+(p[2][1]-p[1][1])*k,
             p[1][2]+(p[2][2]-p[1][2])*k
         ];
     }
+
+    // 🪨 apply strong veins (visible lines)
+    const veinStrength = 0.6;
+    c[0] *= (1 - vein * veinStrength);
+    c[1] *= (1 - vein * veinStrength);
+    c[2] *= (1 - vein * veinStrength);
+
+    return c;
 }
 
-// 💎 glossy reflection
-function reflection(x,y,t){
-    return Math.max(0,
-        Math.sin(x*0.02+t*3)*0.5 +
-        Math.cos(y*0.03+t*2)*0.5
-    );
+// 💎 SHARP highlight streak (not blur)
+function highlight(x,y,t){
+    const line = Math.sin(x*0.1 + t*3);
+    return Math.abs(line) > 0.95 ? 1 : 0;
 }
 
-// 🎯 edge pooling
-function edgePool(x,y){
-    const edgeDist = Math.min(
-        x,
-        y,
-        canvas.width-x,
-        canvas.height-y
-    );
-
-    return Math.max(0, 1 - edgeDist/80);
-}
-
+// 🎬 render
 function draw(){
     const img = ctx.createImageData(canvas.width, canvas.height);
 
@@ -90,44 +83,33 @@ function draw(){
 
             const i=(x+y*canvas.width)*4;
 
-            const d = distort(x,y,t);
+            const v = noise(x,y,t);
+            const vein = veins(x,y,t);
 
-            // 🌊 depth refraction
-            const n1 = layered(d.x,d.y,t);
-            const n2 = layered(d.x+20,d.y+20,t*0.7);
+            const c = getColor(v, vein);
 
-            const base = getBaseColor((n1+n2)*0.5);
+            // 💎 add sharp reflection line
+            const h = highlight(x,y,t);
+            if(h > 0){
+                c[0] = 255;
+                c[1] = 255;
+                c[2] = 255;
+            }
 
-            const shine = reflection(x,y,t);
-            const pool = edgePool(x,y);
-
-            let r = base[0];
-            let g = base[1];
-            let b = base[2];
-
-            // 💎 shine
-            r += shine*35;
-            g += shine*35;
-            b += shine*35;
-
-            // 🎯 darker edge pooling
-            r *= (1 - pool*0.15);
-            g *= (1 - pool*0.15);
-            b *= (1 - pool*0.15);
-
-            img.data[i] = Math.min(255,r);
-            img.data[i+1] = Math.min(255,g);
-            img.data[i+2] = Math.min(255,b);
+            img.data[i] = c[0];
+            img.data[i+1] = c[1];
+            img.data[i+2] = c[2];
             img.data[i+3] = 255;
         }
     }
 
     ctx.putImageData(img,0,0);
 
-    t += 0.04;
+    t += 0.06; // faster visible motion
     requestAnimationFrame(draw);
 }
 
+// 🎯 input → theme
 document.getElementById("generateBtn").onclick = ()=>{
     const prompt = document.getElementById("promptInput").value;
     theme = detectTheme(prompt);
