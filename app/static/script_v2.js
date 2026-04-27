@@ -1,4 +1,4 @@
-alert("EPOXY V16 PRO");
+alert("EPOXY V17 INTERACTIVE");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -15,8 +15,10 @@ canvas.width = window.innerWidth;
 canvas.height = 300;
 
 let t = 0;
-let theme = "galaxy";
-let direction = "flow";
+let theme = "ocean";
+
+// 👉 TOUCH POINT (pour origin)
+let touch = { x: w/2, y: h/2, active: false };
 
 // 🎨 themes
 const themes = {
@@ -32,65 +34,31 @@ function detectTheme(p){
     if(p.includes("ocean")) return "ocean";
     if(p.includes("galaxy")) return "galaxy";
     if(p.includes("marble")) return "marble";
-    return "galaxy";
+    return "ocean";
 }
 
-// 🎯 direction control
-function detectDirection(p){
-    p = p.toLowerCase();
-    if(p.includes("left")) return "left";
-    if(p.includes("right")) return "right";
-    if(p.includes("up")) return "up";
-    if(p.includes("down")) return "down";
-    if(p.includes("swirl")) return "swirl";
-    return "flow";
-}
-
-// 🌊 base layer
-function layer1(x,y,t){
+// 🌊 base flow
+function base(x,y,t){
     return Math.sin(x*0.08+t) + Math.cos(y*0.08-t);
 }
 
-// 🌊 secondary layer (adds depth)
-function layer2(x,y,t){
-    return Math.sin((x+y)*0.05 + t*0.7);
+// 🎯 POUR INFLUENCE
+function pour(x,y){
+    if(!touch.active) return 0;
+
+    const dx = x - touch.x;
+    const dy = y - touch.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    return Math.exp(-dist * 0.2) * 3; // strong center effect
 }
 
-// 🌊 third layer (fine detail)
-function layer3(x,y,t){
-    return Math.cos(x*0.15 + y*0.15 + t*1.5);
-}
-
-// 🌪 direction warp
-function applyDirection(x,y,t){
-
-    if(direction === "left") return [x - t*10, y];
-    if(direction === "right") return [x + t*10, y];
-    if(direction === "up") return [x, y - t*10];
-    if(direction === "down") return [x, y + t*10];
-
-    if(direction === "swirl"){
-        const dx = x - w/2;
-        const dy = y - h/2;
-        const angle = Math.atan2(dy,dx) + t*0.5;
-        const dist = Math.sqrt(dx*dx+dy*dy);
-        return [
-            w/2 + Math.cos(angle)*dist,
-            h/2 + Math.sin(angle)*dist
-        ];
-    }
-
-    return [x,y];
-}
-
-// 🎨 combine layers
+// 🎨 field
 function field(x,y,t){
-    let [wx,wy] = applyDirection(x,y,t);
+    let v = base(x,y,t);
 
-    let v =
-        layer1(wx,wy,t) +
-        layer2(wx,wy,t) * 0.7 +
-        layer3(wx,wy,t) * 0.4;
+    // 🔥 add pour influence
+    v += pour(x,y);
 
     return v;
 }
@@ -102,39 +70,21 @@ function getColor(v){
     let n = (v+2)/4;
     n = Math.max(0, Math.min(1,n));
 
-    let c;
-
     if(n<0.5){
         let k=n*2;
-        c = [
+        return [
             p[0][0]+(p[1][0]-p[0][0])*k,
             p[0][1]+(p[1][1]-p[0][1])*k,
             p[0][2]+(p[1][2]-p[0][2])*k
         ];
     } else {
         let k=(n-0.5)*2;
-        c = [
+        return [
             p[1][0]+(p[2][0]-p[1][0])*k,
             p[1][1]+(p[2][1]-p[1][1])*k,
             p[1][2]+(p[2][2]-p[1][2])*k
         ];
     }
-
-    return c;
-}
-
-// ✨ metallic shimmer (angle-based)
-function metallic(x,y,t){
-    return Math.sin((x+y)*0.2 + t*3);
-}
-
-// 💎 light
-function light(x,y,t){
-    const v1 = field(x,y,t);
-    const v2 = field(x+1,y,t);
-    const v3 = field(x,y+1,t);
-
-    return Math.max(0,(v2-v1)+(v3-v1));
 }
 
 // 🎬 draw
@@ -150,26 +100,9 @@ function draw(){
             let v = field(x,y,t);
             let c = getColor(v);
 
-            // ✨ metallic
-            let m = metallic(x,y,t);
-            c[0] += m*40;
-            c[1] += m*40;
-            c[2] += m*40;
-
-            // 💎 gloss
-            let l = light(x,y,t);
-            c[0] += l*120;
-            c[1] += l*120;
-            c[2] += l*120;
-
-            // 🎯 depth
-            c[0] *= 0.9 + v*0.1;
-            c[1] *= 0.9 + v*0.1;
-            c[2] *= 0.9 + v*0.1;
-
-            img.data[i]   = Math.min(255,c[0]);
-            img.data[i+1] = Math.min(255,c[1]);
-            img.data[i+2] = Math.min(255,c[2]);
+            img.data[i]   = c[0];
+            img.data[i+1] = c[1];
+            img.data[i+2] = c[2];
             img.data[i+3] = 255;
         }
     }
@@ -183,12 +116,39 @@ function draw(){
     requestAnimationFrame(draw);
 }
 
+// 🎯 touch handling (PHONE)
+canvas.addEventListener("touchmove", (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const touchX = e.touches[0].clientX - rect.left;
+    const touchY = e.touches[0].clientY - rect.top;
+
+    touch.x = (touchX / canvas.width) * w;
+    touch.y = (touchY / canvas.height) * h;
+    touch.active = true;
+});
+
+canvas.addEventListener("touchend", ()=>{
+    touch.active = false;
+});
+
+// 🎯 mouse (desktop)
+canvas.addEventListener("mousemove", (e)=>{
+    if(e.buttons === 1){
+        const rect = canvas.getBoundingClientRect();
+        touch.x = (e.clientX - rect.left) / canvas.width * w;
+        touch.y = (e.clientY - rect.top) / canvas.height * h;
+        touch.active = true;
+    }
+});
+
+canvas.addEventListener("mouseup", ()=>{
+    touch.active = false;
+});
+
 // 🎯 generate
 document.getElementById("generateBtn").onclick = ()=>{
     const prompt = document.getElementById("promptInput").value;
-
     theme = detectTheme(prompt);
-    direction = detectDirection(prompt);
 };
 
 draw();
