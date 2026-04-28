@@ -5,13 +5,24 @@
 </head>
 <body style="margin:0; background:black; color:white; font-family:sans-serif;">
 
-    <h3>Epoxy Generator</h3>
+    <h2>Epoxy Generator</h2>
 
     <!-- INPUT -->
-    <input id="promptInput" placeholder="Type: ocean / fire / galaxy / marble" style="width:70%; padding:10px;" />
+    <input id="promptInput" placeholder="Describe epoxy (ocean, fire, galaxy...)" 
+           style="width:60%; padding:10px; font-size:16px;" />
+
+    <!-- THEME DROPDOWN -->
+    <select id="themeSelect">
+        <option>Ocean</option>
+        <option>Fire</option>
+        <option>Galaxy</option>
+        <option>Marble</option>
+    </select>
 
     <!-- BUTTONS -->
     <button id="generateBtn">Generate</button>
+    <button id="saveBtn">Save</button>
+    <button id="loadBtn">Load</button>
     <button id="downloadBtn">Download</button>
 
     <br><br>
@@ -19,8 +30,8 @@
     <!-- CANVAS -->
     <canvas id="canvas"></canvas>
 
-    <!-- 🚨 CACHE BUSTER ADDED HERE -->
-    <script src="/static/script_v2.js?v=9999"></script>
+    <!-- KEEP CACHE BUSTER -->
+    <script src="/static/script_v2.js?v=10001"></script>
 
 </body>
 </html>
