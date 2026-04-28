@@ -1,31 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Epoxy Generator</title>
 </head>
-<body>
+<body style="margin:0; background:black; color:white; font-family:sans-serif;">
 
+    <h3>Epoxy Generator</h3>
+
+    <!-- INPUT -->
+    <input id="promptInput" placeholder="Type: ocean / fire / galaxy / marble" style="width:70%; padding:10px;" />
+
+    <!-- BUTTONS -->
+    <button id="generateBtn">Generate</button>
+    <button id="downloadBtn">Download</button>
+
+    <br><br>
+
+    <!-- CANVAS -->
     <canvas id="canvas"></canvas>
 
-    <div>
-        <input id="promptInput" placeholder="Describe style (e.g. blue ocean epoxy)" />
-
-        <select id="themeSelect">
-            <option value="ocean">Ocean</option>
-            <option value="fire">Fire</option>
-            <option value="galaxy">Galaxy</option>
-            <option value="marble">Marble</option>
-        </select>
-
-        <button id="generateBtn">Generate</button>
-        <button id="saveBtn">Save</button>
-        <button id="loadBtn">Load</button>
-        <button id="downloadBtn">Download</button>
-    </div>
-
-    <script src="/static/script_v2.js?v=102"></script>
+    <!-- 🚨 CACHE BUSTER ADDED HERE -->
+    <script src="/static/script_v2.js?v=9999"></script>
 
 </body>
 </html>
