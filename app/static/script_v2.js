@@ -1,4 +1,4 @@
-alert("EPOXY LAYER 1: NOISE");
+alert("EPOXY LAYER 2: BLOBS");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -20,7 +20,7 @@ void main(){
 `;
 
 // =====================
-// 🔥 NOISE + FLOW BASE
+// 🔥 STRONG BLOB SHADER
 // =====================
 const fragmentShaderSource = `
 precision mediump float;
@@ -51,17 +51,31 @@ float noise(vec2 st){
          + (d-b)*u.x*u.y;
 }
 
+// layered noise
+float fbm(vec2 st){
+    float v = 0.0;
+    float a = 0.5;
+
+    for(int i=0;i<6;i++){
+        v += a * noise(st);
+        st *= 2.0;
+        a *= 0.5;
+    }
+    return v;
+}
+
 void main(){
 
     vec2 uv = gl_FragCoord.xy / resolution.xy;
 
-    // 🔥 smooth movement
-    uv += vec2(
-        sin(time + uv.y * 4.0),
-        cos(time + uv.x * 4.0)
-    ) * 0.1;
+    // 🔥 REMOVE WAVE DOMINANCE
+    uv += fbm(uv * 2.0 + time * 0.3) * 0.3;
 
-    float n = noise(uv * 5.0);
+    // 🔥 MAIN STRUCTURE
+    float n = fbm(uv * 4.0);
+
+    // 🔥 FORCE BLOB SHAPES (CRITICAL)
+    n = smoothstep(0.4, 0.6, n);
 
     vec3 col;
 
@@ -77,6 +91,9 @@ void main(){
     else{
         col = vec3(n);
     }
+
+    // ✨ HARD CONTRAST (visible shapes)
+    col *= 1.5;
 
     gl_FragColor = vec4(col, 1.0);
 }
