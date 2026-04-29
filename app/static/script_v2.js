@@ -1,4 +1,4 @@
-alert("EPOXY V34 – CELLULAR UPGRADE");
+alert("EPOXY V35 – STRUCTURE FIX");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -27,15 +27,12 @@ uniform float theme;
 uniform vec2 resolution;
 
 // ---------------------
-// pseudo random (no loops)
 float rand(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.545);
 }
 
 // ---------------------
-// fake cell pattern
 float cells(vec2 uv){
-
     vec2 i = floor(uv);
     vec2 f = fract(uv);
 
@@ -45,10 +42,9 @@ float cells(vec2 uv){
         for(int x=-1; x<=1; x++){
 
             vec2 g = vec2(float(x), float(y));
-            vec2 o = vec2(rand(i + g), rand(i + g + 1.0));
+            vec2 o = vec2(rand(i+g), rand(i+g+1.0));
 
             vec2 p = g + o - f;
-
             d = min(d, dot(p,p));
         }
     }
@@ -56,54 +52,72 @@ float cells(vec2 uv){
     return sqrt(d);
 }
 
+// ---------------------
 void main(){
 
     vec2 uv = gl_FragCoord.xy / resolution.xy;
 
-    // ---------------------
-    // FLOW
+    // FLOW (gentle, not chaotic)
     uv += vec2(
-        sin(uv.y * 4.0 + time),
-        cos(uv.x * 4.0 - time)
-    ) * 0.2;
+        sin(uv.y * 3.0 + time*0.5),
+        cos(uv.x * 3.0 - time*0.5)
+    ) * 0.15;
 
     // ---------------------
-    // LAYERS
-    float big = cells(uv * 3.0);
-    float small = cells(uv * 8.0 + time);
+    // LARGE STRUCTURE
+    float big = cells(uv * 2.0);
 
-    float mixVal = mix(big, small, 0.5);
-
-    // ---------------------
-    // SHAPE
-    float shape = smoothstep(0.1, 0.5, mixVal);
+    // SMALL DETAIL
+    float small = cells(uv * 6.0 + time*0.3);
 
     // ---------------------
-    // COLOR
-    vec3 col;
+    // HARD REGION SPLIT (IMPORTANT)
+    float region = step(0.35, big);
+
+    // ---------------------
+    // BASE COLOR PER THEME
+    vec3 c1;
+    vec3 c2;
 
     if(theme < 0.5){
-        col = mix(vec3(0.0,0.2,0.5), vec3(0.0,0.8,1.0), shape);
+        c1 = vec3(0.0,0.2,0.5);
+        c2 = vec3(0.0,0.8,1.0);
     }
     else if(theme < 1.5){
-        col = mix(vec3(0.5,0.0,0.0), vec3(1.0,0.7,0.0), shape);
+        c1 = vec3(0.5,0.0,0.0);
+        c2 = vec3(1.0,0.7,0.0);
     }
     else if(theme < 2.5){
-        col = mix(vec3(0.1,0.0,0.2), vec3(0.9,0.0,1.0), shape);
+        c1 = vec3(0.1,0.0,0.2);
+        c2 = vec3(0.9,0.0,1.0);
     }
     else{
-        col = vec3(shape);
+        c1 = vec3(0.2);
+        c2 = vec3(0.8);
     }
 
     // ---------------------
-    // METALLIC LINES
-    float lines = smoothstep(0.0, 0.02, abs(fract(mixVal * 10.0) - 0.5));
-    col += vec3(1.0,0.8,0.2) * lines * 0.5;
+    // REGION COLORS (NO BLUR MIX)
+    vec3 col = mix(c1, c2, region);
 
     // ---------------------
-    // GLOSS
-    float gloss = pow(1.0 - mixVal, 6.0);
-    col += gloss * 0.4;
+    // CELL DETAIL OVERLAY
+    float detail = smoothstep(0.1, 0.4, small);
+    col *= 0.8 + detail * 0.4;
+
+    // ---------------------
+    // GOLD VEINS (SHARP CUTS)
+    float veins = abs(fract(big * 8.0) - 0.5);
+    veins = smoothstep(0.48, 0.5, veins);
+
+    vec3 gold = vec3(1.0, 0.85, 0.3);
+
+    col = mix(col, gold, veins);
+
+    // ---------------------
+    // GLOSS (strong highlight)
+    float gloss = pow(1.0 - big, 8.0);
+    col += gloss * 0.6;
 
     gl_FragColor = vec4(col,1.0);
 }
