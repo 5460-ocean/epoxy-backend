@@ -1,4 +1,4 @@
-alert("EPOXY SAFE MODE");
+alert("EPOXY MOBILE REALISM");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -18,7 +18,7 @@ void main(){
 }
 `;
 
-// 🔥 NO LOOP / NO FBM VERSION
+// =====================
 const fragmentShaderSource = `
 precision mediump float;
 
@@ -30,33 +30,57 @@ void main(){
 
     vec2 uv = gl_FragCoord.xy / resolution.xy;
 
-    // 🔥 SAFE FLOW
-    float wave1 = sin(uv.x * 6.0 + time);
-    float wave2 = cos(uv.y * 6.0 - time);
+    // ---------------------
+    // 🌊 FLOW (directional)
+    // ---------------------
+    uv.x += sin(uv.y * 4.0 + time * 0.8) * 0.2;
+    uv.y += cos(uv.x * 3.0 - time * 0.6) * 0.2;
 
-    float n = (wave1 + wave2) * 0.5;
+    // ---------------------
+    // 🧪 CELL STRUCTURE
+    // ---------------------
+    float c1 = sin(uv.x * 8.0);
+    float c2 = cos(uv.y * 8.0);
+    float cells = c1 * c2;
 
-    // normalize to 0–1
-    n = n * 0.5 + 0.5;
+    // normalize
+    cells = cells * 0.5 + 0.5;
 
+    // sharpen into “cells”
+    cells = smoothstep(0.3, 0.7, cells);
+
+    // ---------------------
+    // 🎯 EDGE CONTRAST
+    // ---------------------
+    float edges = abs(sin(cells * 6.28));
+    edges = pow(edges, 3.0);
+
+    // ---------------------
+    // 🎨 COLOR
+    // ---------------------
     vec3 col;
 
     if(theme < 0.5){
-        col = mix(vec3(0.0,0.2,0.6), vec3(0.2,0.8,1.0), n);
+        col = mix(vec3(0.0,0.2,0.6), vec3(0.2,0.8,1.0), cells);
     }
     else if(theme < 1.5){
-        col = mix(vec3(0.6,0.05,0.0), vec3(1.0,0.8,0.1), n);
+        col = mix(vec3(0.6,0.05,0.0), vec3(1.0,0.8,0.1), cells);
     }
     else if(theme < 2.5){
-        col = mix(vec3(0.1,0.0,0.3), vec3(0.9,0.0,1.0), n);
+        col = mix(vec3(0.1,0.0,0.3), vec3(0.9,0.0,1.0), cells);
     }
     else{
-        col = vec3(n);
+        col = vec3(cells);
     }
 
-    // ✨ fake gloss
-    float gloss = pow(n, 6.0);
-    col += gloss * 0.3;
+    // apply darker edges (resin boundary)
+    col = mix(col, col * 0.3, edges);
+
+    // ---------------------
+    // ✨ GLOSS (highlight)
+    // ---------------------
+    float gloss = pow(cells, 8.0);
+    col += gloss * 0.4;
 
     gl_FragColor = vec4(col,1.0);
 }
