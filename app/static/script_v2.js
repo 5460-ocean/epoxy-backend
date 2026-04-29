@@ -1,4 +1,4 @@
-alert("EPOXY MOBILE REALISM");
+alert("EPOXY V33 THEMES FIXED");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -30,57 +30,81 @@ void main(){
 
     vec2 uv = gl_FragCoord.xy / resolution.xy;
 
-    // ---------------------
-    // 🌊 FLOW (directional)
-    // ---------------------
-    uv.x += sin(uv.y * 4.0 + time * 0.8) * 0.2;
-    uv.y += cos(uv.x * 3.0 - time * 0.6) * 0.2;
+    // =====================
+    // THEME BEHAVIOR
+    // =====================
 
-    // ---------------------
-    // 🧪 CELL STRUCTURE
-    // ---------------------
-    float c1 = sin(uv.x * 8.0);
-    float c2 = cos(uv.y * 8.0);
-    float cells = c1 * c2;
+    if(theme < 0.5){
+        // 🌊 Ocean → horizontal flow
+        uv.x += sin(uv.y * 6.0 + time) * 0.3;
+    }
+    else if(theme < 1.5){
+        // 🔥 Fire → vertical rising
+        uv.y += sin(uv.x * 6.0 + time * 1.5) * 0.4;
+    }
+    else if(theme < 2.5){
+        // 🌌 Galaxy → swirl rotation
+        float angle = time * 0.5;
+        uv = vec2(
+            uv.x * cos(angle) - uv.y * sin(angle),
+            uv.x * sin(angle) + uv.y * cos(angle)
+        );
+    }
+    else{
+        // ⚪ Marble → slow drift
+        uv += vec2(
+            sin(time * 0.3),
+            cos(time * 0.3)
+        ) * 0.1;
+    }
 
-    // normalize
-    cells = cells * 0.5 + 0.5;
+    // =====================
+    // MULTI-SCALE STRUCTURE
+    // =====================
+    float base = sin(uv.x * 8.0) * cos(uv.y * 8.0);
+    float detail = sin(uv.x * 16.0 + time) * cos(uv.y * 16.0 - time);
 
-    // sharpen into “cells”
-    cells = smoothstep(0.3, 0.7, cells);
+    float n = base * 0.7 + detail * 0.3;
+    n = n * 0.5 + 0.5;
 
-    // ---------------------
-    // 🎯 EDGE CONTRAST
-    // ---------------------
-    float edges = abs(sin(cells * 6.28));
-    edges = pow(edges, 3.0);
+    // =====================
+    // CELL SHAPING
+    // =====================
+    float cells = smoothstep(0.3, 0.7, n);
 
-    // ---------------------
-    // 🎨 COLOR
-    // ---------------------
+    // =====================
+    // EDGE DEPTH
+    // =====================
+    float edges = pow(abs(sin(cells * 6.28)), 3.0);
+
+    // =====================
+    // COLOR PER THEME
+    // =====================
     vec3 col;
 
     if(theme < 0.5){
-        col = mix(vec3(0.0,0.2,0.6), vec3(0.2,0.8,1.0), cells);
+        col = mix(vec3(0.0,0.2,0.5), vec3(0.0,0.8,1.0), cells);
     }
     else if(theme < 1.5){
-        col = mix(vec3(0.6,0.05,0.0), vec3(1.0,0.8,0.1), cells);
+        col = mix(vec3(0.4,0.0,0.0), vec3(1.0,0.7,0.0), cells);
     }
     else if(theme < 2.5){
-        col = mix(vec3(0.1,0.0,0.3), vec3(0.9,0.0,1.0), cells);
+        col = mix(vec3(0.1,0.0,0.2), vec3(0.9,0.0,1.0), cells);
     }
     else{
         col = vec3(cells);
     }
 
-    // apply darker edges (resin boundary)
+    // =====================
+    // DEPTH MIX
+    // =====================
     col = mix(col, col * 0.3, edges);
 
-    // ---------------------
-    // ✨ GLOSS (highlight)
-    // ---------------------
-    float gloss = pow(cells, 8.0);
-    col += gloss * 0.4;
+    // =====================
+    // GLOSS HIGHLIGHT
+    // =====================
+    float gloss = pow(cells, 10.0);
+    col += gloss * 0.5;
 
     gl_FragColor = vec4(col,1.0);
 }
@@ -128,7 +152,6 @@ const resLoc = gl.getUniformLocation(program,"resolution");
 
 // =====================
 function render(t){
-
     gl.uniform1f(timeLoc, t*0.001);
     gl.uniform1f(themeLoc, themeValue);
     gl.uniform2f(resLoc, canvas.width, canvas.height);
