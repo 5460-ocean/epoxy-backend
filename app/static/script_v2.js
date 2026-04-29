@@ -1,4 +1,4 @@
-alert("DEBUG STEP 1");
+alert("THEME CONNECTION TEST");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -9,6 +9,9 @@ canvas.height = 300;
 gl.viewport(0, 0, canvas.width, canvas.height);
 
 // =====================
+let themeValue = 0;
+
+// =====================
 const vertexShaderSource = `
 attribute vec2 position;
 void main(){
@@ -16,20 +19,30 @@ void main(){
 }
 `;
 
-// 🔴 PURE GRADIENT TEST
+// 🔥 ONLY TESTING THEME
 const fragmentShaderSource = `
 precision mediump float;
 
-uniform vec2 resolution;
+uniform float theme;
 
 void main(){
 
-    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec3 col;
 
-    // should create gradient left→right and top→bottom
-    vec3 col = vec3(uv.x, uv.y, 0.0);
+    if(theme < 0.5){
+        col = vec3(0.0, 0.0, 1.0); // BLUE
+    }
+    else if(theme < 1.5){
+        col = vec3(1.0, 0.0, 0.0); // RED
+    }
+    else if(theme < 2.5){
+        col = vec3(1.0, 0.0, 1.0); // PURPLE
+    }
+    else{
+        col = vec3(1.0, 1.0, 1.0); // WHITE
+    }
 
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = vec4(col,1.0);
 }
 `;
 
@@ -38,11 +51,6 @@ function createShader(gl, type, src){
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
-
-    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
-        console.error(gl.getShaderInfoLog(s));
-    }
-
     return s;
 }
 
@@ -69,11 +77,31 @@ gl.enableVertexAttribArray(pos);
 gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
 
 // =====================
-const resLoc = gl.getUniformLocation(program,"resolution");
+const themeLoc = gl.getUniformLocation(program,"theme");
 
+// 🔥 DEBUG
+console.log("themeLoc:", themeLoc);
+
+// =====================
 function render(){
-    gl.uniform2f(resLoc, canvas.width, canvas.height);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-}
 
+    gl.uniform1f(themeLoc, themeValue);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    requestAnimationFrame(render);
+}
 render();
+
+// =====================
+document.getElementById("generateBtn").onclick = ()=>{
+
+    const prompt = document.getElementById("promptInput").value.toLowerCase();
+
+    if(prompt.includes("ocean")) themeValue = 0;
+    else if(prompt.includes("fire")) themeValue = 1;
+    else if(prompt.includes("galaxy")) themeValue = 2;
+    else if(prompt.includes("marble")) themeValue = 3;
+
+    alert("themeValue = " + themeValue);
+};
