@@ -1,4 +1,4 @@
-alert("EPOXY V45 TRUE FLOW");
+alert("EPOXY V46 REAL RESIN");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -27,14 +27,11 @@ uniform float theme;
 uniform vec2 resolution;
 
 // ---------------------
-// CONTINUOUS FLOW FIELD (no grid)
+// FLOW FIELD (continuous)
 vec2 flow(vec2 p, float t){
 
-    float x = p.x;
-    float y = p.y;
-
-    float fx = sin(y * 2.0 + t) + cos(y * 3.0 - t);
-    float fy = cos(x * 2.0 - t) + sin(x * 3.0 + t);
+    float fx = sin(p.y * 2.0 + t) + cos(p.y * 3.0 - t);
+    float fy = cos(p.x * 2.0 - t) + sin(p.x * 3.0 + t);
 
     return p + vec2(fx, fy) * 0.2;
 }
@@ -49,24 +46,30 @@ void main(){
     // GLOBAL FLOW
     uv += vec2(t * 0.3, t * 0.15);
 
-    // MULTI FLOW PASSES (smooth)
-    uv = flow(uv, t);
-    uv = flow(uv * 1.3, t);
-    uv = flow(uv * 0.7, t);
+    // MULTI-LAYER FLOW (DEPTH)
+    vec2 uv1 = flow(uv, t);
+    vec2 uv2 = flow(uv * 1.3, t);
+    vec2 uv3 = flow(uv * 0.6, t);
 
-    // CONTINUOUS PATTERN (NO GRID)
-    float n =
-        sin(uv.x * 2.0 + t) * 0.5 +
-        cos(uv.y * 2.0 - t) * 0.5;
+    // ---------------------
+    // BASE FIELD
+    float f1 = sin(uv1.x * 2.0 + t) + cos(uv1.y * 2.0);
+    float f2 = sin(uv2.x * 3.0 - t) + cos(uv2.y * 3.0);
+    float f3 = sin(uv3.x * 4.0 + t);
 
-    n += sin((uv.x + uv.y) * 1.5) * 0.3;
+    float field = (f1 * 0.5 + f2 * 0.3 + f3 * 0.2);
+    field = field * 0.5 + 0.5;
 
-    n = n * 0.5 + 0.5;
+    // ---------------------
+    // 🔥 EPOXY CELLS (derived, not circles)
+    float cells = smoothstep(0.45, 0.7, field);
+    float cellEdges = smoothstep(0.48, 0.5, abs(field - 0.5));
 
-    // VEINS (linear, not circular)
-    float veins = abs(fract(n * 8.0) - 0.5);
-    veins = smoothstep(0.48, 0.5, veins);
+    // ---------------------
+    // ✨ METALLIC VEINS
+    float veins = pow(cellEdges, 6.0);
 
+    // ---------------------
     // COLORS
     vec3 c1;
     vec3 c2;
@@ -77,7 +80,7 @@ void main(){
     }
     else if(theme < 1.5){
         c1 = vec3(0.6,0.0,0.0);
-        c2 = vec3(1.0,0.7,0.0);
+        c2 = vec3(1.0,0.6,0.0);
     }
     else if(theme < 2.5){
         c1 = vec3(0.2,0.0,0.4);
@@ -88,17 +91,22 @@ void main(){
         c2 = vec3(0.3);
     }
 
-    vec3 color = mix(c1, c2, n);
+    vec3 color = mix(c1, c2, cells);
 
-    // DEPTH
-    color *= 0.7 + 0.3 * n;
+    // ---------------------
+    // 🌊 DEPTH LAYERING
+    float depth = f2 * 0.5 + 0.5;
+    color *= 0.6 + 0.4 * depth;
 
-    // VEINS
-    color -= veins * 0.25;
+    // ---------------------
+    // 💎 METALLIC GOLD
+    vec3 gold = vec3(1.0, 0.85, 0.3);
+    color += veins * gold * 0.8;
 
+    // ---------------------
     // GLOSS
-    float shine = pow(1.0 - abs(n - 0.5) * 2.0, 6.0);
-    color += shine * 0.4;
+    float shine = pow(1.0 - abs(field - 0.5) * 2.0, 8.0);
+    color += shine * 0.3;
 
     gl_FragColor = vec4(color,1.0);
 }
