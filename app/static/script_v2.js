@@ -1,4 +1,4 @@
-alert("EPOXY V43 GLOBAL FLOW");
+alert("EPOXY V44 NO GRID");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -28,7 +28,7 @@ uniform vec2 resolution;
 
 // ---------------------
 float rand(vec2 p){
-    return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
+    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
 float noise(vec2 p){
@@ -47,45 +47,44 @@ float noise(vec2 p){
          + (d-b)*u.x*u.y;
 }
 
+// 🔥 ROTATE SPACE (kills squares)
+mat2 rotate(float a){
+    float s = sin(a);
+    float c = cos(a);
+    return mat2(c, -s, s, c);
+}
+
 void main(){
 
     vec2 uv = gl_FragCoord.xy / resolution.xy;
     uv.x *= resolution.x / resolution.y;
 
-    // 🔥 GLOBAL FLOW (THIS FIXES EVERYTHING)
-    float t = time * 0.3;
+    float t = time * 0.25;
 
-    // move entire field consistently
-    uv += vec2(t * 0.5, t * 0.2);
+    // 🔥 ROTATE + SKEW SPACE
+    uv = rotate(0.5) * uv;
+    uv += vec2(uv.y * 0.3, uv.x * 0.2);
 
-    // ---------------------
-    // LAYERED FLOW DISTORTION
-    vec2 flow1 = vec2(
-        noise(uv * 1.5 + t),
-        noise(uv * 1.5 - t)
-    );
+    // GLOBAL FLOW
+    uv += vec2(t * 0.4, t * 0.2);
 
-    vec2 flow2 = vec2(
-        noise(uv * 3.0 + t),
-        noise(uv * 3.0 - t)
-    );
+    // MULTI-LAYER DISTORTION (no grid)
+    vec2 d1 = vec2(noise(uv * 1.3 + t), noise(uv * 1.3 - t));
+    vec2 d2 = vec2(noise(uv * 2.7 + t), noise(uv * 2.7 - t));
 
-    uv += flow1 * 0.5;
-    uv += flow2 * 0.25;
+    uv += d1 * 0.6;
+    uv += d2 * 0.3;
 
-    // ---------------------
-    // STRUCTURE
+    // 🔥 NON-ALIGNED SAMPLING (key!)
     float n =
-        noise(uv * 1.5) * 0.6 +
-        noise(uv * 3.0) * 0.3 +
-        noise(uv * 6.0) * 0.1;
+        noise(uv * vec2(1.3,0.7)) * 0.5 +
+        noise(uv * vec2(2.1,1.4)) * 0.3 +
+        noise(uv * vec2(4.2,2.3)) * 0.2;
 
-    // ---------------------
-    // VEINS (linear, not circular)
-    float veins = abs(fract(n * 8.0) - 0.5);
-    veins = smoothstep(0.48, 0.5, veins);
+    // VEINS (non-grid)
+    float veins = abs(fract(n * 7.0) - 0.5);
+    veins = smoothstep(0.47, 0.5, veins);
 
-    // ---------------------
     // COLORS
     vec3 c1;
     vec3 c2;
@@ -109,15 +108,12 @@ void main(){
 
     vec3 color = mix(c1, c2, n);
 
-    // ---------------------
     // DEPTH
     color *= 0.7 + 0.3 * n;
 
-    // ---------------------
     // VEINS
-    color -= veins * 0.3;
+    color -= veins * 0.25;
 
-    // ---------------------
     // GLOSS
     float shine = pow(1.0 - abs(n - 0.5) * 2.0, 6.0);
     color += shine * 0.4;
