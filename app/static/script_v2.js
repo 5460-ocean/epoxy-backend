@@ -1,4 +1,4 @@
-alert("EPOXY V42 MOTION FIX");
+alert("EPOXY V43 GLOBAL FLOW");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -47,39 +47,45 @@ float noise(vec2 p){
          + (d-b)*u.x*u.y;
 }
 
-// ---------------------
-// STRONG FLOW (FIXED)
-vec2 flow(vec2 p){
-    float t = time * 0.8; // 🔥 increased speed
-
-    float n1 = noise(p + t);
-    float n2 = noise(p + vec2(5.2,1.3) - t);
-
-    // 🔥 stronger movement
-    return p + vec2(n1 * 2.0, n2 * 1.0);
-}
-
 void main(){
 
     vec2 uv = gl_FragCoord.xy / resolution.xy;
     uv.x *= resolution.x / resolution.y;
-    uv *= 3.0;
 
-    // FLOW (multi-pass)
-    uv = flow(uv);
-    uv = flow(uv * 1.5);
-    uv = flow(uv * 0.7);
+    // 🔥 GLOBAL FLOW (THIS FIXES EVERYTHING)
+    float t = time * 0.3;
 
-    // BASE
-    float base = noise(uv);
-    float detail = noise(uv * vec2(4.0,1.0));
+    // move entire field consistently
+    uv += vec2(t * 0.5, t * 0.2);
 
-    float n = base * 0.6 + detail * 0.4;
+    // ---------------------
+    // LAYERED FLOW DISTORTION
+    vec2 flow1 = vec2(
+        noise(uv * 1.5 + t),
+        noise(uv * 1.5 - t)
+    );
 
-    // VEINS
-    float veins = abs(fract(n * 6.0) - 0.5);
-    veins = smoothstep(0.45, 0.5, veins);
+    vec2 flow2 = vec2(
+        noise(uv * 3.0 + t),
+        noise(uv * 3.0 - t)
+    );
 
+    uv += flow1 * 0.5;
+    uv += flow2 * 0.25;
+
+    // ---------------------
+    // STRUCTURE
+    float n =
+        noise(uv * 1.5) * 0.6 +
+        noise(uv * 3.0) * 0.3 +
+        noise(uv * 6.0) * 0.1;
+
+    // ---------------------
+    // VEINS (linear, not circular)
+    float veins = abs(fract(n * 8.0) - 0.5);
+    veins = smoothstep(0.48, 0.5, veins);
+
+    // ---------------------
     // COLORS
     vec3 c1;
     vec3 c2;
@@ -103,12 +109,15 @@ void main(){
 
     vec3 color = mix(c1, c2, n);
 
+    // ---------------------
     // DEPTH
     color *= 0.7 + 0.3 * n;
 
-    // VEINS DARKEN
-    color -= veins * 0.25;
+    // ---------------------
+    // VEINS
+    color -= veins * 0.3;
 
+    // ---------------------
     // GLOSS
     float shine = pow(1.0 - abs(n - 0.5) * 2.0, 6.0);
     color += shine * 0.4;
@@ -122,11 +131,6 @@ function createShader(gl, type, src){
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
-
-    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
-        console.error(gl.getShaderInfoLog(s));
-    }
-
     return s;
 }
 
@@ -158,16 +162,14 @@ const themeLoc = gl.getUniformLocation(program,"theme");
 const resLoc = gl.getUniformLocation(program,"resolution");
 
 // =====================
-// ✅ FIXED RENDER LOOP
 function render(t){
-    gl.uniform1f(timeLoc, t * 0.001); // 🔥 critical
+    gl.uniform1f(timeLoc, t * 0.001);
     gl.uniform1f(themeLoc, themeValue);
     gl.uniform2f(resLoc, canvas.width, canvas.height);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(render);
 }
-
 requestAnimationFrame(render);
 
 // =====================
