@@ -1,4 +1,4 @@
-alert("EPOXY V47 HARD RESIN");
+alert("EPOXY V47 FIXED");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -27,7 +27,6 @@ uniform float theme;
 uniform vec2 resolution;
 
 // ---------------------
-// FLOW
 vec2 flow(vec2 p, float t){
     float fx = sin(p.y * 2.0 + t) + cos(p.y * 3.0 - t);
     float fy = cos(p.x * 2.0 - t) + sin(p.x * 3.0 + t);
@@ -35,7 +34,6 @@ vec2 flow(vec2 p, float t){
 }
 
 // ---------------------
-// RIDGE FUNCTION (key)
 float ridge(float x){
     return abs(x - 0.5) * 2.0;
 }
@@ -66,14 +64,14 @@ void main(){
     float cells = step(0.5, f);
 
     // ---------------------
-    // RIDGE STRUCTURE (sharp breakup)
+    // RIDGE
     float r = ridge(f);
     r = pow(r, 2.0);
 
     // ---------------------
-    // EDGE DETECTION (REAL VEINS)
-    float edge = abs(dFdx(f)) + abs(dFdy(f));
-    edge = pow(edge, 2.0);
+    // SAFE EDGE DETECTION (no dFdx)
+    float edge = abs(f - 0.5);
+    edge = 1.0 - smoothstep(0.0, 0.05, edge);
 
     // ---------------------
     // COLORS
@@ -97,24 +95,19 @@ void main(){
         c2 = vec3(0.2);
     }
 
-    // HARD MIX (no softness)
     vec3 color = mix(c1, c2, cells);
 
-    // ---------------------
-    // DEPTH (strong)
+    // DEPTH
     color *= 0.5 + 0.8 * f;
 
-    // ---------------------
-    // RIDGE DARKENING
+    // RIDGE DARKEN
     color -= r * 0.4;
 
-    // ---------------------
-    // 💎 REAL GOLD VEINS (thin, sharp)
+    // 💎 GOLD VEINS (fixed)
     vec3 gold = vec3(1.0, 0.85, 0.2);
-    color += edge * gold * 2.0;
+    color += edge * gold * 1.5;
 
-    // ---------------------
-    // GLOSS (tight highlight)
+    // GLOSS
     float shine = pow(1.0 - r, 6.0);
     color += shine * 0.3;
 
@@ -127,6 +120,11 @@ function createShader(gl, type, src){
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
+
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+        console.error(gl.getShaderInfoLog(s));
+    }
+
     return s;
 }
 
