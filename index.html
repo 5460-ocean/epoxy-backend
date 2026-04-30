@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Epoxy Generator</title>
+</head>
+<body>
+
+<h1>Epoxy Generator</h1>
+
+<input type="text" id="description" placeholder="Describe design..." />
+<br><br>
+
+<select id="theme">
+    <option value="0">Ocean</option>
+    <option value="1">Fire</option>
+    <option value="2">Galaxy</option>
+    <option value="3">Marble</option>
+</select>
+
+<br><br>
+
+<button onclick="generate()">Generate</button>
+<button onclick="save()">Save</button>
+<button onclick="load()">Load</button>
+<button onclick="download()">Download</button>
+
+<br><br>
+
+<canvas id="canvas"></canvas>
+
+<!-- 🔥 UPDATED VERSION HERE -->
+<script src="/static/script_v2.js?v=200"></script>
+
+</body>
+</html>
