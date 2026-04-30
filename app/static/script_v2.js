@@ -1,4 +1,4 @@
-alert("EPOXY V35 – STRUCTURE FIX");
+alert("EPOXY V40 FLOW BASE");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -27,55 +27,63 @@ uniform float theme;
 uniform vec2 resolution;
 
 // ---------------------
+// simple noise (safe)
 float rand(vec2 p){
-    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.545);
+    return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float noise(vec2 p){
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+
+    float a = rand(i);
+    float b = rand(i + vec2(1.0,0.0));
+    float c = rand(i + vec2(0.0,1.0));
+    float d = rand(i + vec2(1.0,1.0));
+
+    vec2 u = f*f*(3.0-2.0*f);
+
+    return mix(a,b,u.x)
+         + (c-a)*u.y*(1.0-u.x)
+         + (d-b)*u.x*u.y;
 }
 
 // ---------------------
-float cells(vec2 uv){
-    vec2 i = floor(uv);
-    vec2 f = fract(uv);
+// STRONG FLOW (key)
+vec2 flow(vec2 p){
+    float t = time * 0.15;
 
-    float d = 1.0;
+    float n1 = noise(p + t);
+    float n2 = noise(p + vec2(5.2,1.3) - t);
 
-    for(int y=-1; y<=1; y++){
-        for(int x=-1; x<=1; x++){
-
-            vec2 g = vec2(float(x), float(y));
-            vec2 o = vec2(rand(i+g), rand(i+g+1.0));
-
-            vec2 p = g + o - f;
-            d = min(d, dot(p,p));
-        }
-    }
-
-    return sqrt(d);
+    // stretch (kills circles)
+    return p + vec2(n1 * 1.2, n2 * 0.3);
 }
 
-// ---------------------
 void main(){
 
     vec2 uv = gl_FragCoord.xy / resolution.xy;
 
-    // FLOW (gentle, not chaotic)
-    uv += vec2(
-        sin(uv.y * 3.0 + time*0.5),
-        cos(uv.x * 3.0 - time*0.5)
-    ) * 0.15;
+    // fix aspect
+    uv.x *= resolution.x / resolution.y;
+
+    // zoom
+    uv *= 3.0;
+
+    // APPLY FLOW MULTIPLE TIMES (IMPORTANT)
+    uv = flow(uv);
+    uv = flow(uv * 1.5);
+    uv = flow(uv * 0.7);
 
     // ---------------------
-    // LARGE STRUCTURE
-    float big = cells(uv * 2.0);
-
-    // SMALL DETAIL
-    float small = cells(uv * 6.0 + time*0.3);
-
-    // ---------------------
-    // HARD REGION SPLIT (IMPORTANT)
-    float region = step(0.35, big);
+    // LAYERED DISTORTION
+    float n =
+        noise(uv * vec2(1.5,0.5)) * 0.6 +
+        noise(uv * vec2(3.0,1.0)) * 0.3 +
+        noise(uv * vec2(6.0,2.0)) * 0.1;
 
     // ---------------------
-    // BASE COLOR PER THEME
+    // COLOR
     vec3 c1;
     vec3 c2;
 
@@ -84,42 +92,30 @@ void main(){
         c2 = vec3(0.0,0.8,1.0);
     }
     else if(theme < 1.5){
-        c1 = vec3(0.5,0.0,0.0);
+        c1 = vec3(0.6,0.0,0.0);
         c2 = vec3(1.0,0.7,0.0);
     }
     else if(theme < 2.5){
-        c1 = vec3(0.1,0.0,0.2);
-        c2 = vec3(0.9,0.0,1.0);
+        c1 = vec3(0.2,0.0,0.4);
+        c2 = vec3(1.0,0.0,1.0);
     }
     else{
-        c1 = vec3(0.2);
-        c2 = vec3(0.8);
+        c1 = vec3(0.9);
+        c2 = vec3(0.3);
     }
 
-    // ---------------------
-    // REGION COLORS (NO BLUR MIX)
-    vec3 col = mix(c1, c2, region);
+    vec3 color = mix(c1, c2, n);
 
     // ---------------------
-    // CELL DETAIL OVERLAY
-    float detail = smoothstep(0.1, 0.4, small);
-    col *= 0.8 + detail * 0.4;
+    // DEPTH SHADING
+    color *= 0.7 + 0.3 * n;
 
     // ---------------------
-    // GOLD VEINS (SHARP CUTS)
-    float veins = abs(fract(big * 8.0) - 0.5);
-    veins = smoothstep(0.48, 0.5, veins);
+    // GLOSS
+    float shine = pow(1.0 - abs(n - 0.5) * 2.0, 6.0);
+    color += shine * 0.4;
 
-    vec3 gold = vec3(1.0, 0.85, 0.3);
-
-    col = mix(col, gold, veins);
-
-    // ---------------------
-    // GLOSS (strong highlight)
-    float gloss = pow(1.0 - big, 8.0);
-    col += gloss * 0.6;
-
-    gl_FragColor = vec4(col,1.0);
+    gl_FragColor = vec4(color,1.0);
 }
 `;
 
@@ -128,11 +124,6 @@ function createShader(gl, type, src){
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
-
-    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
-        console.error(gl.getShaderInfoLog(s));
-    }
-
     return s;
 }
 
