@@ -1,4 +1,4 @@
-alert("EPOXY V40 FLOW BASE");
+alert("EPOXY V42 MOTION FIX");
 
 // =====================
 const canvas = document.getElementById("canvas");
@@ -27,7 +27,6 @@ uniform float theme;
 uniform vec2 resolution;
 
 // ---------------------
-// simple noise (safe)
 float rand(vec2 p){
     return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
 }
@@ -49,41 +48,39 @@ float noise(vec2 p){
 }
 
 // ---------------------
-// STRONG FLOW (key)
+// STRONG FLOW (FIXED)
 vec2 flow(vec2 p){
-    float t = time * 0.15;
+    float t = time * 0.8; // 🔥 increased speed
 
     float n1 = noise(p + t);
     float n2 = noise(p + vec2(5.2,1.3) - t);
 
-    // stretch (kills circles)
-    return p + vec2(n1 * 1.2, n2 * 0.3);
+    // 🔥 stronger movement
+    return p + vec2(n1 * 2.0, n2 * 1.0);
 }
 
 void main(){
 
     vec2 uv = gl_FragCoord.xy / resolution.xy;
-
-    // fix aspect
     uv.x *= resolution.x / resolution.y;
-
-    // zoom
     uv *= 3.0;
 
-    // APPLY FLOW MULTIPLE TIMES (IMPORTANT)
+    // FLOW (multi-pass)
     uv = flow(uv);
     uv = flow(uv * 1.5);
     uv = flow(uv * 0.7);
 
-    // ---------------------
-    // LAYERED DISTORTION
-    float n =
-        noise(uv * vec2(1.5,0.5)) * 0.6 +
-        noise(uv * vec2(3.0,1.0)) * 0.3 +
-        noise(uv * vec2(6.0,2.0)) * 0.1;
+    // BASE
+    float base = noise(uv);
+    float detail = noise(uv * vec2(4.0,1.0));
 
-    // ---------------------
-    // COLOR
+    float n = base * 0.6 + detail * 0.4;
+
+    // VEINS
+    float veins = abs(fract(n * 6.0) - 0.5);
+    veins = smoothstep(0.45, 0.5, veins);
+
+    // COLORS
     vec3 c1;
     vec3 c2;
 
@@ -106,11 +103,12 @@ void main(){
 
     vec3 color = mix(c1, c2, n);
 
-    // ---------------------
-    // DEPTH SHADING
+    // DEPTH
     color *= 0.7 + 0.3 * n;
 
-    // ---------------------
+    // VEINS DARKEN
+    color -= veins * 0.25;
+
     // GLOSS
     float shine = pow(1.0 - abs(n - 0.5) * 2.0, 6.0);
     color += shine * 0.4;
@@ -124,6 +122,11 @@ function createShader(gl, type, src){
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
+
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+        console.error(gl.getShaderInfoLog(s));
+    }
+
     return s;
 }
 
@@ -155,14 +158,16 @@ const themeLoc = gl.getUniformLocation(program,"theme");
 const resLoc = gl.getUniformLocation(program,"resolution");
 
 // =====================
+// ✅ FIXED RENDER LOOP
 function render(t){
-    gl.uniform1f(timeLoc, t*0.001);
+    gl.uniform1f(timeLoc, t * 0.001); // 🔥 critical
     gl.uniform1f(themeLoc, themeValue);
     gl.uniform2f(resLoc, canvas.width, canvas.height);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(render);
 }
+
 requestAnimationFrame(render);
 
 // =====================
