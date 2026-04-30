@@ -1,4 +1,4 @@
-alert("REAL SHADER LOADED");
+alert("FLOW STAGE");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -17,9 +17,21 @@ void main(){
 const fragmentShaderSource = `
 precision mediump float;
 
+uniform float time;
+
 void main(){
+
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
-    gl_FragColor = vec4(uv.x, uv.y, 0.5, 1.0);
+
+    float t = time * 0.5;
+
+    // 🌊 FLOW distortion
+    uv.x += sin(uv.y * 5.0 + t) * 0.1;
+    uv.y += cos(uv.x * 5.0 - t) * 0.1;
+
+    vec3 color = vec3(uv.x, uv.y, 0.5);
+
+    gl_FragColor = vec4(color,1.0);
 }
 `;
 
@@ -43,10 +55,6 @@ gl.attachShader(program, vs);
 gl.attachShader(program, fs);
 gl.linkProgram(program);
 
-if(!gl.getProgramParameter(program, gl.LINK_STATUS)){
-    alert(gl.getProgramInfoLog(program));
-}
-
 gl.useProgram(program);
 
 const buffer = gl.createBuffer();
@@ -61,8 +69,11 @@ const pos = gl.getAttribLocation(program,"position");
 gl.enableVertexAttribArray(pos);
 gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
 
-function render(){
+const timeLoc = gl.getUniformLocation(program,"time");
+
+function render(t){
+    gl.uniform1f(timeLoc, t * 0.001);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(render);
 }
-render();
+requestAnimationFrame(render);
