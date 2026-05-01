@@ -1,4 +1,4 @@
-alert("EPOXY FINAL STRUCTURE");
+alert("EPOXY HARDENED");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -36,21 +36,29 @@ void main(){
     float t = time * 0.6 + seed * 10.0;
 
     uv = flow(uv, t);
-    uv = flow(uv * 1.1, t);
+    uv = flow(uv * 1.15, t);
 
+    // BASE FIELD
     float f =
         sin(uv.x * 2.5 + t) +
         cos(uv.y * 2.5 - t);
 
     f = f * 0.5 + 0.5;
 
-    // 🔥 HARD STRUCTURE (banding)
-    float bands = floor(f * 4.0) / 4.0;
+    // 🔥 CONTRAST COMPRESSION (KEY FIX)
+    f = pow(f, 2.2);
 
-    // smooth edges slightly (avoid pixel harshness)
-    float structure = mix(bands, f, 0.3);
+    // 🔥 SECONDARY LAYER (break smoothness)
+    float f2 =
+        sin(uv.x * 6.0 - t*0.5) *
+        cos(uv.y * 6.0 + t*0.5);
 
-    // 🎨 colors
+    f2 = f2 * 0.5 + 0.5;
+
+    // combine layers
+    float structure = mix(f, f2, 0.35);
+
+    // 🎨 COLORS
     vec3 deep;
     vec3 light;
 
@@ -67,19 +75,21 @@ void main(){
 
     vec3 color = mix(deep, light, structure);
 
-    // 🔥 STRONG DEPTH
-    color *= 0.4 + 1.2 * structure;
+    // 🔥 DARK SEPARATION (depth illusion)
+    float separation = smoothstep(0.45, 0.5, abs(f - 0.5));
+    color *= 0.6 + 1.0 * structure;
+    color -= separation * 0.25;
 
-    // ✨ GLOSS (more visible)
-    float gloss = pow(structure, 8.0);
-    color += gloss * 0.35;
+    // ✨ GLOSS (stronger)
+    float gloss = pow(structure, 10.0);
+    color += gloss * 0.4;
 
-    // 🟡 VEINS (keep good version)
+    // 🟡 VEINS (keep correct thin lines)
     float edge = abs(f - 0.5);
     float veins = 1.0 - smoothstep(0.0, 0.02, edge);
 
     vec3 gold = vec3(1.0, 0.85, 0.25);
-    color += veins * gold * 1.4;
+    color += veins * gold * 1.6;
 
     gl_FragColor = vec4(color,1.0);
 }
