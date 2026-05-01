@@ -1,4 +1,4 @@
-alert("EPOXY HARDENED");
+alert("EPOXY ORGANIC MODE");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -24,41 +24,52 @@ uniform float time;
 uniform float theme;
 uniform float seed;
 
-vec2 flow(vec2 p, float t){
-    p.x += sin(p.y * 3.0 + t) * 0.12;
-    p.y += cos(p.x * 3.0 - t) * 0.12;
-    return p;
+// 🔥 pseudo-noise (no sin patterns)
+float hash(vec2 p){
+    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
+}
+
+float noise(vec2 p){
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+
+    float a = hash(i);
+    float b = hash(i + vec2(1.0,0.0));
+    float c = hash(i + vec2(0.0,1.0));
+    float d = hash(i + vec2(1.0,1.0));
+
+    vec2 u = f*f*(3.0-2.0*f);
+
+    return mix(a,b,u.x) +
+           (c-a)*u.y*(1.0-u.x) +
+           (d-b)*u.x*u.y;
+}
+
+// 🔥 domain warp (THIS creates epoxy feel)
+vec2 warp(vec2 p, float t){
+    float n1 = noise(p * 2.0 + t);
+    float n2 = noise(p * 2.0 - t);
+
+    return p + vec2(n1, n2) * 0.3;
 }
 
 void main(){
 
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
-    float t = time * 0.6 + seed * 10.0;
+    float t = time * 0.4 + seed * 20.0;
 
-    uv = flow(uv, t);
-    uv = flow(uv * 1.15, t);
+    // 🔥 MULTI WARP (organic flow)
+    uv = warp(uv, t);
+    uv = warp(uv * 1.5, t * 0.7);
+    uv = warp(uv * 2.0, t * 0.3);
 
-    // BASE FIELD
-    float f =
-        sin(uv.x * 2.5 + t) +
-        cos(uv.y * 2.5 - t);
+    // base field
+    float f = noise(uv * 3.0);
 
-    f = f * 0.5 + 0.5;
+    // contrast shaping
+    f = pow(f, 1.8);
 
-    // 🔥 CONTRAST COMPRESSION (KEY FIX)
-    f = pow(f, 2.2);
-
-    // 🔥 SECONDARY LAYER (break smoothness)
-    float f2 =
-        sin(uv.x * 6.0 - t*0.5) *
-        cos(uv.y * 6.0 + t*0.5);
-
-    f2 = f2 * 0.5 + 0.5;
-
-    // combine layers
-    float structure = mix(f, f2, 0.35);
-
-    // 🎨 COLORS
+    // 🎨 colors
     vec3 deep;
     vec3 light;
 
@@ -73,23 +84,20 @@ void main(){
         light = vec3(0.8,0.0,1.0);
     }
 
-    vec3 color = mix(deep, light, structure);
+    vec3 color = mix(deep, light, f);
 
-    // 🔥 DARK SEPARATION (depth illusion)
-    float separation = smoothstep(0.45, 0.5, abs(f - 0.5));
-    color *= 0.6 + 1.0 * structure;
-    color -= separation * 0.25;
+    // depth
+    color *= 0.5 + 1.2 * f;
 
-    // ✨ GLOSS (stronger)
-    float gloss = pow(structure, 10.0);
+    // gloss
+    float gloss = pow(f, 6.0);
     color += gloss * 0.4;
 
-    // 🟡 VEINS (keep correct thin lines)
-    float edge = abs(f - 0.5);
-    float veins = 1.0 - smoothstep(0.0, 0.02, edge);
+    // 🔥 REAL VEINS from noise gradients
+    float veins = smoothstep(0.45, 0.5, abs(f - 0.5));
 
-    vec3 gold = vec3(1.0, 0.85, 0.25);
-    color += veins * gold * 1.6;
+    vec3 gold = vec3(1.0,0.85,0.25);
+    color += (1.0 - veins) * gold * 1.5;
 
     gl_FragColor = vec4(color,1.0);
 }
