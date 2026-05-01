@@ -1,4 +1,4 @@
-alert("FINAL EPOXY");
+alert("EPOXY STABLE + REAL VEINS");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -8,6 +8,7 @@ canvas.height = 300;
 gl.viewport(0, 0, canvas.width, canvas.height);
 
 let themeValue = 0;
+let seedValue = 0.0; // 🔥 NEW
 
 const vertexShaderSource = `
 attribute vec2 position;
@@ -21,7 +22,9 @@ precision mediump float;
 
 uniform float time;
 uniform float theme;
+uniform float seed;
 
+// flow
 vec2 flow(vec2 p, float t){
     p.x += sin(p.y * 3.0 + t) * 0.12;
     p.y += cos(p.x * 3.0 - t) * 0.12;
@@ -31,23 +34,24 @@ vec2 flow(vec2 p, float t){
 void main(){
 
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
-    float t = time * 0.6;
 
-    // FLOW
+    float t = time * 0.6 + seed * 10.0; // 🔥 seed affects structure
+
+    // flow layers
     uv = flow(uv, t);
     uv = flow(uv * 1.15, t);
 
-    // BASE FIELD (more structured)
+    // base field
     float f =
         sin(uv.x * 2.5 + t) +
         cos(uv.y * 2.5 - t);
 
     f = f * 0.5 + 0.5;
 
-    // 🔥 HARD STRUCTURE (key upgrade)
+    // structure
     float structure = smoothstep(0.35, 0.65, f);
 
-    // 🎨 THEMES
+    // colors
     vec3 deep;
     vec3 light;
 
@@ -64,16 +68,19 @@ void main(){
 
     vec3 color = mix(deep, light, structure);
 
-    // 🌊 DEPTH (stronger)
+    // depth
     color *= 0.5 + 0.9 * structure;
 
-    // ✨ GLOSS (sharper highlight)
+    // gloss
     float gloss = pow(structure, 12.0);
     color += gloss * 0.3;
 
-    // 🟡 METALLIC VEINS (thin, sharp lines)
-    float veins = abs(fract(f * 8.0) - 0.5);
-    veins = smoothstep(0.48, 0.5, veins);
+    // 🔥 REAL VEINS (directional, not circular)
+    float veinField =
+        sin(uv.x * 8.0 + t * 2.0) *
+        cos(uv.y * 2.0 - t);
+
+    float veins = smoothstep(0.6, 0.7, veinField);
 
     vec3 gold = vec3(1.0, 0.85, 0.25);
 
@@ -118,6 +125,7 @@ gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
 
 const timeLoc = gl.getUniformLocation(program,"time");
 const themeLoc = gl.getUniformLocation(program,"theme");
+const seedLoc = gl.getUniformLocation(program,"seed");
 
 let start = Date.now();
 
@@ -126,13 +134,17 @@ function render(){
 
     gl.uniform1f(timeLoc, t);
     gl.uniform1f(themeLoc, themeValue);
+    gl.uniform1f(seedLoc, seedValue);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(render);
 }
 render();
 
-// GENERATE BUTTON
+// 🔥 GENERATE NOW STABLE
 document.querySelector("button").onclick = function(){
     themeValue = (themeValue + 1.0) % 3.0;
+
+    // NEW SEED EACH CLICK
+    seedValue = Math.random();
 };
