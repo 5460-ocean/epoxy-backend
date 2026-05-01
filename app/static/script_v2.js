@@ -1,4 +1,4 @@
-alert("FLOW + GENERATE FIXED");
+alert("FINAL EPOXY");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -7,7 +7,6 @@ canvas.width = window.innerWidth;
 canvas.height = 300;
 gl.viewport(0, 0, canvas.width, canvas.height);
 
-// 👇 theme control
 let themeValue = 0;
 
 const vertexShaderSource = `
@@ -34,16 +33,21 @@ void main(){
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
     float t = time * 0.6;
 
+    // FLOW
     uv = flow(uv, t);
-    uv = flow(uv * 1.1, t);
+    uv = flow(uv * 1.15, t);
 
+    // BASE FIELD (more structured)
     float f =
-        sin(uv.x * 2.0 + t) +
-        cos(uv.y * 2.0 - t);
+        sin(uv.x * 2.5 + t) +
+        cos(uv.y * 2.5 - t);
 
     f = f * 0.5 + 0.5;
 
-    // 🎨 THEMES (basic for now)
+    // 🔥 HARD STRUCTURE (key upgrade)
+    float structure = smoothstep(0.35, 0.65, f);
+
+    // 🎨 THEMES
     vec3 deep;
     vec3 light;
 
@@ -58,12 +62,22 @@ void main(){
         light = vec3(0.8,0.0,1.0);
     }
 
-    vec3 color = mix(deep, light, f);
+    vec3 color = mix(deep, light, structure);
 
-    color *= 0.7 + 0.6 * f;
+    // 🌊 DEPTH (stronger)
+    color *= 0.5 + 0.9 * structure;
 
-    float gloss = pow(f, 8.0);
-    color += gloss * 0.2;
+    // ✨ GLOSS (sharper highlight)
+    float gloss = pow(structure, 12.0);
+    color += gloss * 0.3;
+
+    // 🟡 METALLIC VEINS (thin, sharp lines)
+    float veins = abs(fract(f * 8.0) - 0.5);
+    veins = smoothstep(0.48, 0.5, veins);
+
+    vec3 gold = vec3(1.0, 0.85, 0.25);
+
+    color += veins * gold * 1.2;
 
     gl_FragColor = vec4(color,1.0);
 }
@@ -118,7 +132,7 @@ function render(){
 }
 render();
 
-// 🔥 GENERATE BUTTON FIX
+// GENERATE BUTTON
 document.querySelector("button").onclick = function(){
     themeValue = (themeValue + 1.0) % 3.0;
 };
