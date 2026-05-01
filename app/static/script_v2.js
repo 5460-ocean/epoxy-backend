@@ -1,4 +1,4 @@
-alert("EPOXY STABLE + REAL VEINS");
+alert("EPOXY FIXED VEINS");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -8,7 +8,7 @@ canvas.height = 300;
 gl.viewport(0, 0, canvas.width, canvas.height);
 
 let themeValue = 0;
-let seedValue = 0.0; // 🔥 NEW
+let seedValue = 0.0;
 
 const vertexShaderSource = `
 attribute vec2 position;
@@ -35,20 +35,18 @@ void main(){
 
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
 
-    float t = time * 0.6 + seed * 10.0; // 🔥 seed affects structure
+    float t = time * 0.6 + seed * 10.0;
 
-    // flow layers
     uv = flow(uv, t);
-    uv = flow(uv * 1.15, t);
+    uv = flow(uv * 1.1, t);
 
-    // base field
+    // base epoxy field
     float f =
         sin(uv.x * 2.5 + t) +
         cos(uv.y * 2.5 - t);
 
     f = f * 0.5 + 0.5;
 
-    // structure
     float structure = smoothstep(0.35, 0.65, f);
 
     // colors
@@ -72,19 +70,18 @@ void main(){
     color *= 0.5 + 0.9 * structure;
 
     // gloss
-    float gloss = pow(structure, 12.0);
-    color += gloss * 0.3;
+    float gloss = pow(structure, 10.0);
+    color += gloss * 0.25;
 
-    // 🔥 REAL VEINS (directional, not circular)
-    float veinField =
-        sin(uv.x * 8.0 + t * 2.0) *
-        cos(uv.y * 2.0 - t);
+    // 🔥 TRUE VEINS (EDGE-BASED, NOT BLOBS)
+    float edge = abs(f - 0.5);
 
-    float veins = smoothstep(0.6, 0.7, veinField);
+    // make VERY thin line
+    float veins = 1.0 - smoothstep(0.0, 0.02, edge);
 
     vec3 gold = vec3(1.0, 0.85, 0.25);
 
-    color += veins * gold * 1.2;
+    color += veins * gold * 1.5;
 
     gl_FragColor = vec4(color,1.0);
 }
@@ -141,10 +138,8 @@ function render(){
 }
 render();
 
-// 🔥 GENERATE NOW STABLE
+// generate = stable
 document.querySelector("button").onclick = function(){
     themeValue = (themeValue + 1.0) % 3.0;
-
-    // NEW SEED EACH CLICK
     seedValue = Math.random();
 };
