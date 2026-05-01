@@ -1,4 +1,4 @@
-alert("FLOW RESTORED");
+alert("FLOW + GENERATE FIXED");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -6,6 +6,9 @@ const gl = canvas.getContext("webgl");
 canvas.width = window.innerWidth;
 canvas.height = 300;
 gl.viewport(0, 0, canvas.width, canvas.height);
+
+// 👇 theme control
+let themeValue = 0;
 
 const vertexShaderSource = `
 attribute vec2 position;
@@ -18,6 +21,7 @@ const fragmentShaderSource = `
 precision mediump float;
 
 uniform float time;
+uniform float theme;
 
 vec2 flow(vec2 p, float t){
     p.x += sin(p.y * 3.0 + t) * 0.12;
@@ -39,15 +43,25 @@ void main(){
 
     f = f * 0.5 + 0.5;
 
-    vec3 deep = vec3(0.02, 0.05, 0.15);
-    vec3 light = vec3(0.0, 0.7, 0.9);
+    // 🎨 THEMES (basic for now)
+    vec3 deep;
+    vec3 light;
+
+    if(theme < 0.5){
+        deep = vec3(0.02,0.05,0.15);
+        light = vec3(0.0,0.7,0.9);
+    } else if(theme < 1.5){
+        deep = vec3(0.2,0.02,0.02);
+        light = vec3(1.0,0.4,0.0);
+    } else {
+        deep = vec3(0.1,0.0,0.2);
+        light = vec3(0.8,0.0,1.0);
+    }
 
     vec3 color = mix(deep, light, f);
 
-    // depth
     color *= 0.7 + 0.6 * f;
 
-    // gloss
     float gloss = pow(f, 8.0);
     color += gloss * 0.2;
 
@@ -89,6 +103,7 @@ gl.enableVertexAttribArray(pos);
 gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
 
 const timeLoc = gl.getUniformLocation(program,"time");
+const themeLoc = gl.getUniformLocation(program,"theme");
 
 let start = Date.now();
 
@@ -96,8 +111,14 @@ function render(){
     let t = (Date.now() - start) * 0.002;
 
     gl.uniform1f(timeLoc, t);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.uniform1f(themeLoc, themeValue);
 
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(render);
 }
 render();
+
+// 🔥 GENERATE BUTTON FIX
+document.querySelector("button").onclick = function(){
+    themeValue = (themeValue + 1.0) % 3.0;
+};
