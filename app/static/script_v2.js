@@ -1,4 +1,4 @@
-alert("STABLE EPOXY");
+alert("EPOXY STRUCTURE + VEINS");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -30,28 +30,40 @@ void main(){
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
     float t = time * 0.6;
 
-    // smoother, lighter flow
+    // FLOW (keep stable)
     uv = flow(uv, t);
     uv = flow(uv * 1.1, t);
 
+    // BASE FIELD
     float f =
         sin(uv.x * 2.0 + t) +
         cos(uv.y * 2.0 - t);
 
     f = f * 0.5 + 0.5;
 
-    // epoxy colors
+    // 🔥 ADD STRUCTURE (sharper contrast)
+    float structure = smoothstep(0.3, 0.7, f);
+
+    // COLORS
     vec3 deep = vec3(0.02, 0.05, 0.15);
-    vec3 light = vec3(0.0, 0.6, 0.8);
+    vec3 light = vec3(0.0, 0.7, 0.9);
 
-    vec3 color = mix(deep, light, f);
+    vec3 color = mix(deep, light, structure);
 
-    // depth (lightweight)
-    color *= 0.7 + 0.6 * f;
+    // DEPTH
+    color *= 0.7 + 0.6 * structure;
 
-    // gloss (safe)
-    float gloss = pow(f, 8.0);
-    color += gloss * 0.2;
+    // GLOSS
+    float gloss = pow(structure, 10.0);
+    color += gloss * 0.25;
+
+    // 🟡 METALLIC VEINS (thin, not blobs)
+    float vein = abs(fract(f * 6.0) - 0.5);
+    vein = smoothstep(0.48, 0.5, vein);
+
+    vec3 gold = vec3(1.0, 0.85, 0.3);
+
+    color += vein * gold * 0.8;
 
     gl_FragColor = vec4(color,1.0);
 }
