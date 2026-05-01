@@ -1,4 +1,4 @@
-alert("FLOW STAGE");
+alert("FLOW FIXED");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -23,11 +23,11 @@ void main(){
 
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
 
-    float t = time * 0.5;
+    // 🔥 FORCE visible motion
+    float t = time;
 
-    // 🌊 FLOW distortion
-    uv.x += sin(uv.y * 5.0 + t) * 0.1;
-    uv.y += cos(uv.x * 5.0 - t) * 0.1;
+    uv.x += sin(uv.y * 5.0 + t) * 0.2;
+    uv.y += cos(uv.x * 5.0 - t) * 0.2;
 
     vec3 color = vec3(uv.x, uv.y, 0.5);
 
@@ -54,9 +54,9 @@ const program = gl.createProgram();
 gl.attachShader(program, vs);
 gl.attachShader(program, fs);
 gl.linkProgram(program);
-
 gl.useProgram(program);
 
+// buffer
 const buffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
@@ -69,11 +69,20 @@ const pos = gl.getAttribLocation(program,"position");
 gl.enableVertexAttribArray(pos);
 gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
 
+// 🔥 GET TIME LOCATION
 const timeLoc = gl.getUniformLocation(program,"time");
 
-function render(t){
-    gl.uniform1f(timeLoc, t * 0.001);
+// 🔥 FORCE TIME LOOP
+let start = Date.now();
+
+function render(){
+    let now = Date.now();
+    let t = (now - start) * 0.002; // strong visible motion
+
+    gl.uniform1f(timeLoc, t);
+
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(render);
 }
-requestAnimationFrame(render);
+
+render();
