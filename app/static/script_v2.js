@@ -1,4 +1,4 @@
-alert("EPOXY BALANCED FLOW");
+alert("EPOXY MULTI-LAYER FIX");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -24,16 +24,11 @@ uniform float time;
 uniform float theme;
 uniform float seed;
 
-// 🔥 FLOW (keep this — it was good)
+// FLOW
 vec2 flow(vec2 p, float t){
     p.x += sin(p.y * 3.0 + t) * 0.12;
     p.y += cos(p.x * 3.0 - t) * 0.12;
     return p;
-}
-
-// 🔥 LIGHT NOISE (small only)
-float hash(vec2 p){
-    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
 void main(){
@@ -41,25 +36,29 @@ void main(){
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
     float t = time * 0.5 + seed * 10.0;
 
-    // KEEP FLOW
     uv = flow(uv, t);
     uv = flow(uv * 1.1, t);
 
-    // 🔥 SMALL ORGANIC DISTORTION (subtle!)
-    float n = hash(floor(uv * 6.0)) * 0.05;
-    uv += n;
-
-    // BASE FIELD (restore good structure)
-    float f =
+    // 🔥 BASE FIELD
+    float f1 =
         sin(uv.x * 2.5 + t) +
         cos(uv.y * 2.5 - t);
 
-    f = f * 0.5 + 0.5;
+    f1 = f1 * 0.5 + 0.5;
 
-    // 🔥 CONTRAST (not too strong)
-    f = pow(f, 1.6);
+    // 🔥 SECOND FIELD (breaks blob)
+    float f2 =
+        sin(uv.x * 6.0 - t * 0.5) *
+        cos(uv.y * 6.0 + t * 0.3);
 
-    // 🎨 COLORS
+    f2 = f2 * 0.5 + 0.5;
+
+    // 🔥 MIX = epoxy structure
+    float f = mix(f1, f2, 0.4);
+
+    f = pow(f, 1.5);
+
+    // COLORS
     vec3 deep;
     vec3 light;
 
@@ -76,19 +75,22 @@ void main(){
 
     vec3 color = mix(deep, light, f);
 
-    // 🔥 DEPTH
-    color *= 0.5 + 1.0 * f;
+    // 🔥 MULTI VEINS (important)
+    float e1 = 1.0 - smoothstep(0.0, 0.02, abs(f - 0.3));
+    float e2 = 1.0 - smoothstep(0.0, 0.02, abs(f - 0.5));
+    float e3 = 1.0 - smoothstep(0.0, 0.02, abs(f - 0.7));
 
-    // ✨ GLOSS
-    float gloss = pow(f, 8.0);
-    color += gloss * 0.35;
-
-    // 🔥 VEINS FOLLOW STRUCTURE (not blobs)
-    float edge = abs(f - 0.5);
-    float veins = 1.0 - smoothstep(0.0, 0.02, edge);
+    float veins = max(max(e1, e2), e3);
 
     vec3 gold = vec3(1.0, 0.85, 0.25);
-    color += veins * gold * 1.3;
+    color += veins * gold * 1.2;
+
+    // depth
+    color *= 0.5 + f;
+
+    // gloss
+    float gloss = pow(f, 6.0);
+    color += gloss * 0.3;
 
     gl_FragColor = vec4(color,1.0);
 }
