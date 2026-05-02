@@ -1,4 +1,4 @@
-alert("EPOXY FINAL LIGHTING");
+alert("EPOXY FINAL MOBILE SAFE");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -76,29 +76,22 @@ void main(){
 
     vec3 color = mix(deep, light, f);
 
-    // 🔥 IRREGULAR VEINS (break contour look)
+    // veins (irregular)
     float v = abs(f - 0.5);
     float veins = smoothstep(0.015, 0.0, v);
-
     veins *= 0.7 + hash(uv * 40.0) * 0.6;
 
     vec3 gold = vec3(1.0, 0.85, 0.25);
     color += veins * gold * 2.0;
 
-    // 🔥 FAKE LIGHT DIRECTION
-    vec2 lightDir = normalize(vec2(-0.6, 0.8));
-    float lighting = dot(normalize(vec2(
-        dFdx(f),
-        dFdy(f)
-    )), lightDir);
+    // ✅ FAKE LIGHTING (NO dFdx)
+    float lighting = 0.5 + 0.5 * sin(uv.x * 3.0 + uv.y * 2.0 + t);
 
-    lighting = lighting * 0.5 + 0.5;
+    color *= 0.6 + lighting * 0.7;
 
-    color *= 0.6 + lighting * 0.8;
-
-    // 🔥 SPECULAR HIGHLIGHT (epoxy shine)
-    float spec = pow(max(lighting, 0.0), 12.0);
-    color += spec * 0.5;
+    // gloss highlight
+    float gloss = pow(lighting, 6.0);
+    color += gloss * 0.4;
 
     gl_FragColor = vec4(color,1.0);
 }
