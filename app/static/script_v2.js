@@ -1,4 +1,4 @@
-alert("EPOXY FINAL MOBILE SAFE");
+alert("EPOXY FINAL NORMALS");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -34,10 +34,8 @@ float hash(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
-void main(){
-
-    vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
-    float t = time * 0.6 + seed * 10.0;
+// 🔥 SAME FIELD FUNCTION (important: reused for sampling)
+float field(vec2 uv, float t){
 
     uv = flow(uv, t);
     uv = flow(uv * 1.3, t * 0.7);
@@ -57,11 +55,19 @@ void main(){
 
     f = mix(f, d, 0.45);
 
-    // micro breakup
     f += hash(uv * 150.0) * 0.04;
 
-    f = smoothstep(0.1, 0.9, f);
+    return smoothstep(0.1, 0.9, f);
+}
 
+void main(){
+
+    vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
+    float t = time * 0.6 + seed * 10.0;
+
+    float f = field(uv, t);
+
+    // 🎨 COLORS
     vec3 deep = vec3(0.02,0.05,0.15);
     vec3 light = vec3(0.0,0.7,0.9);
 
@@ -76,7 +82,7 @@ void main(){
 
     vec3 color = mix(deep, light, f);
 
-    // veins (irregular)
+    // 🔥 VEINS
     float v = abs(f - 0.5);
     float veins = smoothstep(0.015, 0.0, v);
     veins *= 0.7 + hash(uv * 40.0) * 0.6;
@@ -84,14 +90,32 @@ void main(){
     vec3 gold = vec3(1.0, 0.85, 0.25);
     color += veins * gold * 2.0;
 
-    // ✅ FAKE LIGHTING (NO dFdx)
-    float lighting = 0.5 + 0.5 * sin(uv.x * 3.0 + uv.y * 2.0 + t);
+    // 🔥 FAKE NORMALS (NEIGHBOR SAMPLING)
+    float e = 0.002;
 
-    color *= 0.6 + lighting * 0.7;
+    float fx = field(uv + vec2(e,0.0), t);
+    float fy = field(uv + vec2(0.0,e), t);
 
-    // gloss highlight
-    float gloss = pow(lighting, 6.0);
-    color += gloss * 0.4;
+    vec3 normal = normalize(vec3(
+        (fx - f) / e,
+        (fy - f) / e,
+        1.0
+    ));
+
+    // 🔥 LIGHT DIRECTION
+    vec3 lightDir = normalize(vec3(-0.5, 0.6, 1.0));
+
+    float diffuse = max(dot(normal, lightDir), 0.0);
+
+    // 🔥 SPECULAR (SHINY EPOXY)
+    vec3 viewDir = vec3(0.0,0.0,1.0);
+    vec3 reflectDir = reflect(-lightDir, normal);
+
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 20.0);
+
+    // APPLY LIGHTING
+    color *= 0.6 + diffuse * 0.9;
+    color += spec * 0.6;
 
     gl_FragColor = vec4(color,1.0);
 }
