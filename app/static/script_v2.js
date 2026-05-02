@@ -1,4 +1,4 @@
-alert("EPOXY MASTER FINAL");
+alert("EPOXY FINAL POLISH");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -24,9 +24,10 @@ uniform float time;
 uniform float theme;
 uniform float seed;
 
+// 🔥 DIAGONAL FLOW
 vec2 flow(vec2 p, float t){
-    p.x += sin(p.y * 4.0 + t) * 0.12;
-    p.y += cos(p.x * 4.0 - t) * 0.12;
+    p.x += sin((p.y + p.x) * 3.0 + t) * 0.15;
+    p.y += cos((p.x - p.y) * 3.0 - t) * 0.15;
     return p;
 }
 
@@ -34,16 +35,15 @@ float hash(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
-// 🔥 FIELD
 float field(vec2 uv, float t){
 
     uv = flow(uv, t);
-    uv = flow(uv * 1.3, t * 0.7);
-    uv = flow(uv * 1.7, t * 0.4);
+    uv = flow(uv * 1.4, t * 0.6);
+    uv = flow(uv * 1.8, t * 0.3);
 
     float f =
-        sin(uv.x * 2.5 + t) +
-        cos(uv.y * 2.5 - t);
+        sin(uv.x * 2.2 + t) +
+        cos(uv.y * 2.2 - t);
 
     f = f * 0.5 + 0.5;
 
@@ -53,26 +53,25 @@ float field(vec2 uv, float t){
 
     d = d * 0.5 + 0.5;
 
-    f = mix(f, d, 0.5);
+    f = mix(f, d, 0.55);
 
-    // seed influence (IMPORTANT)
-    f += seed * 0.15;
+    f += seed * 0.2;
 
-    return smoothstep(0.05, 0.95, f);
+    return smoothstep(0.08, 0.92, f);
 }
 
 void main(){
 
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
-    float t = time * 0.5 + seed * 20.0;
+    float t = time * 0.5 + seed * 15.0;
 
     float f = field(uv, t);
 
-    // 🔥 PIGMENT DENSITY
-    float density = pow(f, 2.0);
+    // 🔥 STRONGER DEPTH
+    float density = pow(f, 2.2);
 
-    vec3 deep = vec3(0.01,0.03,0.1);
-    vec3 light = vec3(0.0,0.8,1.0);
+    vec3 deep = vec3(0.01,0.03,0.12);
+    vec3 light = vec3(0.0,0.85,1.0);
 
     if(theme > 0.5){
         deep = vec3(0.3,0.02,0.02);
@@ -85,35 +84,33 @@ void main(){
 
     vec3 color = mix(deep, light, density);
 
-    // 🔥 THICK GOLD (multi-layer)
-    float band1 = smoothstep(0.03, 0.0, abs(f - 0.5));
-    float band2 = smoothstep(0.06, 0.0, abs(f - 0.5));
+    // 🔥 REAL GOLD (NOT YELLOW)
+    float band1 = smoothstep(0.025, 0.0, abs(f - 0.5));
+    float band2 = smoothstep(0.05, 0.0, abs(f - 0.5));
 
-    float veins = band1 * 0.7 + band2 * 0.5;
+    float veins = band1 * 0.7 + band2 * 0.6;
 
-    // breakup (no uniform lines)
-    veins *= 0.6 + hash(uv * 25.0 + seed) * 0.8;
+    veins *= 0.6 + hash(uv * 30.0 + seed) * 0.8;
 
-    vec3 goldA = vec3(1.0, 0.85, 0.3);
-    vec3 goldB = vec3(0.7, 0.5, 0.1);
+    vec3 goldDark  = vec3(0.6, 0.45, 0.1);
+    vec3 goldMid   = vec3(0.8, 0.65, 0.2);
+    vec3 goldBright= vec3(1.0, 0.9, 0.4);
 
-    vec3 gold = mix(goldA, goldB, f);
+    vec3 gold = mix(goldDark, goldBright, pow(f, 1.5));
+    gold = mix(gold, goldMid, 0.5);
 
     color = mix(color, gold, veins);
 
-    // 🔥 SHARP EDGES
-    float edge = smoothstep(0.48, 0.5, f) - smoothstep(0.5, 0.52, f);
-    color += edge * 0.2;
+    // 🔥 CRISP EDGES (resin boundaries)
+    float edge = smoothstep(0.49, 0.5, f) - smoothstep(0.5, 0.51, f);
+    color += edge * 0.3;
 
-    // 🔥 PIGMENT STREAKS (flow direction)
-    float streak =
-        sin(uv.x * 20.0 + t) *
-        sin(uv.y * 5.0 - t);
+    // 🔥 PIGMENT STREAKS (diagonal aligned)
+    float streak = sin((uv.x + uv.y) * 25.0 + t);
+    color += streak * 0.04;
 
-    color += streak * 0.05;
-
-    // 🔥 FAKE NORMALS (FIXED - no mesh)
-    float e = 0.001; // smaller = smoother
+    // 🔥 NORMALS (stable)
+    float e = 0.001;
 
     float fx = field(uv + vec2(e,0.0), t);
     float fy = field(uv + vec2(0.0,e), t);
@@ -124,19 +121,18 @@ void main(){
         1.0
     ));
 
-    vec3 lightDir = normalize(vec3(-0.4, 0.6, 1.0));
+    vec3 lightDir = normalize(vec3(-0.4, 0.7, 1.0));
     float diffuse = max(dot(normal, lightDir), 0.0);
 
-    // 🔥 STRONG GLOSS
     vec3 viewDir = vec3(0.0,0.0,1.0);
     vec3 reflectDir = reflect(-lightDir, normal);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 40.0);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 45.0);
 
-    color *= 0.5 + diffuse * 1.2;
+    color *= 0.5 + diffuse * 1.3;
 
-    // ✨ stronger on gold
-    color += spec * (0.3 + veins * 1.2);
+    // ✨ GOLD-SENSITIVE SHINE
+    color += spec * (0.2 + veins * 1.5);
 
     gl_FragColor = vec4(color,1.0);
 }
@@ -193,8 +189,7 @@ function render(){
 }
 render();
 
-// 🔥 FIX GENERATE
 document.querySelector("button").onclick = function(){
     themeValue = (themeValue + 1.0) % 3.0;
-    seedValue = Math.random(); // NOW ACTUALLY CHANGES OUTPUT
+    seedValue = Math.random();
 };
