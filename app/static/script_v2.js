@@ -1,4 +1,4 @@
-alert("EPOXY MULTI-LAYER FIX");
+alert("EPOXY HARD CELLS");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -24,7 +24,6 @@ uniform float time;
 uniform float theme;
 uniform float seed;
 
-// FLOW
 vec2 flow(vec2 p, float t){
     p.x += sin(p.y * 3.0 + t) * 0.12;
     p.y += cos(p.x * 3.0 - t) * 0.12;
@@ -39,24 +38,28 @@ void main(){
     uv = flow(uv, t);
     uv = flow(uv * 1.1, t);
 
-    // 🔥 BASE FIELD
-    float f1 =
+    // BASE FIELD
+    float f =
         sin(uv.x * 2.5 + t) +
         cos(uv.y * 2.5 - t);
 
-    f1 = f1 * 0.5 + 0.5;
+    f = f * 0.5 + 0.5;
 
-    // 🔥 SECOND FIELD (breaks blob)
-    float f2 =
-        sin(uv.x * 6.0 - t * 0.5) *
-        cos(uv.y * 6.0 + t * 0.3);
+    // SECONDARY DETAIL
+    float d =
+        sin(uv.x * 8.0 - t * 0.5) *
+        cos(uv.y * 8.0 + t * 0.3);
 
-    f2 = f2 * 0.5 + 0.5;
+    d = d * 0.5 + 0.5;
 
-    // 🔥 MIX = epoxy structure
-    float f = mix(f1, f2, 0.4);
+    // MIX
+    f = mix(f, d, 0.35);
 
-    f = pow(f, 1.5);
+    // 🔥 CONTRAST COMPRESSION (KEY)
+    f = smoothstep(0.2, 0.8, f);
+
+    // 🔥 CELL BREAKUP (THIS CREATES HARD REGIONS)
+    float cell = floor(f * 4.0) / 4.0;
 
     // COLORS
     vec3 deep;
@@ -73,24 +76,21 @@ void main(){
         light = vec3(0.8,0.0,1.0);
     }
 
-    vec3 color = mix(deep, light, f);
+    vec3 color = mix(deep, light, cell);
 
-    // 🔥 MULTI VEINS (important)
-    float e1 = 1.0 - smoothstep(0.0, 0.02, abs(f - 0.3));
-    float e2 = 1.0 - smoothstep(0.0, 0.02, abs(f - 0.5));
-    float e3 = 1.0 - smoothstep(0.0, 0.02, abs(f - 0.7));
-
-    float veins = max(max(e1, e2), e3);
+    // 🔥 HARD EDGE LINES (epoxy separation)
+    float edge = fract(f * 4.0);
+    float line = 1.0 - smoothstep(0.0, 0.03, edge);
 
     vec3 gold = vec3(1.0, 0.85, 0.25);
-    color += veins * gold * 1.2;
+    color += line * gold * 1.5;
 
-    // depth
-    color *= 0.5 + f;
+    // DEPTH
+    color *= 0.6 + cell * 1.2;
 
-    // gloss
-    float gloss = pow(f, 6.0);
-    color += gloss * 0.3;
+    // GLOSS
+    float gloss = pow(cell, 6.0);
+    color += gloss * 0.4;
 
     gl_FragColor = vec4(color,1.0);
 }
