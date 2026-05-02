@@ -1,4 +1,4 @@
-alert("EPOXY FINAL V2");
+alert("EPOXY FINAL LIGHTING");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -30,7 +30,6 @@ vec2 flow(vec2 p, float t){
     return p;
 }
 
-// tiny noise (break smoothness)
 float hash(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
@@ -40,71 +39,66 @@ void main(){
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
     float t = time * 0.6 + seed * 10.0;
 
-    // 🔥 MULTI FLOW (depth)
     uv = flow(uv, t);
-    uv = flow(uv * 1.2, t * 0.7);
-    uv = flow(uv * 1.5, t * 0.4);
+    uv = flow(uv * 1.3, t * 0.7);
+    uv = flow(uv * 1.6, t * 0.4);
 
-    // BASE FIELD
     float f =
         sin(uv.x * 2.5 + t) +
         cos(uv.y * 2.5 - t);
 
     f = f * 0.5 + 0.5;
 
-    // DETAIL FIELD
     float d =
         sin(uv.x * 9.0 - t * 0.7) *
         cos(uv.y * 9.0 + t * 0.5);
 
     d = d * 0.5 + 0.5;
 
-    // MIX
     f = mix(f, d, 0.45);
 
-    // 🔥 MICRO BREAKUP (kills smooth)
-    float grain = hash(uv * 120.0) * 0.05;
-    f += grain;
+    // micro breakup
+    f += hash(uv * 150.0) * 0.04;
 
-    // CONTRAST BOOST
     f = smoothstep(0.1, 0.9, f);
 
-    // COLORS
-    vec3 deep;
-    vec3 light;
+    vec3 deep = vec3(0.02,0.05,0.15);
+    vec3 light = vec3(0.0,0.7,0.9);
 
-    if(theme < 0.5){
-        deep = vec3(0.02,0.05,0.15);
-        light = vec3(0.0,0.7,0.9);
-    } else if(theme < 1.5){
+    if(theme > 0.5){
         deep = vec3(0.2,0.02,0.02);
         light = vec3(1.0,0.4,0.0);
-    } else {
+    }
+    if(theme > 1.5){
         deep = vec3(0.1,0.0,0.2);
         light = vec3(0.8,0.0,1.0);
     }
 
     vec3 color = mix(deep, light, f);
 
-    // 🔥 STRONG SHARP VEINS
-    float v1 = abs(f - 0.5);
-    float veins = smoothstep(0.02, 0.0, v1);
+    // 🔥 IRREGULAR VEINS (break contour look)
+    float v = abs(f - 0.5);
+    float veins = smoothstep(0.015, 0.0, v);
 
-    float v2 = abs(f - 0.3);
-    veins += smoothstep(0.015, 0.0, v2);
-
-    float v3 = abs(f - 0.7);
-    veins += smoothstep(0.015, 0.0, v3);
+    veins *= 0.7 + hash(uv * 40.0) * 0.6;
 
     vec3 gold = vec3(1.0, 0.85, 0.25);
     color += veins * gold * 2.0;
 
-    // 🔥 DEPTH SHADING
-    color *= 0.5 + f * 1.2;
+    // 🔥 FAKE LIGHT DIRECTION
+    vec2 lightDir = normalize(vec2(-0.6, 0.8));
+    float lighting = dot(normalize(vec2(
+        dFdx(f),
+        dFdy(f)
+    )), lightDir);
 
-    // 🔥 GLOSS (stronger highlight)
-    float gloss = pow(f, 6.0);
-    color += gloss * 0.35;
+    lighting = lighting * 0.5 + 0.5;
+
+    color *= 0.6 + lighting * 0.8;
+
+    // 🔥 SPECULAR HIGHLIGHT (epoxy shine)
+    float spec = pow(max(lighting, 0.0), 12.0);
+    color += spec * 0.5;
 
     gl_FragColor = vec4(color,1.0);
 }
