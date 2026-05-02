@@ -1,4 +1,4 @@
-alert("EPOXY HARD CELLS");
+alert("EPOXY ORGANIC FINAL");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -38,28 +38,25 @@ void main(){
     uv = flow(uv, t);
     uv = flow(uv * 1.1, t);
 
-    // BASE FIELD
+    // 🔥 MAIN FIELD
     float f =
         sin(uv.x * 2.5 + t) +
         cos(uv.y * 2.5 - t);
 
     f = f * 0.5 + 0.5;
 
-    // SECONDARY DETAIL
+    // 🔥 DETAIL FIELD
     float d =
-        sin(uv.x * 8.0 - t * 0.5) *
-        cos(uv.y * 8.0 + t * 0.3);
+        sin(uv.x * 7.0 - t * 0.6) *
+        cos(uv.y * 7.0 + t * 0.4);
 
     d = d * 0.5 + 0.5;
 
-    // MIX
+    // 🔥 MIX (organic structure)
     f = mix(f, d, 0.35);
 
-    // 🔥 CONTRAST COMPRESSION (KEY)
-    f = smoothstep(0.2, 0.8, f);
-
-    // 🔥 CELL BREAKUP (THIS CREATES HARD REGIONS)
-    float cell = floor(f * 4.0) / 4.0;
+    // 🔥 CONTRAST (not too harsh)
+    f = smoothstep(0.15, 0.85, f);
 
     // COLORS
     vec3 deep;
@@ -76,21 +73,33 @@ void main(){
         light = vec3(0.8,0.0,1.0);
     }
 
-    vec3 color = mix(deep, light, cell);
+    vec3 color = mix(deep, light, f);
 
-    // 🔥 HARD EDGE LINES (epoxy separation)
-    float edge = fract(f * 4.0);
-    float line = 1.0 - smoothstep(0.0, 0.03, edge);
+    // 🔥 THIN VEINS (NOT BLOBS)
+    float edge =
+        smoothstep(0.48, 0.5, f) -
+        smoothstep(0.5, 0.52, f);
+
+    // add multiple subtle layers
+    float edge2 =
+        smoothstep(0.28, 0.3, f) -
+        smoothstep(0.3, 0.32, f);
+
+    float edge3 =
+        smoothstep(0.68, 0.7, f) -
+        smoothstep(0.7, 0.72, f);
+
+    float veins = edge + edge2 + edge3;
 
     vec3 gold = vec3(1.0, 0.85, 0.25);
-    color += line * gold * 1.5;
+    color += veins * gold * 1.5;
 
-    // DEPTH
-    color *= 0.6 + cell * 1.2;
+    // 🔥 DEPTH
+    color *= 0.6 + f * 0.8;
 
-    // GLOSS
-    float gloss = pow(cell, 6.0);
-    color += gloss * 0.4;
+    // 🔥 GLOSS (resin shine)
+    float gloss = pow(f, 5.0);
+    color += gloss * 0.25;
 
     gl_FragColor = vec4(color,1.0);
 }
