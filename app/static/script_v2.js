@@ -1,4 +1,4 @@
-alert("EPOXY FINAL NORMALS");
+alert("EPOXY ULTRA REALISM");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -34,7 +34,7 @@ float hash(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
-// 🔥 SAME FIELD FUNCTION (important: reused for sampling)
+// 🔥 FIELD (used everywhere = consistency)
 float field(vec2 uv, float t){
 
     uv = flow(uv, t);
@@ -53,11 +53,11 @@ float field(vec2 uv, float t){
 
     d = d * 0.5 + 0.5;
 
-    f = mix(f, d, 0.45);
+    f = mix(f, d, 0.5);
 
-    f += hash(uv * 150.0) * 0.04;
+    f += hash(uv * 150.0) * 0.05;
 
-    return smoothstep(0.1, 0.9, f);
+    return smoothstep(0.05, 0.95, f);
 }
 
 void main(){
@@ -67,32 +67,43 @@ void main(){
 
     float f = field(uv, t);
 
-    // 🎨 COLORS
-    vec3 deep = vec3(0.02,0.05,0.15);
-    vec3 light = vec3(0.0,0.7,0.9);
+    // 🔥 PIGMENT DENSITY (depth illusion)
+    float density = pow(f, 1.8); // thicker zones darker
+
+    vec3 deep = vec3(0.01,0.03,0.1);
+    vec3 light = vec3(0.0,0.75,1.0);
 
     if(theme > 0.5){
-        deep = vec3(0.2,0.02,0.02);
-        light = vec3(1.0,0.4,0.0);
+        deep = vec3(0.25,0.02,0.02);
+        light = vec3(1.0,0.5,0.0);
     }
     if(theme > 1.5){
         deep = vec3(0.1,0.0,0.2);
-        light = vec3(0.8,0.0,1.0);
+        light = vec3(0.9,0.0,1.0);
     }
 
-    vec3 color = mix(deep, light, f);
+    vec3 color = mix(deep, light, density);
 
-    // 🔥 VEINS
-    float v = abs(f - 0.5);
-    float veins = smoothstep(0.015, 0.0, v);
-    veins *= 0.7 + hash(uv * 40.0) * 0.6;
+    // 🔥 THICK METALLIC VEINS (embedded)
+    float band = smoothstep(0.02, 0.0, abs(f - 0.5));
+    float band2 = smoothstep(0.04, 0.0, abs(f - 0.5));
 
-    vec3 gold = vec3(1.0, 0.85, 0.25);
-    color += veins * gold * 2.0;
+    float veins = band * 0.6 + band2 * 0.4;
 
-    // 🔥 FAKE NORMALS (NEIGHBOR SAMPLING)
+    // irregular breakup
+    veins *= 0.6 + hash(uv * 30.0) * 0.8;
+
+    // 🔥 GOLD (multi-tone metallic)
+    vec3 goldA = vec3(1.0, 0.85, 0.25);
+    vec3 goldB = vec3(0.8, 0.6, 0.1);
+
+    vec3 gold = mix(goldA, goldB, f);
+
+    // blend INTO material (not overlay)
+    color = mix(color, gold, veins * 0.8);
+
+    // 🔥 FAKE NORMALS
     float e = 0.002;
-
     float fx = field(uv + vec2(e,0.0), t);
     float fy = field(uv + vec2(0.0,e), t);
 
@@ -102,20 +113,17 @@ void main(){
         1.0
     ));
 
-    // 🔥 LIGHT DIRECTION
     vec3 lightDir = normalize(vec3(-0.5, 0.6, 1.0));
-
     float diffuse = max(dot(normal, lightDir), 0.0);
 
-    // 🔥 SPECULAR (SHINY EPOXY)
+    // 🔥 STRONG SPECULAR (metal feel)
     vec3 viewDir = vec3(0.0,0.0,1.0);
     vec3 reflectDir = reflect(-lightDir, normal);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 20.0);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 30.0);
 
-    // APPLY LIGHTING
-    color *= 0.6 + diffuse * 0.9;
-    color += spec * 0.6;
+    color *= 0.5 + diffuse * 1.0;
+    color += spec * 0.8 * veins; // stronger on veins
 
     gl_FragColor = vec4(color,1.0);
 }
