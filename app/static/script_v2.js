@@ -1,4 +1,4 @@
-alert("EPOXY ORGANIC FINAL");
+alert("EPOXY FINAL V2");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -25,38 +25,49 @@ uniform float theme;
 uniform float seed;
 
 vec2 flow(vec2 p, float t){
-    p.x += sin(p.y * 3.0 + t) * 0.12;
-    p.y += cos(p.x * 3.0 - t) * 0.12;
+    p.x += sin(p.y * 4.0 + t) * 0.15;
+    p.y += cos(p.x * 4.0 - t) * 0.15;
     return p;
+}
+
+// tiny noise (break smoothness)
+float hash(vec2 p){
+    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
 void main(){
 
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
-    float t = time * 0.5 + seed * 10.0;
+    float t = time * 0.6 + seed * 10.0;
 
+    // 🔥 MULTI FLOW (depth)
     uv = flow(uv, t);
-    uv = flow(uv * 1.1, t);
+    uv = flow(uv * 1.2, t * 0.7);
+    uv = flow(uv * 1.5, t * 0.4);
 
-    // 🔥 MAIN FIELD
+    // BASE FIELD
     float f =
         sin(uv.x * 2.5 + t) +
         cos(uv.y * 2.5 - t);
 
     f = f * 0.5 + 0.5;
 
-    // 🔥 DETAIL FIELD
+    // DETAIL FIELD
     float d =
-        sin(uv.x * 7.0 - t * 0.6) *
-        cos(uv.y * 7.0 + t * 0.4);
+        sin(uv.x * 9.0 - t * 0.7) *
+        cos(uv.y * 9.0 + t * 0.5);
 
     d = d * 0.5 + 0.5;
 
-    // 🔥 MIX (organic structure)
-    f = mix(f, d, 0.35);
+    // MIX
+    f = mix(f, d, 0.45);
 
-    // 🔥 CONTRAST (not too harsh)
-    f = smoothstep(0.15, 0.85, f);
+    // 🔥 MICRO BREAKUP (kills smooth)
+    float grain = hash(uv * 120.0) * 0.05;
+    f += grain;
+
+    // CONTRAST BOOST
+    f = smoothstep(0.1, 0.9, f);
 
     // COLORS
     vec3 deep;
@@ -75,31 +86,25 @@ void main(){
 
     vec3 color = mix(deep, light, f);
 
-    // 🔥 THIN VEINS (NOT BLOBS)
-    float edge =
-        smoothstep(0.48, 0.5, f) -
-        smoothstep(0.5, 0.52, f);
+    // 🔥 STRONG SHARP VEINS
+    float v1 = abs(f - 0.5);
+    float veins = smoothstep(0.02, 0.0, v1);
 
-    // add multiple subtle layers
-    float edge2 =
-        smoothstep(0.28, 0.3, f) -
-        smoothstep(0.3, 0.32, f);
+    float v2 = abs(f - 0.3);
+    veins += smoothstep(0.015, 0.0, v2);
 
-    float edge3 =
-        smoothstep(0.68, 0.7, f) -
-        smoothstep(0.7, 0.72, f);
-
-    float veins = edge + edge2 + edge3;
+    float v3 = abs(f - 0.7);
+    veins += smoothstep(0.015, 0.0, v3);
 
     vec3 gold = vec3(1.0, 0.85, 0.25);
-    color += veins * gold * 1.5;
+    color += veins * gold * 2.0;
 
-    // 🔥 DEPTH
-    color *= 0.6 + f * 0.8;
+    // 🔥 DEPTH SHADING
+    color *= 0.5 + f * 1.2;
 
-    // 🔥 GLOSS (resin shine)
-    float gloss = pow(f, 5.0);
-    color += gloss * 0.25;
+    // 🔥 GLOSS (stronger highlight)
+    float gloss = pow(f, 6.0);
+    color += gloss * 0.35;
 
     gl_FragColor = vec4(color,1.0);
 }
