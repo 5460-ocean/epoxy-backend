@@ -1,4 +1,4 @@
-alert("EPOXY ULTRA REALISM");
+alert("EPOXY MASTER FINAL");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -8,7 +8,7 @@ canvas.height = 300;
 gl.viewport(0, 0, canvas.width, canvas.height);
 
 let themeValue = 0;
-let seedValue = 0.0;
+let seedValue = Math.random();
 
 const vertexShaderSource = `
 attribute vec2 position;
@@ -25,8 +25,8 @@ uniform float theme;
 uniform float seed;
 
 vec2 flow(vec2 p, float t){
-    p.x += sin(p.y * 4.0 + t) * 0.15;
-    p.y += cos(p.x * 4.0 - t) * 0.15;
+    p.x += sin(p.y * 4.0 + t) * 0.12;
+    p.y += cos(p.x * 4.0 - t) * 0.12;
     return p;
 }
 
@@ -34,12 +34,12 @@ float hash(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
-// 🔥 FIELD (used everywhere = consistency)
+// 🔥 FIELD
 float field(vec2 uv, float t){
 
     uv = flow(uv, t);
     uv = flow(uv * 1.3, t * 0.7);
-    uv = flow(uv * 1.6, t * 0.4);
+    uv = flow(uv * 1.7, t * 0.4);
 
     float f =
         sin(uv.x * 2.5 + t) +
@@ -48,14 +48,15 @@ float field(vec2 uv, float t){
     f = f * 0.5 + 0.5;
 
     float d =
-        sin(uv.x * 9.0 - t * 0.7) *
-        cos(uv.y * 9.0 + t * 0.5);
+        sin(uv.x * 10.0 - t) *
+        cos(uv.y * 10.0 + t);
 
     d = d * 0.5 + 0.5;
 
     f = mix(f, d, 0.5);
 
-    f += hash(uv * 150.0) * 0.05;
+    // seed influence (IMPORTANT)
+    f += seed * 0.15;
 
     return smoothstep(0.05, 0.95, f);
 }
@@ -63,18 +64,18 @@ float field(vec2 uv, float t){
 void main(){
 
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
-    float t = time * 0.6 + seed * 10.0;
+    float t = time * 0.5 + seed * 20.0;
 
     float f = field(uv, t);
 
-    // 🔥 PIGMENT DENSITY (depth illusion)
-    float density = pow(f, 1.8); // thicker zones darker
+    // 🔥 PIGMENT DENSITY
+    float density = pow(f, 2.0);
 
     vec3 deep = vec3(0.01,0.03,0.1);
-    vec3 light = vec3(0.0,0.75,1.0);
+    vec3 light = vec3(0.0,0.8,1.0);
 
     if(theme > 0.5){
-        deep = vec3(0.25,0.02,0.02);
+        deep = vec3(0.3,0.02,0.02);
         light = vec3(1.0,0.5,0.0);
     }
     if(theme > 1.5){
@@ -84,46 +85,58 @@ void main(){
 
     vec3 color = mix(deep, light, density);
 
-    // 🔥 THICK METALLIC VEINS (embedded)
-    float band = smoothstep(0.02, 0.0, abs(f - 0.5));
-    float band2 = smoothstep(0.04, 0.0, abs(f - 0.5));
+    // 🔥 THICK GOLD (multi-layer)
+    float band1 = smoothstep(0.03, 0.0, abs(f - 0.5));
+    float band2 = smoothstep(0.06, 0.0, abs(f - 0.5));
 
-    float veins = band * 0.6 + band2 * 0.4;
+    float veins = band1 * 0.7 + band2 * 0.5;
 
-    // irregular breakup
-    veins *= 0.6 + hash(uv * 30.0) * 0.8;
+    // breakup (no uniform lines)
+    veins *= 0.6 + hash(uv * 25.0 + seed) * 0.8;
 
-    // 🔥 GOLD (multi-tone metallic)
-    vec3 goldA = vec3(1.0, 0.85, 0.25);
-    vec3 goldB = vec3(0.8, 0.6, 0.1);
+    vec3 goldA = vec3(1.0, 0.85, 0.3);
+    vec3 goldB = vec3(0.7, 0.5, 0.1);
 
     vec3 gold = mix(goldA, goldB, f);
 
-    // blend INTO material (not overlay)
-    color = mix(color, gold, veins * 0.8);
+    color = mix(color, gold, veins);
 
-    // 🔥 FAKE NORMALS
-    float e = 0.002;
+    // 🔥 SHARP EDGES
+    float edge = smoothstep(0.48, 0.5, f) - smoothstep(0.5, 0.52, f);
+    color += edge * 0.2;
+
+    // 🔥 PIGMENT STREAKS (flow direction)
+    float streak =
+        sin(uv.x * 20.0 + t) *
+        sin(uv.y * 5.0 - t);
+
+    color += streak * 0.05;
+
+    // 🔥 FAKE NORMALS (FIXED - no mesh)
+    float e = 0.001; // smaller = smoother
+
     float fx = field(uv + vec2(e,0.0), t);
     float fy = field(uv + vec2(0.0,e), t);
 
     vec3 normal = normalize(vec3(
-        (fx - f) / e,
-        (fy - f) / e,
+        (fx - f),
+        (fy - f),
         1.0
     ));
 
-    vec3 lightDir = normalize(vec3(-0.5, 0.6, 1.0));
+    vec3 lightDir = normalize(vec3(-0.4, 0.6, 1.0));
     float diffuse = max(dot(normal, lightDir), 0.0);
 
-    // 🔥 STRONG SPECULAR (metal feel)
+    // 🔥 STRONG GLOSS
     vec3 viewDir = vec3(0.0,0.0,1.0);
     vec3 reflectDir = reflect(-lightDir, normal);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 30.0);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 40.0);
 
-    color *= 0.5 + diffuse * 1.0;
-    color += spec * 0.8 * veins; // stronger on veins
+    color *= 0.5 + diffuse * 1.2;
+
+    // ✨ stronger on gold
+    color += spec * (0.3 + veins * 1.2);
 
     gl_FragColor = vec4(color,1.0);
 }
@@ -180,7 +193,8 @@ function render(){
 }
 render();
 
+// 🔥 FIX GENERATE
 document.querySelector("button").onclick = function(){
     themeValue = (themeValue + 1.0) % 3.0;
-    seedValue = Math.random();
+    seedValue = Math.random(); // NOW ACTUALLY CHANGES OUTPUT
 };
