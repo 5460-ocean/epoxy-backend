@@ -1,4 +1,4 @@
-alert("EPOXY FINAL POLISH");
+alert("EPOXY FINAL COMPLETE");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -35,11 +35,16 @@ float hash(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
+// 🔥 FIELD (stretched = real flow)
 float field(vec2 uv, float t){
 
     uv = flow(uv, t);
     uv = flow(uv * 1.4, t * 0.6);
     uv = flow(uv * 1.8, t * 0.3);
+
+    // 👉 stretch (IMPORTANT)
+    uv.x *= 1.6;
+    uv.y *= 0.8;
 
     float f =
         sin(uv.x * 2.2 + t) +
@@ -57,7 +62,11 @@ float field(vec2 uv, float t){
 
     f += seed * 0.2;
 
-    return smoothstep(0.08, 0.92, f);
+    // 🔥 strong contrast (epoxy depth)
+    f = clamp(f, 0.0, 1.0);
+    f = pow(f, 2.4);
+
+    return f;
 }
 
 void main(){
@@ -67,8 +76,8 @@ void main(){
 
     float f = field(uv, t);
 
-    // 🔥 STRONGER DEPTH
-    float density = pow(f, 2.2);
+    // 🔥 deep pigment density
+    float density = pow(f, 3.0);
 
     vec3 deep = vec3(0.01,0.03,0.12);
     vec3 light = vec3(0.0,0.85,1.0);
@@ -84,32 +93,39 @@ void main(){
 
     vec3 color = mix(deep, light, density);
 
-    // 🔥 REAL GOLD (NOT YELLOW)
-    float band1 = smoothstep(0.025, 0.0, abs(f - 0.5));
-    float band2 = smoothstep(0.05, 0.0, abs(f - 0.5));
+    // 🔥 REAL METALLIC GOLD
+    float v = abs(f - 0.5);
 
-    float veins = band1 * 0.7 + band2 * 0.6;
+    float veins =
+        smoothstep(0.035, 0.0, v) +
+        smoothstep(0.07, 0.0, v);
 
-    veins *= 0.6 + hash(uv * 30.0 + seed) * 0.8;
+    veins *= 0.6 + hash(uv * 20.0 + seed) * 1.2;
 
-    vec3 goldDark  = vec3(0.6, 0.45, 0.1);
-    vec3 goldMid   = vec3(0.8, 0.65, 0.2);
-    vec3 goldBright= vec3(1.0, 0.9, 0.4);
+    vec3 goldDark  = vec3(0.35, 0.25, 0.05);
+    vec3 goldMid   = vec3(0.7, 0.55, 0.15);
+    vec3 goldBright= vec3(1.2, 1.0, 0.6);
 
-    vec3 gold = mix(goldDark, goldBright, pow(f, 1.5));
-    gold = mix(gold, goldMid, 0.5);
+    float shimmer = sin((uv.x + uv.y) * 40.0 + time * 2.0);
 
-    color = mix(color, gold, veins);
+    vec3 gold = mix(goldDark, goldMid, f);
+    gold = mix(gold, goldBright, shimmer * 0.5 + 0.5);
 
-    // 🔥 CRISP EDGES (resin boundaries)
-    float edge = smoothstep(0.49, 0.5, f) - smoothstep(0.5, 0.51, f);
-    color += edge * 0.3;
+    // embed (not overlay)
+    color = mix(color * 0.8, gold, veins);
 
-    // 🔥 PIGMENT STREAKS (diagonal aligned)
+    // 🔥 CRISP RESIN EDGES
+    float edgeSharp =
+        smoothstep(0.495, 0.5, f) -
+        smoothstep(0.5, 0.505, f);
+
+    color += edgeSharp * vec3(0.25);
+
+    // 🔥 PIGMENT STREAKS (diagonal flow)
     float streak = sin((uv.x + uv.y) * 25.0 + t);
     color += streak * 0.04;
 
-    // 🔥 NORMALS (stable)
+    // 🔥 FAKE NORMALS (stable, no mesh)
     float e = 0.001;
 
     float fx = field(uv + vec2(e,0.0), t);
@@ -131,7 +147,7 @@ void main(){
 
     color *= 0.5 + diffuse * 1.3;
 
-    // ✨ GOLD-SENSITIVE SHINE
+    // stronger shine on gold
     color += spec * (0.2 + veins * 1.5);
 
     gl_FragColor = vec4(color,1.0);
