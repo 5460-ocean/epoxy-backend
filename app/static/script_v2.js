@@ -1,4 +1,4 @@
-alert("STABLE EPOXY RESET");
+alert("STRUCTURE PASS");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -37,15 +37,7 @@ float field(vec2 uv, float t){
         sin(uv.x * 2.0 + t) +
         cos(uv.y * 2.0 - t);
 
-    f = f * 0.5 + 0.5;
-
-    float d =
-        sin(uv.x * 5.0 - t) *
-        cos(uv.y * 5.0 + t);
-
-    d = d * 0.5 + 0.5;
-
-    return mix(f, d, 0.5);
+    return f * 0.5 + 0.5;
 }
 
 void main(){
@@ -55,41 +47,22 @@ void main(){
 
     float f = field(uv, t);
 
-    // 🎨 DEEP RESIN COLORS
-    float density = pow(f, 1.5);
+    // 🔥 STRUCTURE COMPRESSION (THIS IS THE KEY)
+    float shaped = smoothstep(0.2, 0.8, f);
 
+    // 🎨 COLORS (keep simple for now)
     vec3 deep  = vec3(0.02, 0.05, 0.12);
-    vec3 mid   = vec3(0.0, 0.45, 0.85);
-    vec3 light = vec3(0.3, 0.9, 1.0);
+    vec3 light = vec3(0.2, 0.8, 1.0);
 
-    vec3 color = mix(deep, mid, density);
-    color = mix(color, light, density * density);
+    vec3 color = mix(deep, light, shaped);
 
-    // 🔍 EDGE DETECTION (BALANCED)
-    float e = 0.0015;
+    // 🔥 EDGE THICKENING (NOT LINES)
+    float edge = abs(f - shaped);
 
-    float fx = field(uv + vec2(e,0.0), t);
-    float fy = field(uv + vec2(0.0,e), t);
+    float band = smoothstep(0.02, 0.08, edge);
 
-    float edge = abs(fx - f) + abs(fy - f);
-
-    // 👉 controlled veins (NOT everywhere)
-    float veins = smoothstep(0.02, 0.05, edge);
-
-    // ✨ METALLIC GOLD (SUBTLE)
-    vec3 gold = vec3(1.0, 0.82, 0.25);
-
-    color = mix(color, gold, veins * 0.4);
-
-    // 💡 GLOSS
-    vec3 normal = normalize(vec3(fx - f, fy - f, 1.0));
-
-    vec3 lightDir = normalize(vec3(-0.4, 0.6, 1.0));
-    vec3 reflectDir = reflect(-lightDir, normal);
-
-    float spec = pow(max(dot(vec3(0,0,1), reflectDir), 0.0), 60.0);
-
-    color += spec * 0.4;
+    // darken boundaries slightly → gives separation
+    color *= (1.0 - band * 0.4);
 
     gl_FragColor = vec4(color,1.0);
 }
