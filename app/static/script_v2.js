@@ -1,4 +1,4 @@
-alert("FIX: remove black edges + resin blending");
+alert("FIX: no dFdx + proper blending");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -70,23 +70,26 @@ void main(){
 
     float f = field(uv, t);
 
-    // 🔥 smoother structure (no harsh cutoff)
     float shaped = smoothstep(0.25, 0.75, f);
 
     vec3 deep  = vec3(0.02, 0.05, 0.12);
     vec3 mid   = vec3(0.0, 0.5, 0.9);
     vec3 light = vec3(0.3, 0.9, 1.0);
 
-    // 🎨 layered blending (resin feel)
     vec3 color = mix(deep, mid, shaped);
     color = mix(color, light, shaped * shaped);
 
-    // 🔥 SOFT EDGE BLENDING (no black lines)
-    float edge = abs(dFdx(f)) + abs(dFdy(f));
+    // 🔥 manual edge detection (SAFE)
+    float e = 0.002;
+
+    float fx = field(uv + vec2(e,0.0), t);
+    float fy = field(uv + vec2(0.0,e), t);
+
+    float edge = abs(fx - f) + abs(fy - f);
 
     float softEdge = smoothstep(0.01, 0.05, edge);
 
-    // instead of darkening → blend color slightly
+    // soft blend instead of black borders
     color = mix(color, color * 0.85, softEdge * 0.3);
 
     gl_FragColor = vec4(color,1.0);
