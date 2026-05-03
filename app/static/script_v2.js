@@ -1,4 +1,4 @@
-alert("EPOXY CRISP + GLOSS");
+alert("EPOXY HARD STRUCTURE");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -7,7 +7,6 @@ canvas.width = window.innerWidth;
 canvas.height = 300;
 gl.viewport(0, 0, canvas.width, canvas.height);
 
-let themeValue = 0;
 let seedValue = Math.random();
 
 const vertexShaderSource = `
@@ -24,19 +23,15 @@ uniform float time;
 uniform float seed;
 
 vec2 flow(vec2 p, float t){
-    p.x += sin(p.y * 3.0 + t) * 0.1;
-    p.y += cos(p.x * 3.0 - t) * 0.1;
+    p.x += sin(p.y * 2.5 + t) * 0.1;
+    p.y += cos(p.x * 2.5 - t) * 0.1;
     return p;
-}
-
-float hash(vec2 p){
-    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
 float field(vec2 uv, float t){
 
     uv = flow(uv, t);
-    uv = flow(uv * 1.3, t * 0.5);
+    uv = flow(uv * 1.4, t * 0.6);
 
     uv.x *= 1.2;
     uv.y *= 0.9;
@@ -48,8 +43,8 @@ float field(vec2 uv, float t){
     f = f * 0.5 + 0.5;
 
     float d =
-        sin(uv.x * 6.0 - t) *
-        cos(uv.y * 6.0 + t);
+        sin(uv.x * 7.0 - t) *
+        cos(uv.y * 7.0 + t);
 
     d = d * 0.5 + 0.5;
 
@@ -57,9 +52,7 @@ float field(vec2 uv, float t){
 
     f += seed * 0.15;
 
-    // 🔥 HARD contrast (no blur)
     f = clamp(f, 0.0, 1.0);
-    f = pow(f, 3.0);
 
     return f;
 }
@@ -71,20 +64,17 @@ void main(){
 
     float f = field(uv, t);
 
-    // 🔥 COLOR (deeper)
+    // 🔥 HARD COLOR SEGMENTS (NO SMOOTH BLEND)
+    float bands = floor(f * 4.0) / 4.0;
+
     vec3 deep = vec3(0.01,0.02,0.08);
     vec3 light = vec3(0.0,0.7,1.0);
 
-    vec3 color = mix(deep, light, f);
+    vec3 color = mix(deep, light, bands);
 
-    // 🔥 SHARP VEINS (thin, not blobs)
-    float v = abs(f - 0.5);
-
-    float veins =
-        smoothstep(0.02, 0.0, v) +
-        smoothstep(0.04, 0.0, v);
-
-    veins *= 0.7 + hash(uv * 12.0) * 0.6;
+    // 🔥 SHARP SEPARATION LINES
+    float edge = abs(fract(f * 4.0) - 0.5);
+    edge = smoothstep(0.02, 0.0, edge);
 
     // 🔥 NORMALS
     float e = 0.001;
@@ -97,30 +87,26 @@ void main(){
         1.0
     ));
 
-    // 🔥 REAL METALLIC GOLD
+    // 🔥 GOLD ONLY IN EDGES (REALISTIC)
     vec3 goldDark = vec3(0.3, 0.22, 0.05);
     vec3 goldBright = vec3(1.0, 0.85, 0.3);
 
-    float specBand = pow(max(dot(normal, normalize(vec3(0.7,0.3,1.0))),0.0),10.0);
+    float specBand = pow(max(dot(normal, normalize(vec3(0.6,0.4,1.0))),0.0),12.0);
 
     vec3 gold = mix(goldDark, goldBright, specBand);
 
-    color = mix(color, gold, veins);
+    // apply gold ONLY on edges
+    color = mix(color, gold, edge);
 
-    // 🔥 STRONG GLOSS (BIG FIX)
+    // 🔥 STRONG GLOSS
     vec3 lightDir = normalize(vec3(-0.5, 0.6, 1.0));
     vec3 viewDir = vec3(0.0,0.0,1.0);
 
     vec3 reflectDir = reflect(-lightDir, normal);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 60.0);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 80.0);
 
-    // stronger shine on veins
-    color += spec * (0.2 + veins * 2.0);
-
-    // 🔥 EDGE SHARPEN (remove smear)
-    float edge = abs(fx - f) + abs(fy - f);
-    color += edge * 0.5;
+    color += spec * (0.3 + edge * 2.0);
 
     gl_FragColor = vec4(color,1.0);
 }
