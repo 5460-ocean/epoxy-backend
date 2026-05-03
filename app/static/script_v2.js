@@ -1,4 +1,4 @@
-alert("EPOXY TRUE FINAL");
+alert("EPOXY RECOVERED + IMPROVED");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -25,8 +25,8 @@ uniform float theme;
 uniform float seed;
 
 vec2 flow(vec2 p, float t){
-    p.x += sin((p.y + p.x) * 3.0 + t) * 0.15;
-    p.y += cos((p.x - p.y) * 3.0 - t) * 0.15;
+    p.x += sin((p.y + p.x) * 2.5 + t) * 0.12;
+    p.y += cos((p.x - p.y) * 2.5 - t) * 0.12;
     return p;
 }
 
@@ -34,39 +34,34 @@ float hash(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
-// 🔥 FIELD (fixed: stretch + drift)
 float field(vec2 uv, float t){
 
     uv = flow(uv, t);
-    uv = flow(uv * 1.4, t * 0.6);
-    uv = flow(uv * 1.8, t * 0.3);
+    uv = flow(uv * 1.3, t * 0.6);
+    uv = flow(uv * 1.6, t * 0.3);
 
-    // 👉 directional drift (FIX 3)
-    uv += vec2(0.4, -0.7) * t * 0.2;
-
-    // 👉 stretch (FIX 1)
-    uv.x *= 1.6;
-    uv.y *= 0.8;
+    // mild stretch (NOT destructive)
+    uv.x *= 1.2;
+    uv.y *= 0.9;
 
     float f =
-        sin(uv.x * 2.2 + t) +
-        cos(uv.y * 2.2 - t);
+        sin(uv.x * 2.0 + t) +
+        cos(uv.y * 2.0 - t);
 
     f = f * 0.5 + 0.5;
 
     float d =
-        sin(uv.x * 10.0 - t) *
-        cos(uv.y * 10.0 + t);
+        sin(uv.x * 8.0 - t) *
+        cos(uv.y * 8.0 + t);
 
     d = d * 0.5 + 0.5;
 
-    f = mix(f, d, 0.55);
+    f = mix(f, d, 0.5);
 
-    f += seed * 0.2;
+    f += seed * 0.15;
 
-    // 👉 strong epoxy contrast (FIX 2)
     f = clamp(f, 0.0, 1.0);
-    f = pow(f, 2.4);
+    f = pow(f, 2.2);
 
     return f;
 }
@@ -74,33 +69,22 @@ float field(vec2 uv, float t){
 void main(){
 
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
-    float t = time * 0.5 + seed * 15.0;
+    float t = time * 0.5 + seed * 10.0;
 
     float f = field(uv, t);
 
-    // 🔥 depth
-    float density = pow(f, 3.0);
+    float density = pow(f, 2.5);
 
     vec3 deep = vec3(0.01,0.03,0.12);
-    vec3 light = vec3(0.0,0.85,1.0);
-
-    if(theme > 0.5){
-        deep = vec3(0.3,0.02,0.02);
-        light = vec3(1.0,0.5,0.0);
-    }
-    if(theme > 1.5){
-        deep = vec3(0.1,0.0,0.2);
-        light = vec3(0.9,0.0,1.0);
-    }
+    vec3 light = vec3(0.0,0.8,1.0);
 
     vec3 color = mix(deep, light, density);
 
-    // 🔥 VEINS (FIX 1 — no circles)
-    float veins = f * (1.0 - f);
-    veins = pow(veins, 6.0);
-    veins *= 0.5 + hash(uv * 15.0 + seed) * 1.5;
+    // ✅ SOFT VEINS (no circles)
+    float veins = smoothstep(0.4, 0.6, f) - smoothstep(0.6, 0.7, f);
+    veins *= 0.6 + hash(uv * 10.0) * 0.6;
 
-    // 🔥 NORMALS (needed before gold)
+    // NORMALS
     float e = 0.001;
     float fx = field(uv + vec2(e,0.0), t);
     float fy = field(uv + vec2(0.0,e), t);
@@ -111,39 +95,35 @@ void main(){
         1.0
     ));
 
-    // 🔥 GOLD (FIX 2 — real metallic)
-    vec3 goldBase = vec3(0.5, 0.35, 0.1);
-    vec3 goldLight = vec3(1.0, 0.85, 0.4);
+    // ✅ METALLIC GOLD (less yellow)
+    vec3 goldDark = vec3(0.4, 0.3, 0.1);
+    vec3 goldLight = vec3(0.9, 0.75, 0.3);
 
-    float reflectBand = dot(normal, normalize(vec3(0.8,0.2,1.0)));
-    reflectBand = pow(max(reflectBand, 0.0), 8.0);
+    float reflectBand = dot(normal, normalize(vec3(0.6,0.4,1.0)));
+    reflectBand = pow(max(reflectBand, 0.0), 6.0);
 
-    vec3 gold = mix(goldBase, goldLight, reflectBand);
+    vec3 gold = mix(goldDark, goldLight, reflectBand);
 
     color = mix(color, gold, veins);
 
-    // 🔥 MICRO RIDGES (FIX 4)
+    // ✅ MICRO RIDGES (subtle, no grid)
     float ridges =
-        sin(uv.x * 80.0 + t) *
-        sin(uv.y * 60.0 - t);
+        sin(uv.x * 30.0 + t) *
+        sin(uv.y * 20.0 - t);
 
-    color += ridges * 0.015;
+    color += ridges * 0.01;
 
-    // 🔥 EDGE SHARPNESS (FIX 5)
-    float edge = abs(fx - f) + abs(fy - f);
-    color += edge * 0.3;
-
-    // 🔥 LIGHTING
-    vec3 lightDir = normalize(vec3(-0.4, 0.7, 1.0));
+    // LIGHTING
+    vec3 lightDir = normalize(vec3(-0.4, 0.6, 1.0));
     float diffuse = max(dot(normal, lightDir), 0.0);
 
     vec3 viewDir = vec3(0.0,0.0,1.0);
     vec3 reflectDir = reflect(-lightDir, normal);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 45.0);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 30.0);
 
-    color *= 0.5 + diffuse * 1.3;
-    color += spec * (0.2 + veins * 1.5);
+    color *= 0.6 + diffuse * 1.0;
+    color += spec * (0.2 + veins * 0.8);
 
     gl_FragColor = vec4(color,1.0);
 }
