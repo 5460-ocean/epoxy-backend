@@ -1,4 +1,4 @@
-alert("FORCED GOLD + DEPTH FIX");
+alert("STABLE EPOXY RESET");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -23,16 +23,15 @@ uniform float time;
 uniform float seed;
 
 vec2 flow(vec2 p, float t){
-    p.x += sin(p.y * 2.0 + t) * 0.15;
-    p.y += cos(p.x * 2.0 - t) * 0.15;
+    p.x += sin(p.y * 2.0 + t) * 0.12;
+    p.y += cos(p.x * 2.0 - t) * 0.12;
     return p;
 }
 
 float field(vec2 uv, float t){
-
     uv = flow(uv, t);
-    uv = flow(uv * 1.4, t * 0.6);
-    uv = flow(uv * 1.8, t * 0.3);
+    uv = flow(uv * 1.3, t * 0.6);
+    uv = flow(uv * 1.7, t * 0.3);
 
     float f =
         sin(uv.x * 2.0 + t) +
@@ -41,68 +40,56 @@ float field(vec2 uv, float t){
     f = f * 0.5 + 0.5;
 
     float d =
-        sin(uv.x * 6.0 - t) *
-        cos(uv.y * 6.0 + t);
+        sin(uv.x * 5.0 - t) *
+        cos(uv.y * 5.0 + t);
 
     d = d * 0.5 + 0.5;
 
-    return mix(f, d, 0.7);
+    return mix(f, d, 0.5);
 }
 
 void main(){
 
     vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
-    float t = time * 0.5 + seed * 10.0;
+    float t = time * 0.4 + seed * 10.0;
 
     float f = field(uv, t);
 
-    // 🔥 STRONG CONTRAST (fix flat look)
-    float density = pow(f, 1.3);
+    // 🎨 DEEP RESIN COLORS
+    float density = pow(f, 1.5);
 
-    vec3 deep  = vec3(0.01, 0.03, 0.08);
-    vec3 mid   = vec3(0.0, 0.55, 0.95);
-    vec3 light = vec3(0.4, 0.95, 1.0);
+    vec3 deep  = vec3(0.02, 0.05, 0.12);
+    vec3 mid   = vec3(0.0, 0.45, 0.85);
+    vec3 light = vec3(0.3, 0.9, 1.0);
 
     vec3 color = mix(deep, mid, density);
     color = mix(color, light, density * density);
 
-    // 🔥 MUCH STRONGER EDGE DETECTION
-    float e = 0.003;
+    // 🔍 EDGE DETECTION (BALANCED)
+    float e = 0.0015;
 
     float fx = field(uv + vec2(e,0.0), t);
     float fy = field(uv + vec2(0.0,e), t);
 
     float edge = abs(fx - f) + abs(fy - f);
 
-    // 🚀 FORCE VISIBILITY
-    edge *= 8.0;
+    // 👉 controlled veins (NOT everywhere)
+    float veins = smoothstep(0.02, 0.05, edge);
 
-    // 👉 THIS GUARANTEES GOLD APPEARS
-    float veins = smoothstep(0.02, 0.08, edge);
+    // ✨ METALLIC GOLD (SUBTLE)
+    vec3 gold = vec3(1.0, 0.82, 0.25);
 
-    // widen veins heavily
-    veins += smoothstep(0.08, 0.15, edge);
-
-    veins = clamp(veins, 0.0, 1.0);
-
-    vec3 normal = normalize(vec3(
-        fx - f,
-        fy - f,
-        1.0
-    ));
-
-    // ✨ STRONG GOLD (NOT SUBTLE ANYMORE)
-    vec3 gold = vec3(1.0, 0.85, 0.3);
-
-    color = mix(color, gold, veins);
+    color = mix(color, gold, veins * 0.4);
 
     // 💡 GLOSS
-    vec3 lightDir = normalize(vec3(-0.5, 0.7, 1.0));
+    vec3 normal = normalize(vec3(fx - f, fy - f, 1.0));
+
+    vec3 lightDir = normalize(vec3(-0.4, 0.6, 1.0));
     vec3 reflectDir = reflect(-lightDir, normal);
 
-    float spec = pow(max(dot(vec3(0,0,1), reflectDir), 0.0), 80.0);
+    float spec = pow(max(dot(vec3(0,0,1), reflectDir), 0.0), 60.0);
 
-    color += spec * 0.6;
+    color += spec * 0.4;
 
     gl_FragColor = vec4(color,1.0);
 }
