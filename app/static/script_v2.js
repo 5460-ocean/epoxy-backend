@@ -1,4 +1,4 @@
-alert("EPOXY RECOVERED + IMPROVED");
+alert("EPOXY CRISP + GLOSS");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -21,12 +21,11 @@ const fragmentShaderSource = `
 precision mediump float;
 
 uniform float time;
-uniform float theme;
 uniform float seed;
 
 vec2 flow(vec2 p, float t){
-    p.x += sin((p.y + p.x) * 2.5 + t) * 0.12;
-    p.y += cos((p.x - p.y) * 2.5 - t) * 0.12;
+    p.x += sin(p.y * 3.0 + t) * 0.1;
+    p.y += cos(p.x * 3.0 - t) * 0.1;
     return p;
 }
 
@@ -37,10 +36,8 @@ float hash(vec2 p){
 float field(vec2 uv, float t){
 
     uv = flow(uv, t);
-    uv = flow(uv * 1.3, t * 0.6);
-    uv = flow(uv * 1.6, t * 0.3);
+    uv = flow(uv * 1.3, t * 0.5);
 
-    // mild stretch (NOT destructive)
     uv.x *= 1.2;
     uv.y *= 0.9;
 
@@ -51,8 +48,8 @@ float field(vec2 uv, float t){
     f = f * 0.5 + 0.5;
 
     float d =
-        sin(uv.x * 8.0 - t) *
-        cos(uv.y * 8.0 + t);
+        sin(uv.x * 6.0 - t) *
+        cos(uv.y * 6.0 + t);
 
     d = d * 0.5 + 0.5;
 
@@ -60,8 +57,9 @@ float field(vec2 uv, float t){
 
     f += seed * 0.15;
 
+    // 🔥 HARD contrast (no blur)
     f = clamp(f, 0.0, 1.0);
-    f = pow(f, 2.2);
+    f = pow(f, 3.0);
 
     return f;
 }
@@ -73,18 +71,22 @@ void main(){
 
     float f = field(uv, t);
 
-    float density = pow(f, 2.5);
+    // 🔥 COLOR (deeper)
+    vec3 deep = vec3(0.01,0.02,0.08);
+    vec3 light = vec3(0.0,0.7,1.0);
 
-    vec3 deep = vec3(0.01,0.03,0.12);
-    vec3 light = vec3(0.0,0.8,1.0);
+    vec3 color = mix(deep, light, f);
 
-    vec3 color = mix(deep, light, density);
+    // 🔥 SHARP VEINS (thin, not blobs)
+    float v = abs(f - 0.5);
 
-    // ✅ SOFT VEINS (no circles)
-    float veins = smoothstep(0.4, 0.6, f) - smoothstep(0.6, 0.7, f);
-    veins *= 0.6 + hash(uv * 10.0) * 0.6;
+    float veins =
+        smoothstep(0.02, 0.0, v) +
+        smoothstep(0.04, 0.0, v);
 
-    // NORMALS
+    veins *= 0.7 + hash(uv * 12.0) * 0.6;
+
+    // 🔥 NORMALS
     float e = 0.001;
     float fx = field(uv + vec2(e,0.0), t);
     float fy = field(uv + vec2(0.0,e), t);
@@ -95,35 +97,30 @@ void main(){
         1.0
     ));
 
-    // ✅ METALLIC GOLD (less yellow)
-    vec3 goldDark = vec3(0.4, 0.3, 0.1);
-    vec3 goldLight = vec3(0.9, 0.75, 0.3);
+    // 🔥 REAL METALLIC GOLD
+    vec3 goldDark = vec3(0.3, 0.22, 0.05);
+    vec3 goldBright = vec3(1.0, 0.85, 0.3);
 
-    float reflectBand = dot(normal, normalize(vec3(0.6,0.4,1.0)));
-    reflectBand = pow(max(reflectBand, 0.0), 6.0);
+    float specBand = pow(max(dot(normal, normalize(vec3(0.7,0.3,1.0))),0.0),10.0);
 
-    vec3 gold = mix(goldDark, goldLight, reflectBand);
+    vec3 gold = mix(goldDark, goldBright, specBand);
 
     color = mix(color, gold, veins);
 
-    // ✅ MICRO RIDGES (subtle, no grid)
-    float ridges =
-        sin(uv.x * 30.0 + t) *
-        sin(uv.y * 20.0 - t);
-
-    color += ridges * 0.01;
-
-    // LIGHTING
-    vec3 lightDir = normalize(vec3(-0.4, 0.6, 1.0));
-    float diffuse = max(dot(normal, lightDir), 0.0);
-
+    // 🔥 STRONG GLOSS (BIG FIX)
+    vec3 lightDir = normalize(vec3(-0.5, 0.6, 1.0));
     vec3 viewDir = vec3(0.0,0.0,1.0);
+
     vec3 reflectDir = reflect(-lightDir, normal);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 30.0);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 60.0);
 
-    color *= 0.6 + diffuse * 1.0;
-    color += spec * (0.2 + veins * 0.8);
+    // stronger shine on veins
+    color += spec * (0.2 + veins * 2.0);
+
+    // 🔥 EDGE SHARPEN (remove smear)
+    float edge = abs(fx - f) + abs(fy - f);
+    color += edge * 0.5;
 
     gl_FragColor = vec4(color,1.0);
 }
@@ -163,7 +160,6 @@ gl.enableVertexAttribArray(pos);
 gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
 
 const timeLoc = gl.getUniformLocation(program,"time");
-const themeLoc = gl.getUniformLocation(program,"theme");
 const seedLoc = gl.getUniformLocation(program,"seed");
 
 let start = Date.now();
@@ -172,7 +168,6 @@ function render(){
     let t = (Date.now() - start) * 0.002;
 
     gl.uniform1f(timeLoc, t);
-    gl.uniform1f(themeLoc, themeValue);
     gl.uniform1f(seedLoc, seedValue);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -181,6 +176,5 @@ function render(){
 render();
 
 document.querySelector("button").onclick = function(){
-    themeValue = (themeValue + 1.0) % 3.0;
     seedValue = Math.random();
 };
