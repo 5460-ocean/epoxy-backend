@@ -1,4 +1,4 @@
-alert("STRUCTURE PASS");
+alert("ANTI GRID FLOW");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -22,22 +22,53 @@ precision mediump float;
 uniform float time;
 uniform float seed;
 
+// 🔥 pseudo noise (breaks grid)
+float noise(vec2 p){
+    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
+}
+
+// 🔥 smooth noise
+float smoothNoise(vec2 p){
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+
+    float a = noise(i);
+    float b = noise(i + vec2(1.0,0.0));
+    float c = noise(i + vec2(0.0,1.0));
+    float d = noise(i + vec2(1.0,1.0));
+
+    vec2 u = f*f*(3.0-2.0*f);
+
+    return mix(a,b,u.x) +
+           (c-a)*u.y*(1.0-u.x) +
+           (d-b)*u.x*u.y;
+}
+
+// 🔥 flow with distortion
 vec2 flow(vec2 p, float t){
-    p.x += sin(p.y * 2.0 + t) * 0.12;
-    p.y += cos(p.x * 2.0 - t) * 0.12;
+
+    float n = smoothNoise(p * 2.0 + t);
+
+    p += vec2(n - 0.5) * 0.5;
+
+    p.x += sin(p.y * 2.0 + t) * 0.1;
+    p.y += cos(p.x * 2.0 - t) * 0.1;
+
+    // diagonal stretch
+    p += vec2(0.3, -0.2) * t * 0.1;
+
     return p;
 }
 
 float field(vec2 uv, float t){
+
     uv = flow(uv, t);
-    uv = flow(uv * 1.3, t * 0.6);
-    uv = flow(uv * 1.7, t * 0.3);
+    uv = flow(uv * 1.5, t * 0.6);
+    uv = flow(uv * 2.0, t * 0.3);
 
-    float f =
-        sin(uv.x * 2.0 + t) +
-        cos(uv.y * 2.0 - t);
+    float f = smoothNoise(uv * 3.0);
 
-    return f * 0.5 + 0.5;
+    return f;
 }
 
 void main(){
@@ -47,22 +78,19 @@ void main(){
 
     float f = field(uv, t);
 
-    // 🔥 STRUCTURE COMPRESSION (THIS IS THE KEY)
-    float shaped = smoothstep(0.2, 0.8, f);
+    // 🔥 STRUCTURE
+    float shaped = smoothstep(0.3, 0.7, f);
 
-    // 🎨 COLORS (keep simple for now)
     vec3 deep  = vec3(0.02, 0.05, 0.12);
     vec3 light = vec3(0.2, 0.8, 1.0);
 
     vec3 color = mix(deep, light, shaped);
 
-    // 🔥 EDGE THICKENING (NOT LINES)
+    // subtle separation
     float edge = abs(f - shaped);
+    float band = smoothstep(0.03, 0.1, edge);
 
-    float band = smoothstep(0.02, 0.08, edge);
-
-    // darken boundaries slightly → gives separation
-    color *= (1.0 - band * 0.4);
+    color *= (1.0 - band * 0.3);
 
     gl_FragColor = vec4(color,1.0);
 }
