@@ -1,4 +1,4 @@
-alert("EPOXY BALANCED REALISM");
+alert("EPOXY STRUCTURE RESET");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -22,20 +22,19 @@ precision mediump float;
 uniform float time;
 uniform float seed;
 
+// FLOW
 vec2 flow(vec2 p, float t){
-    p.x += sin(p.y * 2.0 + t) * 0.15;
-    p.y += cos(p.x * 2.0 - t) * 0.15;
+    p.x += sin(p.y * 2.0 + t) * 0.12;
+    p.y += cos(p.x * 2.0 - t) * 0.12;
     return p;
 }
 
+// BASE FIELD
 float field(vec2 uv, float t){
 
     uv = flow(uv, t);
-    uv = flow(uv * 1.3, t * 0.6);
-    uv = flow(uv * 1.7, t * 0.3);
-
-    uv.x *= 1.2;
-    uv.y *= 0.9;
+    uv = flow(uv * 1.4, t * 0.6);
+    uv = flow(uv * 1.8, t * 0.3);
 
     float f =
         sin(uv.x * 2.0 + t) +
@@ -49,11 +48,7 @@ float field(vec2 uv, float t){
 
     d = d * 0.5 + 0.5;
 
-    f = mix(f, d, 0.6);
-
-    f += seed * 0.15;
-
-    return clamp(f, 0.0, 1.0);
+    return mix(f, d, 0.6);
 }
 
 void main(){
@@ -63,66 +58,53 @@ void main(){
 
     float f = field(uv, t);
 
-    // ✅ BALANCED COMPRESSION (not crushing)
-    float density = mix(pow(f, 1.2), pow(f, 2.0), 0.5);
+    // 🔥 HARD LAYER STRUCTURE (THIS FIXES BLUR)
+    float bands = floor(f * 5.0) / 5.0;
 
-    // ✅ TRUE RESIN COLORS (FIX NAVY ISSUE)
-    vec3 deep  = vec3(0.02, 0.05, 0.12);
-    vec3 mid   = vec3(0.0, 0.5, 0.9);
-    vec3 light = vec3(0.3, 0.9, 1.0);
+    // smooth edges slightly (not blur)
+    float layer = smoothstep(bands, bands + 0.05, f);
 
-    vec3 color = mix(deep, mid, density);
-    color = mix(color, light, density * density);
+    // 🎨 DEEP RESIN COLORS
+    vec3 c1 = vec3(0.02, 0.05, 0.12);
+    vec3 c2 = vec3(0.0, 0.4, 0.8);
+    vec3 c3 = vec3(0.2, 0.85, 1.0);
 
-    // 🔥 RIDGE DETECTION
-    float e = 0.001;
+    vec3 color = mix(c1, c2, layer);
+    color = mix(color, c3, layer * layer);
 
+    // 🔥 STRONG EDGE DETECTION
+    float e = 0.002;
     float fx = field(uv + vec2(e,0.0), t);
     float fy = field(uv + vec2(0.0,e), t);
 
-    float ridge = abs(fx - f) + abs(fy - f);
+    float edge = abs(fx - f) + abs(fy - f);
 
-    // amplify but not overkill
-    ridge = pow(ridge, 1.2);
-
-    // ✅ STRONG GOLD MASK (FIX "NO GOLD")
-    float veins = smoothstep(0.01, 0.04, ridge);
+    // 👉 THIS CREATES REAL VEIN ZONES
+    float veins = smoothstep(0.03, 0.08, edge);
 
     // widen veins
-    veins += smoothstep(0.04, 0.08, ridge) * 0.5;
+    veins = pow(veins, 0.7);
 
-    veins = clamp(veins, 0.0, 1.0);
-
-    // NORMALS
-    vec3 normal = normalize(vec3(
-        (fx - f),
-        (fy - f),
-        1.0
-    ));
-
-    // ✨ REAL METALLIC GOLD (NOT YELLOW)
-    vec3 goldDark = vec3(0.3, 0.22, 0.05);
+    // ✨ METALLIC GOLD
+    vec3 goldDark = vec3(0.25, 0.18, 0.04);
     vec3 goldBright = vec3(1.0, 0.85, 0.35);
 
-    float metal = pow(max(dot(normal, normalize(vec3(0.6,0.4,1.0))),0.0), 4.0);
+    vec3 normal = normalize(vec3(fx - f, fy - f, 1.0));
+
+    float metal = pow(max(dot(normal, normalize(vec3(0.5,0.5,1.0))),0.0), 6.0);
 
     vec3 gold = mix(goldDark, goldBright, metal);
 
-    // blend gold strongly
+    // 👉 GOLD IS THICK (NOT LINES)
     color = mix(color, gold, veins);
 
-    // 💡 STRONGER GLOSS (FIX METALLIC FEEL)
-    vec3 lightDir = normalize(vec3(-0.5, 0.6, 1.0));
-    vec3 viewDir = vec3(0.0,0.0,1.0);
-
+    // 💡 STRONG GLOSS
+    vec3 lightDir = normalize(vec3(-0.4, 0.6, 1.0));
     vec3 reflectDir = reflect(-lightDir, normal);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 60.0);
+    float spec = pow(max(dot(vec3(0,0,1), reflectDir), 0.0), 80.0);
 
-    color += spec * (0.4 + veins * 1.5);
-
-    // ✅ EDGE CONTRAST (reduce softness)
-    color += ridge * 0.4;
+    color += spec * (0.5 + veins * 1.5);
 
     gl_FragColor = vec4(color,1.0);
 }
