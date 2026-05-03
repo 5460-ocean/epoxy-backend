@@ -1,4 +1,4 @@
-alert("ANTI GRID FLOW");
+alert("FIX: remove black edges + resin blending");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -22,12 +22,10 @@ precision mediump float;
 uniform float time;
 uniform float seed;
 
-// 🔥 pseudo noise (breaks grid)
 float noise(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
 
-// 🔥 smooth noise
 float smoothNoise(vec2 p){
     vec2 i = floor(p);
     vec2 f = fract(p);
@@ -44,31 +42,25 @@ float smoothNoise(vec2 p){
            (d-b)*u.x*u.y;
 }
 
-// 🔥 flow with distortion
 vec2 flow(vec2 p, float t){
-
     float n = smoothNoise(p * 2.0 + t);
 
-    p += vec2(n - 0.5) * 0.5;
+    p += vec2(n - 0.5) * 0.4;
 
     p.x += sin(p.y * 2.0 + t) * 0.1;
     p.y += cos(p.x * 2.0 - t) * 0.1;
 
-    // diagonal stretch
     p += vec2(0.3, -0.2) * t * 0.1;
 
     return p;
 }
 
 float field(vec2 uv, float t){
-
     uv = flow(uv, t);
     uv = flow(uv * 1.5, t * 0.6);
     uv = flow(uv * 2.0, t * 0.3);
 
-    float f = smoothNoise(uv * 3.0);
-
-    return f;
+    return smoothNoise(uv * 3.0);
 }
 
 void main(){
@@ -78,19 +70,24 @@ void main(){
 
     float f = field(uv, t);
 
-    // 🔥 STRUCTURE
-    float shaped = smoothstep(0.3, 0.7, f);
+    // 🔥 smoother structure (no harsh cutoff)
+    float shaped = smoothstep(0.25, 0.75, f);
 
     vec3 deep  = vec3(0.02, 0.05, 0.12);
-    vec3 light = vec3(0.2, 0.8, 1.0);
+    vec3 mid   = vec3(0.0, 0.5, 0.9);
+    vec3 light = vec3(0.3, 0.9, 1.0);
 
-    vec3 color = mix(deep, light, shaped);
+    // 🎨 layered blending (resin feel)
+    vec3 color = mix(deep, mid, shaped);
+    color = mix(color, light, shaped * shaped);
 
-    // subtle separation
-    float edge = abs(f - shaped);
-    float band = smoothstep(0.03, 0.1, edge);
+    // 🔥 SOFT EDGE BLENDING (no black lines)
+    float edge = abs(dFdx(f)) + abs(dFdy(f));
 
-    color *= (1.0 - band * 0.3);
+    float softEdge = smoothstep(0.01, 0.05, edge);
+
+    // instead of darkening → blend color slightly
+    color = mix(color, color * 0.85, softEdge * 0.3);
 
     gl_FragColor = vec4(color,1.0);
 }
