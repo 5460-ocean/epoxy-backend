@@ -1,13 +1,11 @@
-alert("NOW USING ROOT INDEX.HTML");
+alert("SCRIPT RUNNING FINAL CHECK");
 
 const canvas = document.getElementById("canvas");
-const gl = canvas.getContext("webgl");
+const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = 300;
 
-gl.viewport(0,0,canvas.width,canvas.height);
-
-// 🔴 FULL RED SCREEN
-gl.clearColor(1,0,0,1);
-gl.clear(gl.COLOR_BUFFER_BIT);
+// 🔴 HARD RED DRAW (no WebGL)
+ctx.fillStyle = "red";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
