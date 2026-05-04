@@ -1,4 +1,4 @@
-alert("FLOW BASE OK");
+alert("FLOW FIXED (NO SPLIT)");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -18,8 +18,9 @@ const fragmentShaderSource = `
 precision mediump float;
 
 uniform float time;
+uniform vec2 resolution;
 
-// smooth noise
+// noise
 float noise(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
@@ -40,11 +41,10 @@ float smoothNoise(vec2 p){
            (d-b)*u.x*u.y;
 }
 
-// 🔥 TRUE FLOW FIELD
+// flow
 vec2 flow(vec2 uv, float t){
     float n = smoothNoise(uv * 2.0 + t);
 
-    // directional movement
     vec2 dir = vec2(
         sin(n * 6.28),
         cos(n * 6.28)
@@ -54,8 +54,6 @@ vec2 flow(vec2 uv, float t){
 }
 
 float field(vec2 uv, float t){
-
-    // apply flow multiple times (this creates real fluid feel)
     uv = flow(uv, t);
     uv = flow(uv, t * 0.8);
     uv = flow(uv, t * 0.6);
@@ -65,12 +63,13 @@ float field(vec2 uv, float t){
 
 void main(){
 
-    vec2 uv = gl_FragCoord.xy / vec2(800.0,300.0);
+    // 🔥 FIXED UV (uses real resolution)
+    vec2 uv = gl_FragCoord.xy / resolution;
+
     float t = time * 0.3;
 
     float f = field(uv, t);
 
-    // stronger shaping → removes "flat blobs"
     float shaped = smoothstep(0.25, 0.75, f);
 
     vec3 deep  = vec3(0.02, 0.05, 0.12);
@@ -116,6 +115,7 @@ gl.enableVertexAttribArray(pos);
 gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
 
 const timeLoc = gl.getUniformLocation(program,"time");
+const resLoc = gl.getUniformLocation(program,"resolution");
 
 let start = Date.now();
 
@@ -123,6 +123,7 @@ function render(){
     let t = (Date.now() - start) * 0.002;
 
     gl.uniform1f(timeLoc, t);
+    gl.uniform2f(resLoc, canvas.width, canvas.height);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(render);
