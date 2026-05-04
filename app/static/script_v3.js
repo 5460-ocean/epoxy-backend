@@ -1,10 +1,17 @@
-alert("FLOW FIXED (NO SPLIT)");
+alert("FULLSCREEN FIX");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
 
-canvas.width = window.innerWidth;
-canvas.height = 300;
+// 🔥 FIX: proper sizing
+const dpr = window.devicePixelRatio || 1;
+
+canvas.style.width = window.innerWidth + "px";
+canvas.style.height = "300px";
+
+canvas.width = window.innerWidth * dpr;
+canvas.height = 300 * dpr;
+
 gl.viewport(0, 0, canvas.width, canvas.height);
 
 const vertexShaderSource = `
@@ -63,7 +70,6 @@ float field(vec2 uv, float t){
 
 void main(){
 
-    // 🔥 FIXED UV (uses real resolution)
     vec2 uv = gl_FragCoord.xy / resolution;
 
     float t = time * 0.3;
