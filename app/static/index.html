@@ -1,56 +1,26 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Epoxy Generator</title>
-    <style>
-        body {
-            margin: 0;
-            background: #0b0f1a;
-            color: white;
-            font-family: Arial;
-            text-align: center;
-        }
+<body style="margin:0;background:black;">
 
-        h1 { margin: 10px; }
-
-        canvas {
-            display: block;
-            margin: 0 auto;
-        }
-
-        .controls {
-            margin: 10px;
-        }
-
-        button {
-            padding: 10px;
-            margin: 5px;
-            background: #1f2a44;
-            color: white;
-            border: none;
-            border-radius: 6px;
-        }
-
-        input {
-            padding: 8px;
-            width: 200px;
-        }
-    </style>
-</head>
-<body>
-
-<h1>Epoxy Generator</h1>
-
-<input id="prompt" placeholder="Describe epoxy style..." />
+<h1 style="color:red;text-align:center;">TEST MODE</h1>
 
 <canvas id="canvas"></canvas>
 
-<div class="controls">
-    <button id="generate">Generate</button>
-    <button id="download">Download</button>
-</div>
+<script>
+alert("INLINE SCRIPT RUNNING");
 
-<script src="/static/script_v3.js"></script>
+const canvas = document.getElementById("canvas");
+const gl = canvas.getContext("webgl");
+
+canvas.width = window.innerWidth;
+canvas.height = 300;
+
+gl.viewport(0,0,canvas.width,canvas.height);
+
+// FORCE RED SCREEN
+gl.clearColor(1,0,0,1);
+gl.clear(gl.COLOR_BUFFER_BIT);
+</script>
 
 </body>
 </html>
