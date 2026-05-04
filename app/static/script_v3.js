@@ -1,4 +1,4 @@
-alert("FINAL UV FIX (NO BOUNDARY)");
+alert("FINAL GEOMETRY FIX");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
@@ -18,7 +18,7 @@ attribute vec2 position;
 varying vec2 vUv;
 
 void main(){
-    vUv = position * 0.5 + 0.5; // convert -1..1 → 0..1
+    vUv = position * 0.5 + 0.5;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
@@ -29,7 +29,6 @@ precision mediump float;
 uniform float time;
 varying vec2 vUv;
 
-// noise
 float noise(vec2 p){
     return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
 }
@@ -50,7 +49,6 @@ float smoothNoise(vec2 p){
            (d-b)*u.x*u.y;
 }
 
-// flow
 vec2 flow(vec2 uv, float t){
     float n = smoothNoise(uv * 2.0 + t);
 
@@ -71,8 +69,7 @@ float field(vec2 uv, float t){
 }
 
 void main(){
-
-    vec2 uv = vUv; // 🔥 stable UV (no more screen issues)
+    vec2 uv = vUv;
 
     float t = time * 0.3;
 
@@ -89,6 +86,7 @@ void main(){
 }
 `;
 
+// --- shader compile ---
 function createShader(gl, type, src){
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
@@ -97,7 +95,6 @@ function createShader(gl, type, src){
     if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
         alert(gl.getShaderInfoLog(s));
     }
-
     return s;
 }
 
@@ -108,19 +105,31 @@ const program = gl.createProgram();
 gl.attachShader(program, vs);
 gl.attachShader(program, fs);
 gl.linkProgram(program);
+
+if(!gl.getProgramParameter(program, gl.LINK_STATUS)){
+    alert(gl.getProgramInfoLog(program));
+}
+
 gl.useProgram(program);
 
+// 🔥 IMPORTANT: bind AFTER useProgram
 const buffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
--1,-1, 1,-1, -1,1,
--1,1, 1,-1, 1,1
+    -1,-1,
+     1,-1,
+    -1, 1,
+    -1, 1,
+     1,-1,
+     1, 1
 ]), gl.STATIC_DRAW);
 
 const pos = gl.getAttribLocation(program,"position");
 gl.enableVertexAttribArray(pos);
-gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
+
+// 🔥 CRITICAL: re-bind pointer correctly
+gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
 
 const timeLoc = gl.getUniformLocation(program,"time");
 
@@ -129,9 +138,11 @@ let start = Date.now();
 function render(){
     let t = (Date.now() - start) * 0.002;
 
-    gl.uniform1f(timeLoc, t);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
+    gl.uniform1f(timeLoc, t);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+
     requestAnimationFrame(render);
 }
 render();
