@@ -1,9 +1,8 @@
-alert("FULLSCREEN FIX");
+alert("FINAL UV FIX (NO BOUNDARY)");
 
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
 
-// 🔥 FIX: proper sizing
 const dpr = window.devicePixelRatio || 1;
 
 canvas.style.width = window.innerWidth + "px";
@@ -16,7 +15,10 @@ gl.viewport(0, 0, canvas.width, canvas.height);
 
 const vertexShaderSource = `
 attribute vec2 position;
+varying vec2 vUv;
+
 void main(){
+    vUv = position * 0.5 + 0.5; // convert -1..1 → 0..1
     gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
@@ -25,7 +27,7 @@ const fragmentShaderSource = `
 precision mediump float;
 
 uniform float time;
-uniform vec2 resolution;
+varying vec2 vUv;
 
 // noise
 float noise(vec2 p){
@@ -70,7 +72,7 @@ float field(vec2 uv, float t){
 
 void main(){
 
-    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 uv = vUv; // 🔥 stable UV (no more screen issues)
 
     float t = time * 0.3;
 
@@ -121,7 +123,6 @@ gl.enableVertexAttribArray(pos);
 gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
 
 const timeLoc = gl.getUniformLocation(program,"time");
-const resLoc = gl.getUniformLocation(program,"resolution");
 
 let start = Date.now();
 
@@ -129,7 +130,6 @@ function render(){
     let t = (Date.now() - start) * 0.002;
 
     gl.uniform1f(timeLoc, t);
-    gl.uniform2f(resLoc, canvas.width, canvas.height);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(render);
