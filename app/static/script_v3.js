@@ -1,9 +1,15 @@
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
 
-// 🔥 FIX FULLSCREEN
-canvas.width = window.innerWidth;
-canvas.height = 300;
+// 🔥 FIX: real resolution
+const dpr = window.devicePixelRatio || 1;
+
+canvas.style.width = window.innerWidth + "px";
+canvas.style.height = "300px";
+
+canvas.width = window.innerWidth * dpr;
+canvas.height = 300 * dpr;
+
 gl.viewport(0, 0, canvas.width, canvas.height);
 
 const vs = `
@@ -11,7 +17,7 @@ attribute vec2 p;
 varying vec2 vUv;
 
 void main(){
-  vUv = p * 0.5 + 0.5; // 🔥 stable UV
+  vUv = p * 0.5 + 0.5;
   gl_Position = vec4(p,0.0,1.0);
 }
 `;
@@ -43,11 +49,9 @@ float noise(vec2 p){
          (d-b)*u.x*u.y;
 }
 
-// 🔥 STRONG FLOW FIELD
 vec2 flow(vec2 uv){
-  float n = noise(uv * 3.0 + t * 0.4);
+  float n = noise(uv * 3.0 + t * 0.5);
   float angle = n * 6.2831;
-
   return vec2(cos(angle), sin(angle));
 }
 
@@ -55,23 +59,20 @@ void main(){
 
   vec2 uv = vUv;
 
-  // 🔥 MULTI STEP FLOW (continuous)
-  for(int i=0; i<5; i++){
-    uv += flow(uv) * 0.05;
+  // 🔥 continuous flow (stronger + stable)
+  for(int i=0;i<6;i++){
+    uv += flow(uv) * 0.04;
   }
 
   float n = noise(uv * 5.0);
 
-  // 🔥 CONTRAST COMPRESSION (kills softness)
   float shaped = smoothstep(0.3, 0.7, n);
 
-  // 🎨 resin colors
-  vec3 deep  = vec3(0.01,0.03,0.08);
-  vec3 aqua  = vec3(0.0,0.8,1.0);
+  vec3 deep = vec3(0.01,0.03,0.08);
+  vec3 aqua = vec3(0.0,0.8,1.0);
 
   vec3 col = mix(deep, aqua, shaped);
 
-  // 🔥 depth boost
   col *= 1.3;
 
   gl_FragColor = vec4(col,1.0);
