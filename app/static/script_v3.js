@@ -41,31 +41,16 @@ float noise(vec2 p){
 void main(){
   vec2 uv = gl_FragCoord.xy / r.xy;
 
-  // 🔥 STRONG diagonal flow direction
-  vec2 flow = vec2(0.8, 0.6);
+  // 🔥 FORCE CLEAR MOTION
+  uv.x += t * 0.2;
+  uv.y += t * 0.1;
 
-  // 🔥 MOVE EVERYTHING CONSISTENTLY
-  uv += flow * t * 0.2;
+  float n = noise(uv * 4.0);
 
-  // 🔥 STRETCH space (no blobs)
-  uv *= vec2(3.0, 1.5);
+  vec3 deep = vec3(0.02,0.05,0.1);
+  vec3 aqua = vec3(0.0,0.8,1.0);
 
-  float n = noise(uv);
-  float n2 = noise(uv * 2.0);
-
-  float f = n + n2 * 0.5;
-
-  // 🔥 smoother transitions (liquid feel)
-  float mixv = smoothstep(0.3, 0.7, f);
-
-  // 🎨 deep resin colors
-  vec3 deep = vec3(0.01, 0.03, 0.08);
-  vec3 aqua = vec3(0.0, 0.75, 0.95);
-
-  vec3 col = mix(deep, aqua, mixv);
-
-  // 🔥 increase depth
-  col *= 1.2;
+  vec3 col = mix(deep, aqua, n);
 
   gl_FragColor = vec4(col,1.0);
 }
@@ -98,12 +83,19 @@ gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
 const ut = gl.getUniformLocation(prog,"t");
 const ur = gl.getUniformLocation(prog,"r");
 
-function draw(time){
-  gl.uniform1f(ut, time * 0.001);
+let start = performance.now();
+
+function draw(){
+  let now = performance.now();
+  let time = (now - start) * 0.001;
+
+  gl.uniform1f(ut, time);
   gl.uniform2f(ur, canvas.width, canvas.height);
 
   gl.drawArrays(gl.TRIANGLES,0,6);
+
   requestAnimationFrame(draw);
 }
 
-draw(0);
+// 🔥 START LOOP
+draw();
