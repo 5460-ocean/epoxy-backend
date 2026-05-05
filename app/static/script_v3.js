@@ -1,10 +1,9 @@
-alert("ONLY SCRIPT ACTIVE");
+alert("NUCLEAR RESET");
 
-// 🔥 REMOVE ANY EXISTING CANVAS
-const oldCanvas = document.getElementById("canvas");
-oldCanvas.remove();
+// 🔥 REMOVE ALL CANVASES (not just one)
+document.querySelectorAll("canvas").forEach(c => c.remove());
 
-// 🔥 CREATE NEW CLEAN CANVAS
+// 🔥 CREATE ONE CLEAN CANVAS
 const canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
 
@@ -13,6 +12,6 @@ canvas.height = 300;
 
 const ctx = canvas.getContext("2d");
 
-// 🔴 FORCE RED (nothing else can override now)
+// 🔴 FORCE FULL RED
 ctx.fillStyle = "red";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
