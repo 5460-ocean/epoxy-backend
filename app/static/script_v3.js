@@ -1,17 +1,14 @@
-alert("NUCLEAR RESET");
+alert("CLEAN PIPELINE");
 
-// 🔥 REMOVE ALL CANVASES (not just one)
-document.querySelectorAll("canvas").forEach(c => c.remove());
-
-// 🔥 CREATE ONE CLEAN CANVAS
-const canvas = document.createElement("canvas");
-document.body.appendChild(canvas);
+// use EXISTING canvas (important)
+const canvas = document.getElementById("canvas");
+const gl = canvas.getContext("webgl");
 
 canvas.width = window.innerWidth;
 canvas.height = 300;
 
-const ctx = canvas.getContext("2d");
+gl.viewport(0, 0, canvas.width, canvas.height);
 
-// 🔴 FORCE FULL RED
-ctx.fillStyle = "red";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
+// 🔴 simple proof draw (WebGL)
+gl.clearColor(1.0, 0.0, 0.0, 1.0);
+gl.clear(gl.COLOR_BUFFER_BIT);
