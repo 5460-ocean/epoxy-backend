@@ -1,24 +1,28 @@
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
 
+// 🔥 FIX FULLSCREEN
 canvas.width = window.innerWidth;
 canvas.height = 300;
-
 gl.viewport(0, 0, canvas.width, canvas.height);
 
 const vs = `
 attribute vec2 p;
+varying vec2 vUv;
+
 void main(){
+  vUv = p * 0.5 + 0.5; // 🔥 stable UV
   gl_Position = vec4(p,0.0,1.0);
 }
 `;
 
 const fs = `
 precision mediump float;
-uniform float t;
-uniform vec2 r;
 
-// basic noise
+uniform float t;
+varying vec2 vUv;
+
+// noise
 float hash(vec2 p){
   return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);
 }
@@ -39,40 +43,36 @@ float noise(vec2 p){
          (d-b)*u.x*u.y;
 }
 
-// 🔥 FLOW FIELD (this is the key)
+// 🔥 STRONG FLOW FIELD
 vec2 flow(vec2 uv){
-  float n = noise(uv * 2.0 + t * 0.2);
-
-  // convert noise → direction
+  float n = noise(uv * 3.0 + t * 0.4);
   float angle = n * 6.2831;
 
   return vec2(cos(angle), sin(angle));
 }
 
 void main(){
-  vec2 uv = gl_FragCoord.xy / r.xy;
 
-  // 🔥 apply multiple flow steps
-  vec2 f1 = flow(uv);
-  uv += f1 * 0.08;
+  vec2 uv = vUv;
 
-  vec2 f2 = flow(uv + t * 0.1);
-  uv += f2 * 0.06;
+  // 🔥 MULTI STEP FLOW (continuous)
+  for(int i=0; i<5; i++){
+    uv += flow(uv) * 0.05;
+  }
 
-  vec2 f3 = flow(uv + t * 0.2);
-  uv += f3 * 0.04;
+  float n = noise(uv * 5.0);
 
-  // sample final field
-  float n = noise(uv * 4.0);
+  // 🔥 CONTRAST COMPRESSION (kills softness)
+  float shaped = smoothstep(0.3, 0.7, n);
 
-  // 🎨 deep resin colors
-  vec3 deep = vec3(0.01,0.03,0.08);
-  vec3 aqua = vec3(0.0,0.75,0.95);
+  // 🎨 resin colors
+  vec3 deep  = vec3(0.01,0.03,0.08);
+  vec3 aqua  = vec3(0.0,0.8,1.0);
 
-  vec3 col = mix(deep, aqua, n);
+  vec3 col = mix(deep, aqua, shaped);
 
-  // contrast boost
-  col = pow(col, vec3(0.8));
+  // 🔥 depth boost
+  col *= 1.3;
 
   gl_FragColor = vec4(col,1.0);
 }
@@ -103,7 +103,6 @@ gl.enableVertexAttribArray(loc);
 gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
 
 const ut = gl.getUniformLocation(prog,"t");
-const ur = gl.getUniformLocation(prog,"r");
 
 let start = performance.now();
 
@@ -111,8 +110,6 @@ function draw(){
   let time = (performance.now() - start) * 0.001;
 
   gl.uniform1f(ut, time);
-  gl.uniform2f(ur, canvas.width, canvas.height);
-
   gl.drawArrays(gl.TRIANGLES,0,6);
 
   requestAnimationFrame(draw);
