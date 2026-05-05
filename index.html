@@ -6,14 +6,21 @@
 
 <input id="prompt" placeholder="Describe epoxy style..." />
 
-<canvas id="canvas"></canvas>
+<!-- 🔥 FIX: give canvas REAL size -->
+<canvas id="canvas" style="
+  width: 100%;
+  height: 300px;
+  display: block;
+  margin-top: 20px;
+  background: black;
+"></canvas>
 
-<div>
+<div style="margin-top:20px;">
   <button id="generate">Generate</button>
   <button id="download">Download</button>
 </div>
 
-<!-- 🔥 FIXED PATH -->
+<!-- 🔥 KEEP THIS PATH (working one) -->
 <script src="/app/static/script_v4.js"></script>
 
 </body>
