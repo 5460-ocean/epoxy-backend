@@ -1,11 +1,18 @@
-alert("SCRIPT RUNNING FINAL CHECK");
+alert("ONLY SCRIPT ACTIVE");
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+// 🔥 REMOVE ANY EXISTING CANVAS
+const oldCanvas = document.getElementById("canvas");
+oldCanvas.remove();
+
+// 🔥 CREATE NEW CLEAN CANVAS
+const canvas = document.createElement("canvas");
+document.body.appendChild(canvas);
 
 canvas.width = window.innerWidth;
 canvas.height = 300;
 
-// 🔴 HARD RED DRAW (no WebGL)
+const ctx = canvas.getContext("2d");
+
+// 🔴 FORCE RED (nothing else can override now)
 ctx.fillStyle = "red";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
