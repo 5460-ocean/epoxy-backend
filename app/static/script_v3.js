@@ -8,7 +8,7 @@ gl.viewport(0, 0, canvas.width, canvas.height);
 
 const vs = `
 attribute vec2 p;
-void main() {
+void main(){
   gl_Position = vec4(p,0.0,1.0);
 }
 `;
@@ -23,15 +23,15 @@ float hash(vec2 p){
 }
 
 float noise(vec2 p){
-  vec2 i=floor(p);
-  vec2 f=fract(p);
+  vec2 i = floor(p);
+  vec2 f = fract(p);
 
-  float a=hash(i);
-  float b=hash(i+vec2(1.0,0.0));
-  float c=hash(i+vec2(0.0,1.0));
-  float d=hash(i+vec2(1.0,1.0));
+  float a = hash(i);
+  float b = hash(i + vec2(1.0,0.0));
+  float c = hash(i + vec2(0.0,1.0));
+  float d = hash(i + vec2(1.0,1.0));
 
-  vec2 u=f*f*(3.0-2.0*f);
+  vec2 u = f*f*(3.0-2.0*f);
 
   return mix(a,b,u.x) +
          (c-a)*u.y*(1.0-u.x) +
@@ -41,22 +41,31 @@ float noise(vec2 p){
 void main(){
   vec2 uv = gl_FragCoord.xy / r.xy;
 
-  // 🔥 diagonal flow
-  uv.x += uv.y * 0.6;
+  // 🔥 STRONG diagonal flow direction
+  vec2 flow = vec2(0.8, 0.6);
 
-  float n = noise(uv*6.0 + t*0.3);
-  float n2 = noise(uv*12.0 - t*0.2);
+  // 🔥 MOVE EVERYTHING CONSISTENTLY
+  uv += flow * t * 0.2;
 
-  float mixv = smoothstep(0.3,0.7,n + n2*0.5);
+  // 🔥 STRETCH space (no blobs)
+  uv *= vec2(3.0, 1.5);
 
-  // 🔵 deep resin colors
-  vec3 deep = vec3(0.02,0.05,0.12);
-  vec3 aqua = vec3(0.0,0.7,0.9);
+  float n = noise(uv);
+  float n2 = noise(uv * 2.0);
+
+  float f = n + n2 * 0.5;
+
+  // 🔥 smoother transitions (liquid feel)
+  float mixv = smoothstep(0.3, 0.7, f);
+
+  // 🎨 deep resin colors
+  vec3 deep = vec3(0.01, 0.03, 0.08);
+  vec3 aqua = vec3(0.0, 0.75, 0.95);
 
   vec3 col = mix(deep, aqua, mixv);
 
-  // 🔥 contrast boost
-  col = pow(col, vec3(0.8));
+  // 🔥 increase depth
+  col *= 1.2;
 
   gl_FragColor = vec4(col,1.0);
 }
@@ -90,7 +99,7 @@ const ut = gl.getUniformLocation(prog,"t");
 const ur = gl.getUniformLocation(prog,"r");
 
 function draw(time){
-  gl.uniform1f(ut, time*0.001);
+  gl.uniform1f(ut, time * 0.001);
   gl.uniform2f(ur, canvas.width, canvas.height);
 
   gl.drawArrays(gl.TRIANGLES,0,6);
