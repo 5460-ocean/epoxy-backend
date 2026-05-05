@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
+
+# 🔥 THIS LINE FIXES EVERYTHING
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 @app.get("/")
 def home():
@@ -18,7 +22,6 @@ def app_page():
 
     <input placeholder="Describe epoxy style..." />
 
-    <!-- 🔥 VISIBLE CANVAS -->
     <canvas id="canvas" style="
         width:100%;
         height:300px;
@@ -32,7 +35,8 @@ def app_page():
         <button>Download</button>
     </div>
 
-    <script src="/app/static/script_v4.js"></script>
+    <!-- ✅ FIXED PATH -->
+    <script src="/static/script_v4.js"></script>
 
     </body>
     </html>
