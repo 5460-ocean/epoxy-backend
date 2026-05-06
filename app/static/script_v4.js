@@ -20,7 +20,6 @@ precision highp float;
 uniform float t;
 varying vec2 vUv;
 
-// noise
 float hash(vec2 p){
   return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);
 }
@@ -55,46 +54,40 @@ float fbm(vec2 p){
 void main(){
   vec2 uv = vUv;
 
-  // 🔥 BASE FLOW (slow + thick)
-  vec2 base = uv;
-  base.x += t * 0.08;
+  // flow
+  uv.x += t * 0.12;
 
-  for(int i=0;i<5;i++){
+  vec2 p = uv;
+
+  for(int i=0;i<6;i++){
     vec2 d = vec2(
-      fbm(base + vec2(0.0, t*0.05)),
-      fbm(base + vec2(3.0, t*0.05))
+      fbm(p + vec2(0.0, t*0.05)),
+      fbm(p + vec2(3.0, t*0.05))
     );
-    base += (d - 0.5) * vec2(0.25, 0.1);
+    p += (d - 0.5) * vec2(0.3, 0.1);
   }
 
-  // 🔥 SURFACE FLOW (faster detail layer)
-  vec2 surface = base;
-  surface.x += t * 0.12;
+  float n = fbm(p * 2.5);
 
-  for(int i=0;i<3;i++){
-    vec2 d = vec2(
-      fbm(surface * 2.0),
-      fbm(surface * 2.0 + 5.0)
-    );
-    surface += (d - 0.5) * 0.15;
-  }
+  // 🔥 SHARP EDGES (this matters A LOT)
+  float edge = smoothstep(0.48, 0.5, n) - smoothstep(0.5, 0.52, n);
 
-  float n1 = fbm(base * 2.5);     // thick body
-  float n2 = fbm(surface * 4.0);  // fine detail
-
-  // 🔥 sharper, thicker edges
-  float body = smoothstep(0.45, 0.55, n1);
-  float detail = smoothstep(0.48, 0.52, n2);
-
-  float mixVal = mix(body, detail, 0.4);
+  float body = smoothstep(0.45, 0.55, n);
 
   vec3 deep = vec3(0.01,0.03,0.08);
   vec3 aqua = vec3(0.0,0.75,1.0);
 
-  vec3 col = mix(deep, aqua, mixVal);
+  vec3 col = mix(deep, aqua, body);
 
-  // 🔥 depth shading (this adds "thickness")
-  col *= 0.8 + 0.4 * mixVal;
+  // 🔥 DEPTH CONTRAST
+  col *= 0.7 + 0.6 * body;
+
+  // 🔥 FAKE LIGHT (epoxy shine)
+  float light = pow(body, 6.0);
+  col += light * vec3(0.3,0.6,1.0);
+
+  // 🔥 EDGE GLOW (liquid boundary)
+  col += edge * vec3(0.2,0.8,1.0);
 
   gl_FragColor = vec4(col,1.0);
 }
