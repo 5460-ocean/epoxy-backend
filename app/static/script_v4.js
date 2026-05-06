@@ -68,7 +68,7 @@ void main(){
 
   float h = fbm(p * 3.0);
 
-  // NORMAL (for lighting)
+  // NORMAL
   float eps = 0.002;
   float hx = fbm((p + vec2(eps,0.0)) * 3.0);
   float hy = fbm((p + vec2(0.0,eps)) * 3.0);
@@ -78,40 +78,49 @@ void main(){
   vec3 light = normalize(vec3(0.5, 0.4, 1.0));
   float diff = clamp(dot(normal, light), 0.0, 1.0);
 
-  // MASK (marbling separation)
+  // MASK
   float mask = smoothstep(0.45, 0.47, h) - smoothstep(0.53, 0.55, h);
 
-  // 🔥 RICH BASE COLORS
+  // COLORS
   vec3 deep = vec3(0.005, 0.01, 0.04);
   vec3 mid  = vec3(0.0, 0.25, 0.45);
   vec3 high = vec3(0.0, 0.65, 0.95);
 
-  // 🔥 NON-LINEAR BLEND
   float curve = pow(h, 1.5);
 
   vec3 col = mix(deep, mid, curve);
   col = mix(col, high, pow(mask, 0.7));
 
-  // 🔥 SUBTLE COLOR VARIATION
+  // COLOR VARIATION
   float tint = fbm(p * 6.0) * 0.15;
-
   col.r += tint * 0.05;
   col.g += tint * 0.1;
   col.b += tint * 0.2;
 
-  // 🔥 RICH SHADOW TONE
   col *= vec3(0.9, 0.95, 1.1);
 
-  // 🔥 SPECULAR (tinted, not white)
-  float spec = pow(diff, 40.0);
-  col += spec * vec3(0.6, 0.8, 1.0);
+  // 🔥 FINAL GLOSS UPGRADE
 
-  // 🔥 EDGE HIGHLIGHT
+  // sharp highlight
+  float spec1 = pow(diff, 80.0);
+
+  // soft glow
+  float spec2 = pow(diff, 10.0) * 0.3;
+
+  // fresnel (angle reflection)
+  float fresnel = pow(1.0 - dot(normal, vec3(0.0,0.0,1.0)), 3.0);
+
+  // apply gloss
+  col += spec1 * vec3(0.7, 0.9, 1.0);
+  col += spec2 * vec3(0.2, 0.5, 0.8);
+  col += fresnel * vec3(0.3, 0.7, 1.0);
+
+  // edge glow
   float edge = smoothstep(0.48,0.5,h) - smoothstep(0.5,0.52,h);
-  col += edge * vec3(0.3,0.9,1.0);
+  col += edge * vec3(0.4,1.0,1.0);
 
-  // 🔥 DEPTH
-  col *= 0.7 + 0.6 * diff;
+  // depth contrast
+  col *= 0.6 + 0.8 * diff;
 
   gl_FragColor = vec4(col,1.0);
 }
