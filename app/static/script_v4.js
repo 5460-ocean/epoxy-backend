@@ -20,7 +20,6 @@ precision highp float;
 uniform float t;
 varying vec2 vUv;
 
-// smooth noise
 float hash(vec2 p){
   return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);
 }
@@ -41,35 +40,34 @@ float noise(vec2 p){
          (d-b)*u.x*u.y;
 }
 
-// layered noise (THIS kills static)
+// fractal noise
 float fbm(vec2 p){
   float v = 0.0;
   float a = 0.5;
-
-  for(int i=0;i<4;i++){
+  for(int i=0;i<5;i++){
     v += a * noise(p);
     p *= 2.0;
     a *= 0.5;
   }
-
   return v;
 }
 
 void main(){
   vec2 uv = vUv;
 
-  // 🔥 LARGE SCALE FLOW
-  vec2 flow = vec2(
-    fbm(uv * 2.0 + t * 0.2),
-    fbm(uv * 2.0 - t * 0.2)
-  );
-
-  uv += flow * 0.3;
+  // 🔥 REAL FLOW: iterative distortion
+  for(int i=0; i<5; i++){
+    vec2 dir = vec2(
+      fbm(uv + t * 0.2),
+      fbm(uv - t * 0.2)
+    );
+    uv += (dir - 0.5) * 0.15;
+  }
 
   float n = fbm(uv * 3.0);
 
-  // 🔥 SHAPE CREATION (not static anymore)
-  float shape = smoothstep(0.4, 0.6, n);
+  // structure
+  float shape = smoothstep(0.45, 0.55, n);
 
   vec3 deep = vec3(0.01,0.03,0.08);
   vec3 aqua = vec3(0.0,0.75,1.0);
