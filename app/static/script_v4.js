@@ -20,6 +20,7 @@ precision highp float;
 uniform float t;
 varying vec2 vUv;
 
+// noise
 float hash(vec2 p){
   return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);
 }
@@ -54,23 +55,29 @@ float fbm(vec2 p){
 void main(){
   vec2 uv = vUv;
 
-  // 🔥 LOCKED FLOW DIRECTION (left → right)
-  uv.x += t * 0.1;
+  // 🔥 STRONG FLOW DIRECTION
+  uv.x += t * 0.15;
 
-  // 🔥 STABLE DISTORTION (no random flipping)
-  vec2 distortion = vec2(
-    fbm(uv * 2.0 + 1.0),
-    fbm(uv * 2.0 + 2.0)
-  );
+  // 🔥 DOMAIN WARP STACK (this creates stretch)
+  vec2 p = uv;
 
-  uv += (distortion - 0.5) * 0.2;
+  for(int i=0; i<7; i++){
+    vec2 warp = vec2(
+      fbm(p + vec2(0.0, t*0.1)),
+      fbm(p + vec2(5.2, t*0.1))
+    );
 
-  // 🔥 STRETCH ALONG FLOW (important)
-  uv.x *= 1.5;
+    // 🔥 KEY: asymmetric stretch (liquid pull)
+    p += (warp - 0.5) * vec2(0.3, 0.1);
+  }
 
-  float n = fbm(uv * 3.0);
+  // 🔥 ELONGATE along flow
+  p.x *= 2.0;
 
-  float shape = smoothstep(0.45, 0.55, n);
+  float n = fbm(p * 2.5);
+
+  // sharper edges = resin boundaries
+  float shape = smoothstep(0.48, 0.52, n);
 
   vec3 deep = vec3(0.01,0.03,0.08);
   vec3 aqua = vec3(0.0,0.75,1.0);
