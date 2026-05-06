@@ -27,26 +27,21 @@ float hash(vec2 p){
 float noise(vec2 p){
   vec2 i = floor(p);
   vec2 f = fract(p);
-
   float a = hash(i);
-  float b = hash(i + vec2(1.0,0.0));
-  float c = hash(i + vec2(0.0,1.0));
-  float d = hash(i + vec2(1.0,1.0));
-
+  float b = hash(i+vec2(1.0,0.0));
+  float c = hash(i+vec2(0.0,1.0));
+  float d = hash(i+vec2(1.0,1.0));
   vec2 u = f*f*(3.0-2.0*f);
-
-  return mix(a,b,u.x) +
-         (c-a)*u.y*(1.0-u.x) +
-         (d-b)*u.x*u.y;
+  return mix(a,b,u.x)+(c-a)*u.y*(1.0-u.x)+(d-b)*u.x*u.y;
 }
 
 float fbm(vec2 p){
-  float v = 0.0;
-  float a = 0.5;
+  float v=0.0;
+  float a=0.5;
   for(int i=0;i<5;i++){
-    v += a * noise(p);
-    p *= 2.0;
-    a *= 0.5;
+    v+=a*noise(p);
+    p*=2.0;
+    a*=0.5;
   }
   return v;
 }
@@ -69,57 +64,48 @@ void main(){
   float h = fbm(p * 3.0);
 
   // NORMAL
-  float eps = 0.002;
-  float hx = fbm((p + vec2(eps,0.0)) * 3.0);
-  float hy = fbm((p + vec2(0.0,eps)) * 3.0);
+  float e = 0.002;
+  float hx = fbm((p+vec2(e,0.0))*3.0);
+  float hy = fbm((p+vec2(0.0,e))*3.0);
+  vec3 normal = normalize(vec3(h-hx, h-hy, 0.02));
 
-  vec3 normal = normalize(vec3(h - hx, h - hy, 0.02));
+  vec3 light = normalize(vec3(0.5,0.4,1.0));
+  float diff = clamp(dot(normal,light),0.0,1.0);
 
-  vec3 light = normalize(vec3(0.5, 0.4, 1.0));
-  float diff = clamp(dot(normal, light), 0.0, 1.0);
+  // ===== BASE COLOR =====
+  vec3 deep = vec3(0.005,0.01,0.04);
+  vec3 mid  = vec3(0.0,0.25,0.45);
+  vec3 high = vec3(0.0,0.65,0.95);
 
-  // MASK
-  float mask = smoothstep(0.45, 0.47, h) - smoothstep(0.53, 0.55, h);
-
-  // COLORS
-  vec3 deep = vec3(0.005, 0.01, 0.04);
-  vec3 mid  = vec3(0.0, 0.25, 0.45);
-  vec3 high = vec3(0.0, 0.65, 0.95);
-
-  float curve = pow(h, 1.5);
-
+  float curve = pow(h,1.5);
   vec3 col = mix(deep, mid, curve);
-  col = mix(col, high, pow(mask, 0.7));
+  col = mix(col, high, smoothstep(0.45,0.55,h));
 
-  // COLOR VARIATION
-  float tint = fbm(p * 6.0) * 0.15;
-  col.r += tint * 0.05;
-  col.g += tint * 0.1;
-  col.b += tint * 0.2;
+  // ===== GOLD VEINS =====
+  float veins = pow(abs(sin(h*20.0)), 8.0);
+  vec3 gold = vec3(1.0,0.75,0.2);
+  col = mix(col, gold, veins * 0.6);
 
-  col *= vec3(0.9, 0.95, 1.1);
+  // ===== BLACK MARBLE CRACKS =====
+  float cracks = smoothstep(0.49,0.5,h) - smoothstep(0.5,0.51,h);
+  col = mix(col, vec3(0.0), cracks * 0.8);
 
-  // 🔥 FINAL GLOSS UPGRADE
-
-  // sharp highlight
-  float spec1 = pow(diff, 80.0);
-
-  // soft glow
-  float spec2 = pow(diff, 10.0) * 0.3;
-
-  // fresnel (angle reflection)
+  // ===== METALLIC EFFECT =====
   float fresnel = pow(1.0 - dot(normal, vec3(0.0,0.0,1.0)), 3.0);
+  col += fresnel * vec3(0.3,0.6,1.0);
 
-  // apply gloss
-  col += spec1 * vec3(0.7, 0.9, 1.0);
-  col += spec2 * vec3(0.2, 0.5, 0.8);
-  col += fresnel * vec3(0.3, 0.7, 1.0);
+  // ===== GLOSS =====
+  float spec1 = pow(diff, 100.0);
+  float spec2 = pow(diff, 15.0)*0.4;
 
-  // edge glow
+  col += spec1 * vec3(1.0,0.9,0.7);
+  col += spec2 * vec3(0.3,0.6,1.0);
+
+  // ===== EDGE GLOW =====
   float edge = smoothstep(0.48,0.5,h) - smoothstep(0.5,0.52,h);
   col += edge * vec3(0.4,1.0,1.0);
 
-  // depth contrast
+  // ===== FINAL DEPTH =====
   col *= 0.6 + 0.8 * diff;
 
   gl_FragColor = vec4(col,1.0);
@@ -130,11 +116,6 @@ function compile(type,src){
   const s = gl.createShader(type);
   gl.shaderSource(s,src);
   gl.compileShader(s);
-
-  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
-    alert(gl.getShaderInfoLog(s));
-  }
-
   return s;
 }
 
@@ -147,10 +128,10 @@ gl.useProgram(prog);
 
 const buf = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-  -1,-1, 1,-1, -1,1,
-  -1,1, 1,-1, 1,1
-]), gl.STATIC_DRAW);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([
+  -1,-1,1,-1,-1,1,
+  -1,1,1,-1,1,1
+]),gl.STATIC_DRAW);
 
 const loc = gl.getAttribLocation(prog,"p");
 gl.enableVertexAttribArray(loc);
@@ -161,11 +142,9 @@ const ut = gl.getUniformLocation(prog,"t");
 let start = performance.now();
 
 function draw(){
-  let time = (performance.now() - start) * 0.001;
-
-  gl.uniform1f(ut, time);
+  let time = (performance.now()-start)*0.001;
+  gl.uniform1f(ut,time);
   gl.drawArrays(gl.TRIANGLES,0,6);
-
   requestAnimationFrame(draw);
 }
 
