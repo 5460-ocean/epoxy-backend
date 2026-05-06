@@ -55,34 +55,46 @@ float fbm(vec2 p){
 void main(){
   vec2 uv = vUv;
 
-  // 🔥 STRONG FLOW DIRECTION
-  uv.x += t * 0.15;
+  // 🔥 BASE FLOW (slow + thick)
+  vec2 base = uv;
+  base.x += t * 0.08;
 
-  // 🔥 DOMAIN WARP STACK (this creates stretch)
-  vec2 p = uv;
-
-  for(int i=0; i<7; i++){
-    vec2 warp = vec2(
-      fbm(p + vec2(0.0, t*0.1)),
-      fbm(p + vec2(5.2, t*0.1))
+  for(int i=0;i<5;i++){
+    vec2 d = vec2(
+      fbm(base + vec2(0.0, t*0.05)),
+      fbm(base + vec2(3.0, t*0.05))
     );
-
-    // 🔥 KEY: asymmetric stretch (liquid pull)
-    p += (warp - 0.5) * vec2(0.3, 0.1);
+    base += (d - 0.5) * vec2(0.25, 0.1);
   }
 
-  // 🔥 ELONGATE along flow
-  p.x *= 2.0;
+  // 🔥 SURFACE FLOW (faster detail layer)
+  vec2 surface = base;
+  surface.x += t * 0.12;
 
-  float n = fbm(p * 2.5);
+  for(int i=0;i<3;i++){
+    vec2 d = vec2(
+      fbm(surface * 2.0),
+      fbm(surface * 2.0 + 5.0)
+    );
+    surface += (d - 0.5) * 0.15;
+  }
 
-  // sharper edges = resin boundaries
-  float shape = smoothstep(0.48, 0.52, n);
+  float n1 = fbm(base * 2.5);     // thick body
+  float n2 = fbm(surface * 4.0);  // fine detail
+
+  // 🔥 sharper, thicker edges
+  float body = smoothstep(0.45, 0.55, n1);
+  float detail = smoothstep(0.48, 0.52, n2);
+
+  float mixVal = mix(body, detail, 0.4);
 
   vec3 deep = vec3(0.01,0.03,0.08);
   vec3 aqua = vec3(0.0,0.75,1.0);
 
-  vec3 col = mix(deep, aqua, shape);
+  vec3 col = mix(deep, aqua, mixVal);
+
+  // 🔥 depth shading (this adds "thickness")
+  col *= 0.8 + 0.4 * mixVal;
 
   gl_FragColor = vec4(col,1.0);
 }
