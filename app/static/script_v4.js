@@ -72,41 +72,52 @@ void main(){
   vec3 light = normalize(vec3(0.5,0.4,1.0));
   float diff = clamp(dot(normal,light),0.0,1.0);
 
-  // ===== BASE COLOR =====
-  vec3 deep = vec3(0.005,0.01,0.04);
-  vec3 mid  = vec3(0.0,0.25,0.45);
-  vec3 high = vec3(0.0,0.65,0.95);
+  // ===== BASE COLOR (slightly desaturated for metallic feel) =====
+  vec3 deep = vec3(0.01,0.02,0.05);
+  vec3 mid  = vec3(0.0,0.2,0.35);
+  vec3 high = vec3(0.1,0.6,0.9);
 
   float curve = pow(h,1.5);
   vec3 col = mix(deep, mid, curve);
   col = mix(col, high, smoothstep(0.45,0.55,h));
 
-  // ===== GOLD VEINS =====
-  float veins = pow(abs(sin(h*20.0)), 8.0);
-  vec3 gold = vec3(1.0,0.75,0.2);
-  col = mix(col, gold, veins * 0.6);
+  // ===== 🔥 SHARP GOLD VEINS (NEW) =====
+  float v = fbm(p * 8.0 + 10.0);
+  float veins = smoothstep(0.48,0.5,v) - smoothstep(0.5,0.52,v);
 
-  // ===== BLACK MARBLE CRACKS =====
-  float cracks = smoothstep(0.49,0.5,h) - smoothstep(0.5,0.51,h);
-  col = mix(col, vec3(0.0), cracks * 0.8);
+  vec3 gold = vec3(1.0,0.78,0.25);
 
-  // ===== METALLIC EFFECT =====
-  float fresnel = pow(1.0 - dot(normal, vec3(0.0,0.0,1.0)), 3.0);
-  col += fresnel * vec3(0.3,0.6,1.0);
+  // 🔥 make veins crisp, not smeared
+  col = mix(col, gold, veins * 1.2);
 
-  // ===== GLOSS =====
-  float spec1 = pow(diff, 100.0);
-  float spec2 = pow(diff, 15.0)*0.4;
+  // ===== BLACK CRACKS =====
+  float cracks = smoothstep(0.495,0.5,h) - smoothstep(0.5,0.505,h);
+  col = mix(col, vec3(0.0), cracks * 0.9);
 
-  col += spec1 * vec3(1.0,0.9,0.7);
-  col += spec2 * vec3(0.3,0.6,1.0);
+  // ===== 🔥 METALLIC LIGHTING =====
 
-  // ===== EDGE GLOW =====
+  // reduce diffuse → more reflective
+  float metalDiffuse = diff * 0.4;
+
+  // strong specular
+  float spec = pow(diff, 120.0);
+
+  // fresnel reflection (stronger)
+  float fresnel = pow(1.0 - dot(normal, vec3(0.0,0.0,1.0)), 4.0);
+
+  // metallic tint shift
+  vec3 metalTint = vec3(0.6,0.8,1.0);
+
+  col = col * metalDiffuse;
+  col += spec * vec3(1.0,0.9,0.8);
+  col += fresnel * metalTint;
+
+  // ===== EDGE SHINE =====
   float edge = smoothstep(0.48,0.5,h) - smoothstep(0.5,0.52,h);
-  col += edge * vec3(0.4,1.0,1.0);
+  col += edge * vec3(0.5,1.0,1.0);
 
-  // ===== FINAL DEPTH =====
-  col *= 0.6 + 0.8 * diff;
+  // FINAL BOOST
+  col *= 0.7 + 0.9 * diff;
 
   gl_FragColor = vec4(col,1.0);
 }
