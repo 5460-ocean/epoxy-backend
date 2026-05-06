@@ -66,31 +66,40 @@ void main(){
     p += (d - 0.5) * vec2(0.3, 0.1);
   }
 
-  // HEIGHT MAP (this is key)
   float h = fbm(p * 3.0);
 
-  // 🔥 COMPUTE NORMAL (fake 3D)
+  // NORMAL
   float eps = 0.002;
   float hx = fbm((p + vec2(eps,0.0)) * 3.0);
   float hy = fbm((p + vec2(0.0,eps)) * 3.0);
 
   vec3 normal = normalize(vec3(h - hx, h - hy, 0.02));
 
-  // 🔥 LIGHT DIRECTION
-  vec3 light = normalize(vec3(0.5, 0.5, 1.0));
-
+  vec3 light = normalize(vec3(0.5, 0.4, 1.0));
   float diff = clamp(dot(normal, light), 0.0, 1.0);
 
-  // 🔥 SPECULAR (shine)
-  float spec = pow(diff, 20.0);
+  // 🔥 HARD THRESHOLD (marble separation)
+  float mask = smoothstep(0.45, 0.47, h) - smoothstep(0.53, 0.55, h);
 
-  vec3 deep = vec3(0.01,0.03,0.08);
-  vec3 aqua = vec3(0.0,0.7,1.0);
+  // 🔥 COLOR LAYERS
+  vec3 deep = vec3(0.01,0.02,0.06);
+  vec3 mid  = vec3(0.0,0.35,0.6);
+  vec3 high = vec3(0.0,0.85,1.0);
 
-  vec3 base = mix(deep, aqua, h);
+  vec3 col = mix(deep, mid, h);
+  col = mix(col, high, mask);
 
-  // 🔥 APPLY LIGHTING
-  vec3 col = base * diff + spec * vec3(1.0);
+  // 🔥 SPECULAR STREAKS (epoxy shine)
+  float spec = pow(diff, 40.0);
+
+  // 🔥 EDGE SHARPEN
+  float edge = smoothstep(0.48,0.5,h) - smoothstep(0.5,0.52,h);
+
+  col += spec * vec3(1.0);
+  col += edge * vec3(0.3,0.9,1.0);
+
+  // 🔥 DEPTH BOOST
+  col *= 0.7 + 0.6 * diff;
 
   gl_FragColor = vec4(col,1.0);
 }
