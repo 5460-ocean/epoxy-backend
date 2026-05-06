@@ -54,12 +54,11 @@ float fbm(vec2 p){
 void main(){
   vec2 uv = vUv;
 
-  // flow
-  uv.x += t * 0.12;
+  // FLOW
+  uv.x += t * 0.1;
 
   vec2 p = uv;
-
-  for(int i=0;i<6;i++){
+  for(int i=0;i<5;i++){
     vec2 d = vec2(
       fbm(p + vec2(0.0, t*0.05)),
       fbm(p + vec2(3.0, t*0.05))
@@ -67,27 +66,31 @@ void main(){
     p += (d - 0.5) * vec2(0.3, 0.1);
   }
 
-  float n = fbm(p * 2.5);
+  // HEIGHT MAP (this is key)
+  float h = fbm(p * 3.0);
 
-  // 🔥 SHARP EDGES (this matters A LOT)
-  float edge = smoothstep(0.48, 0.5, n) - smoothstep(0.5, 0.52, n);
+  // 🔥 COMPUTE NORMAL (fake 3D)
+  float eps = 0.002;
+  float hx = fbm((p + vec2(eps,0.0)) * 3.0);
+  float hy = fbm((p + vec2(0.0,eps)) * 3.0);
 
-  float body = smoothstep(0.45, 0.55, n);
+  vec3 normal = normalize(vec3(h - hx, h - hy, 0.02));
+
+  // 🔥 LIGHT DIRECTION
+  vec3 light = normalize(vec3(0.5, 0.5, 1.0));
+
+  float diff = clamp(dot(normal, light), 0.0, 1.0);
+
+  // 🔥 SPECULAR (shine)
+  float spec = pow(diff, 20.0);
 
   vec3 deep = vec3(0.01,0.03,0.08);
-  vec3 aqua = vec3(0.0,0.75,1.0);
+  vec3 aqua = vec3(0.0,0.7,1.0);
 
-  vec3 col = mix(deep, aqua, body);
+  vec3 base = mix(deep, aqua, h);
 
-  // 🔥 DEPTH CONTRAST
-  col *= 0.7 + 0.6 * body;
-
-  // 🔥 FAKE LIGHT (epoxy shine)
-  float light = pow(body, 6.0);
-  col += light * vec3(0.3,0.6,1.0);
-
-  // 🔥 EDGE GLOW (liquid boundary)
-  col += edge * vec3(0.2,0.8,1.0);
+  // 🔥 APPLY LIGHTING
+  vec3 col = base * diff + spec * vec3(1.0);
 
   gl_FragColor = vec4(col,1.0);
 }
