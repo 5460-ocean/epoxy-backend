@@ -54,22 +54,22 @@ float fbm(vec2 p){
 void main(){
   vec2 uv = vUv;
 
-  // 🔥 directional drift (this is key)
-  uv.x += t * 0.05;
+  // 🔥 LOCKED FLOW DIRECTION (left → right)
+  uv.x += t * 0.1;
 
-  // 🔥 layered distortion (progressive stretch)
-  vec2 p = uv;
-  for(int i=0;i<6;i++){
-    vec2 d = vec2(
-      fbm(p + t * 0.1),
-      fbm(p - t * 0.1)
-    );
-    p += (d - 0.5) * 0.2;
-  }
+  // 🔥 STABLE DISTORTION (no random flipping)
+  vec2 distortion = vec2(
+    fbm(uv * 2.0 + 1.0),
+    fbm(uv * 2.0 + 2.0)
+  );
 
-  float n = fbm(p * 3.0);
+  uv += (distortion - 0.5) * 0.2;
 
-  // shape carving
+  // 🔥 STRETCH ALONG FLOW (important)
+  uv.x *= 1.5;
+
+  float n = fbm(uv * 3.0);
+
   float shape = smoothstep(0.45, 0.55, n);
 
   vec3 deep = vec3(0.01,0.03,0.08);
