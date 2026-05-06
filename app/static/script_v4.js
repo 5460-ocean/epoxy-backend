@@ -40,7 +40,6 @@ float noise(vec2 p){
          (d-b)*u.x*u.y;
 }
 
-// fractal noise
 float fbm(vec2 p){
   float v = 0.0;
   float a = 0.5;
@@ -55,18 +54,22 @@ float fbm(vec2 p){
 void main(){
   vec2 uv = vUv;
 
-  // 🔥 REAL FLOW: iterative distortion
-  for(int i=0; i<5; i++){
-    vec2 dir = vec2(
-      fbm(uv + t * 0.2),
-      fbm(uv - t * 0.2)
+  // 🔥 directional drift (this is key)
+  uv.x += t * 0.05;
+
+  // 🔥 layered distortion (progressive stretch)
+  vec2 p = uv;
+  for(int i=0;i<6;i++){
+    vec2 d = vec2(
+      fbm(p + t * 0.1),
+      fbm(p - t * 0.1)
     );
-    uv += (dir - 0.5) * 0.15;
+    p += (d - 0.5) * 0.2;
   }
 
-  float n = fbm(uv * 3.0);
+  float n = fbm(p * 3.0);
 
-  // structure
+  // shape carving
   float shape = smoothstep(0.45, 0.55, n);
 
   vec3 deep = vec3(0.01,0.03,0.08);
@@ -94,10 +97,6 @@ const prog = gl.createProgram();
 gl.attachShader(prog, compile(gl.VERTEX_SHADER,vs));
 gl.attachShader(prog, compile(gl.FRAGMENT_SHADER,fs));
 gl.linkProgram(prog);
-
-if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
-  alert(gl.getProgramInfoLog(prog));
-}
 
 gl.useProgram(prog);
 
