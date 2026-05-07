@@ -27,37 +27,46 @@ float hash(vec2 p){
 float noise(vec2 p){
   vec2 i = floor(p);
   vec2 f = fract(p);
+
   float a = hash(i);
   float b = hash(i+vec2(1.0,0.0));
   float c = hash(i+vec2(0.0,1.0));
   float d = hash(i+vec2(1.0,1.0));
+
   vec2 u = f*f*(3.0-2.0*f);
+
   return mix(a,b,u.x)+(c-a)*u.y*(1.0-u.x)+(d-b)*u.x*u.y;
 }
 
 float fbm(vec2 p){
   float v=0.0;
   float a=0.5;
+
   for(int i=0;i<5;i++){
     v+=a*noise(p);
     p*=2.0;
     a*=0.5;
   }
+
   return v;
 }
 
 void main(){
+
   vec2 uv = vUv;
 
   // FLOW
   uv.x += t * 0.1;
 
   vec2 p = uv;
+
   for(int i=0;i<5;i++){
+
     vec2 d = vec2(
       fbm(p + vec2(0.0, t*0.05)),
       fbm(p + vec2(3.0, t*0.05))
     );
+
     p += (d - 0.5) * vec2(0.3, 0.1);
   }
 
@@ -65,55 +74,90 @@ void main(){
 
   // NORMAL
   float e = 0.002;
+
   float hx = fbm((p+vec2(e,0.0))*3.0);
   float hy = fbm((p+vec2(0.0,e))*3.0);
+
   vec3 normal = normalize(vec3(h-hx, h-hy, 0.02));
 
   vec3 light = normalize(vec3(0.5,0.4,1.0));
+
   float diff = clamp(dot(normal,light),0.0,1.0);
 
-  // ===== BASE COLOR (slightly desaturated for metallic feel) =====
+  // ===== BASE COLORS =====
   vec3 deep = vec3(0.01,0.02,0.05);
   vec3 mid  = vec3(0.0,0.2,0.35);
   vec3 high = vec3(0.1,0.6,0.9);
 
   float curve = pow(h,1.5);
+
   vec3 col = mix(deep, mid, curve);
+
   col = mix(col, high, smoothstep(0.45,0.55,h));
 
-  // ===== 🔥 SHARP GOLD VEINS (NEW) =====
+  // ===== GOLD VEINS =====
   float v = fbm(p * 8.0 + 10.0);
-  float veins = smoothstep(0.48,0.5,v) - smoothstep(0.5,0.52,v);
+
+  float veins =
+      smoothstep(0.48,0.5,v)
+    - smoothstep(0.5,0.52,v);
 
   vec3 gold = vec3(1.0,0.78,0.25);
 
-  // 🔥 make veins crisp, not smeared
   col = mix(col, gold, veins * 1.2);
 
   // ===== BLACK CRACKS =====
-  float cracks = smoothstep(0.495,0.5,h) - smoothstep(0.5,0.505,h);
+  float cracks =
+      smoothstep(0.495,0.5,h)
+    - smoothstep(0.5,0.505,h);
+
   col = mix(col, vec3(0.0), cracks * 0.9);
 
-  // ===== 🔥 METALLIC LIGHTING =====
+  // ===== METALLIC LIGHTING =====
 
-  // reduce diffuse → more reflective
   float metalDiffuse = diff * 0.4;
 
-  // strong specular
-  float spec = pow(diff, 120.0);
+  // 🔥 ANISOTROPIC METALLIC REFLECTION
 
-  // fresnel reflection (stronger)
-  float fresnel = pow(1.0 - dot(normal, vec3(0.0,0.0,1.0)), 4.0);
+  vec3 viewDir = vec3(0.0,0.0,1.0);
 
-  // metallic tint shift
+  vec3 halfVec = normalize(light + viewDir);
+
+  float anisotropic =
+      pow(
+        abs(
+          dot(
+            normalize(vec3(normal.x * 2.0, normal.y * 0.2, normal.z)),
+            halfVec
+          )
+        ),
+        180.0
+      );
+
+  float spec = anisotropic;
+
+  // fresnel
+  float fresnel =
+      pow(
+        1.0 - dot(normal, vec3(0.0,0.0,1.0)),
+        4.0
+      );
+
   vec3 metalTint = vec3(0.6,0.8,1.0);
 
   col = col * metalDiffuse;
-  col += spec * vec3(1.0,0.9,0.8);
-  col += fresnel * metalTint;
+
+  // metallic streak highlight
+  col += spec * vec3(1.0,0.95,0.85) * 1.8;
+
+  // stronger metallic edge reflection
+  col += fresnel * metalTint * 1.5;
 
   // ===== EDGE SHINE =====
-  float edge = smoothstep(0.48,0.5,h) - smoothstep(0.5,0.52,h);
+  float edge =
+      smoothstep(0.48,0.5,h)
+    - smoothstep(0.5,0.52,h);
+
   col += edge * vec3(0.5,1.0,1.0);
 
   // FINAL BOOST
@@ -124,38 +168,68 @@ void main(){
 `;
 
 function compile(type,src){
+
   const s = gl.createShader(type);
+
   gl.shaderSource(s,src);
+
   gl.compileShader(s);
+
   return s;
 }
 
 const prog = gl.createProgram();
+
 gl.attachShader(prog, compile(gl.VERTEX_SHADER,vs));
 gl.attachShader(prog, compile(gl.FRAGMENT_SHADER,fs));
+
 gl.linkProgram(prog);
 
 gl.useProgram(prog);
 
 const buf = gl.createBuffer();
+
 gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([
-  -1,-1,1,-1,-1,1,
-  -1,1,1,-1,1,1
-]),gl.STATIC_DRAW);
+
+gl.bufferData(
+  gl.ARRAY_BUFFER,
+  new Float32Array([
+    -1,-1,
+     1,-1,
+    -1, 1,
+
+    -1, 1,
+     1,-1,
+     1, 1
+  ]),
+  gl.STATIC_DRAW
+);
 
 const loc = gl.getAttribLocation(prog,"p");
+
 gl.enableVertexAttribArray(loc);
-gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+
+gl.vertexAttribPointer(
+  loc,
+  2,
+  gl.FLOAT,
+  false,
+  0,
+  0
+);
 
 const ut = gl.getUniformLocation(prog,"t");
 
 let start = performance.now();
 
 function draw(){
+
   let time = (performance.now()-start)*0.001;
+
   gl.uniform1f(ut,time);
+
   gl.drawArrays(gl.TRIANGLES,0,6);
+
   requestAnimationFrame(draw);
 }
 
