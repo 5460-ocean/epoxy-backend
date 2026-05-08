@@ -236,15 +236,20 @@ float acrylicLacing(vec2 uv) {
 
 float oceanMembrane(vec2 uv) {
 
-    float v = voronoi(uv * 14.0);
+    uv.x += sin(uv.y * 2.5) * 0.4;
+    uv.y += cos(uv.x * 2.0) * 0.25;
+
+    float v = voronoi(uv * 5.0);
 
     float membrane = smoothstep(
-        0.06,
-        0.03,
-        abs(v - 0.12)
+        0.14,
+        0.08,
+        abs(v - 0.22)
     );
 
-    return membrane;
+    membrane *= fbm(uv * 2.0);
+
+    return membrane * 0.45;
 }
 
 ///////////////////////////////////////////////////////////
@@ -319,10 +324,10 @@ void main() {
     // OCEAN DEPTH COLORS
     ///////////////////////////////////////////////////////
 
-    vec3 deepOcean = vec3(0.01, 0.03, 0.08);
-    vec3 oceanBlue = vec3(0.02, 0.18, 0.34);
-    vec3 cyan = vec3(0.04, 0.42, 0.52);
-    vec3 foam = vec3(0.82, 0.92, 0.96);
+    vec3 deepOcean = vec3(0.005, 0.015, 0.04);
+    vec3 oceanBlue = vec3(0.02, 0.12, 0.24);
+    vec3 cyan = vec3(0.0, 0.32, 0.42);
+    vec3 foam = vec3(0.92, 0.97, 1.0);
 
     ///////////////////////////////////////////////////////
     // MULTILAYER EPOXY
