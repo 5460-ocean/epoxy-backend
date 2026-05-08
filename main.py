@@ -45,11 +45,4 @@ def app_page():
 
 
 
-"""
-
-
-@app.get("/app/v5")
-async def app_v5():
-    return "v5 works"
-
 
