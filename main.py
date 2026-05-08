@@ -88,5 +88,3 @@ canvas {
 
 </body>
 </html>
-"""
-"""
