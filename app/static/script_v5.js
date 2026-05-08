@@ -211,23 +211,25 @@ float epoxyCells(vec2 uv) {
 
 float acrylicLacing(vec2 uv) {
 
-    float n = fbm(uv * 10.0);
+    vec2 p = uv;
 
-    float lace = sin(
-        uv.x * 40.0 +
-        n * 8.0 +
-        uTime * 0.2
-    );
+    p += fbm(p * 3.0);
 
-    lace = abs(lace);
+    float lace = fbm(p * 8.0);
 
     lace = smoothstep(
-        0.8,
-        1.0,
+        0.72,
+        0.9,
         lace
     );
 
-    return lace;
+    lace *= smoothstep(
+        0.3,
+        0.8,
+        fbm(uv * 1.5)
+    );
+
+    return lace * 0.35;
 }
 
 ///////////////////////////////////////////////////////////
