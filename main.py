@@ -1,4 +1,5 @@
 
+from fastapi.responses import HTMLResponse
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -48,7 +49,7 @@ def app_page():
 
 
 
-@app.get("/app/v5")
+@app.get("/app/v5", response_class=HTMLResponse)
 async def app_v5():
     return """
 <!DOCTYPE html>
