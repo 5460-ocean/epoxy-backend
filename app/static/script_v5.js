@@ -98,14 +98,31 @@ void main() {
     vec3 color = mix(
         deep,
         blue,
-        n1
+        smoothstep(
+            0.1,
+            0.85,
+            n1
+        )
     );
 
     color = mix(
         color,
         cyan,
-        n2 * 0.6
+        smoothstep(
+            0.35,
+            0.95,
+            n2
+        ) * 0.55
     );
+
+    //////////////////////////////////////////////////////
+    // RESIN DEPTH LAYER
+    //////////////////////////////////////////////////////
+
+    float resinDepth =
+        fbm(flow * 10.0);
+
+    color += resinDepth * 0.04;
 
     float goldEdge =
         abs(n1 - n2);
@@ -119,18 +136,60 @@ void main() {
     vec3 gold =
         vec3(1.0, 0.82, 0.3);
 
-    color += gold * goldEdge * 0.5;
+    float goldNoise =
+        fbm(flow * 18.0);
 
-    float foam =
+    float goldMask =
         smoothstep(
-            0.7,
-            0.9,
-            fbm(flow * 12.0)
+            0.45,
+            0.8,
+            goldNoise
         );
 
-    foam *= goldEdge;
+    color +=
+        gold *
+        goldEdge *
+        goldMask *
+        0.32;
 
-    color += foam * 0.22;
+    float foam =
+        fbm(flow * 14.0);
+
+    foam =
+        smoothstep(
+            0.72,
+            0.92,
+            foam
+        );
+
+    foam *= smoothstep(
+        0.03,
+        0.12,
+        goldEdge
+    );
+
+    color +=
+        vec3(0.92,0.96,1.0) *
+        foam *
+        0.18;
+
+
+    //////////////////////////////////////////////////////
+    // OCEAN GLOW
+    //////////////////////////////////////////////////////
+
+    float glow =
+        smoothstep(
+            0.4,
+            1.0,
+            n2
+        );
+
+    color += vec3(
+        0.0,
+        0.12,
+        0.18
+    ) * glow * 0.18;
 
     gl_FragColor = vec4(color, 1.0);
 }
