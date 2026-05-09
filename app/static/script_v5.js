@@ -18,7 +18,10 @@ void main() {
 `;
 
 const fragmentShaderSource = `
+
+#extension GL_OES_standard_derivatives : enable
 precision highp float;
+
 
 varying vec2 vUv;
 
@@ -105,8 +108,7 @@ void main() {
     );
 
     float goldEdge =
-        abs(dFdx(n1)) +
-        abs(dFdy(n1));
+        abs(n1 - n2);
 
     goldEdge = smoothstep(
         0.02,
