@@ -37,6 +37,32 @@ void main() {
     uv.x *= uResolution.x / uResolution.y;
 
     ///////////////////////////////////////////////////////
+    // BUILD OCEAN MASSES FIRST
+    ///////////////////////////////////////////////////////
+
+    vec2 flowUV = riverFlow(uv * 1.2);
+
+    float ocean =
+        fbm(flowUV * 1.2);
+
+    float ocean2 =
+        fbm(flowUV * 2.5 + 4.0);
+
+    float resinMask =
+        smoothstep(
+            0.25,
+            0.8,
+            ocean
+        );
+
+    float depthMask =
+        smoothstep(
+            0.4,
+            0.9,
+            ocean2
+        );
+
+    ///////////////////////////////////////////////////////
     // LARGE SCALE FLUID FLOW
     ///////////////////////////////////////////////////////
 
@@ -122,11 +148,19 @@ void main() {
             fbm(p * 1.8)
         );
 
-    float cells =
-        oceanMembrane(p * 2.5) *
-        cellMask;
+    float foamZone =
+        smoothstep(
+            0.55,
+            0.8,
+            edge
+        );
 
-    color += cells * foam * 0.18;
+    float cells =
+        oceanMembrane(
+            flowUV * 3.0
+        ) * foamZone;
+
+    color += cells * vec3(0.9) * 0.22;
 
     ///////////////////////////////////////////////////////
     // SOFT LACING
@@ -181,6 +215,30 @@ void main() {
     color += gold * goldMask * 0.55;
 
     ///////////////////////////////////////////////////////
+    // GOLD MUST FOLLOW BOUNDARIES
+    ///////////////////////////////////////////////////////
+
+    float edge =
+        abs(dFdx(resinMask)) +
+        abs(dFdy(resinMask));
+
+    edge =
+        smoothstep(
+            0.02,
+            0.08,
+            edge
+        );
+
+    vec3 gold =
+        vec3(
+            1.0,
+            0.82,
+            0.3
+        );
+
+    color += gold * edge * 0.5;
+
+    ///////////////////////////////////////////////////////
     // GOLD PARTICLE CLUSTERS
     ///////////////////////////////////////////////////////
 
@@ -191,23 +249,32 @@ void main() {
     color += gold * goldParticles * 0.25;
 
     ///////////////////////////////////////////////////////
-    // METALLIC PEARL SHIMMER
+    // ADD SUBSURFACE DEPTH
+    ///////////////////////////////////////////////////////
+
+    float depthNoise =
+        fbm(flowUV * 8.0);
+
+    color += depthNoise * 0.04;
+
+    ///////////////////////////////////////////////////////
+    // PEARL METALLIC SHEEN
     ///////////////////////////////////////////////////////
 
     float pearl =
         sin(
-            (uv.x + uv.y) * 120.0 +
-            resinDepth * 4.0
+            flowUV.x * 120.0 +
+            flowUV.y * 80.0
         );
 
     pearl =
         smoothstep(
-            0.7,
+            0.92,
             1.0,
             pearl
         );
 
-    color += pearl * 0.08;
+    color += pearl * 0.05;
 
     ///////////////////////////////////////////////////////
     // GLOSS / FRESNEL
