@@ -1,22 +1,21 @@
 const canvas = document.getElementById("glcanvas");
+
 const gl = canvas.getContext("webgl");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
 
 const vertexShaderSource = `
 attribute vec2 position;
-
 varying vec2 vUv;
 
-void main() {
+void main(){
 
     vUv = position * 0.5 + 0.5;
 
-    gl_Position = vec4(position, 0.0, 1.0);
+    gl_Position = vec4(position,0.0,1.0);
 }
 `;
-
 
 const fragmentShaderSource = `
 precision highp float;
@@ -44,11 +43,15 @@ float random(vec2 st){
 float noise(vec2 st){
 
     vec2 i = floor(st);
+
     vec2 f = fract(st);
 
     float a = random(i);
+
     float b = random(i + vec2(1.0,0.0));
+
     float c = random(i + vec2(0.0,1.0));
+
     float d = random(i + vec2(1.0,1.0));
 
     vec2 u = f * f * (3.0 - 2.0 * f);
@@ -68,7 +71,7 @@ float fbm(vec2 st){
 
     float amp = 0.5;
 
-    for(int i=0;i<6;i++){
+    for(int i=0;i<7;i++){
 
         value += amp * noise(st);
 
@@ -88,18 +91,18 @@ vec2 flowField(vec2 uv){
 
     vec2 flow = uv;
 
-    float t = uTime * 0.04;
+    float t = uTime * 0.06;
 
     flow.x +=
-        sin(flow.y * 1.8 + t) * 0.45;
+        sin(flow.y * 2.0 + t) * 0.4;
 
     flow.y +=
-        cos(flow.x * 1.4 - t) * 0.35;
+        cos(flow.x * 1.5 - t) * 0.35;
 
     flow += vec2(
         fbm(flow * 1.2),
-        fbm(flow * 1.2 + 8.0)
-    ) * 0.22;
+        fbm(flow * 1.2 + 7.0)
+    ) * 0.2;
 
     return flow;
 }
@@ -111,27 +114,27 @@ void main(){
     uv -= 0.5;
 
     //////////////////////////////////////////////////////
-    // MACRO FLOW
+    // FLOW
     //////////////////////////////////////////////////////
 
-    vec2 flowUV =
+    vec2 flow =
         flowField(uv * 2.0);
 
-    float river =
-        fbm(flowUV * 1.2);
-
-    float river2 =
-        fbm(flowUV * 2.4 + 10.0);
-
     //////////////////////////////////////////////////////
-    // LARGE OCEAN REGIONS
+    // LARGE OCEAN MASSES
     //////////////////////////////////////////////////////
 
-    float oceanMask =
+    float mass1 =
+        fbm(flow * 1.0);
+
+    float mass2 =
+        fbm(flow * 2.0 + 8.0);
+
+    float ocean =
         smoothstep(
             0.2,
             0.85,
-            river
+            mass1
         );
 
     //////////////////////////////////////////////////////
@@ -142,39 +145,40 @@ void main(){
         vec3(0.01,0.03,0.08);
 
     vec3 blue =
-        vec3(0.0,0.24,0.45);
+        vec3(0.0,0.22,0.42);
 
     vec3 cyan =
-        vec3(0.0,0.72,0.78);
+        vec3(0.0,0.68,0.78);
 
     vec3 pearl =
-        vec3(0.7,0.9,0.95);
+        vec3(0.85,0.95,1.0);
 
     vec3 color =
         mix(
             deep,
             blue,
-            oceanMask
+            ocean
         );
 
     color =
         mix(
             color,
             cyan,
-            river2 * 0.6
+            mass2 * 0.55
         );
 
     //////////////////////////////////////////////////////
-    // DEPTH STACKING
+    // RESIN DEPTH
     //////////////////////////////////////////////////////
 
     float depth1 =
-        fbm(flowUV * 5.0);
+        fbm(flow * 5.0);
 
     float depth2 =
-        fbm(flowUV * 10.0);
+        fbm(flow * 10.0);
 
     color += depth1 * 0.05;
+
     color += depth2 * 0.025;
 
     //////////////////////////////////////////////////////
@@ -182,44 +186,44 @@ void main(){
     //////////////////////////////////////////////////////
 
     float boundary =
-        abs(river - river2);
+        abs(mass1 - mass2);
 
     boundary =
         smoothstep(
-            0.06,
+            0.05,
             0.12,
             boundary
         );
 
     float goldNoise =
-        fbm(flowUV * 20.0);
+        fbm(flow * 18.0);
 
     float goldMask =
         smoothstep(
-            0.52,
-            0.72,
+            0.58,
+            0.75,
             goldNoise
         );
 
     vec3 gold =
-        vec3(1.0,0.82,0.32);
+        vec3(1.0,0.82,0.35);
 
     color +=
         gold *
         boundary *
         goldMask *
-        0.42;
+        0.45;
 
     //////////////////////////////////////////////////////
-    // FOAM CELLS
+    // FOAM REGIONS
     //////////////////////////////////////////////////////
 
     float foamField =
-        fbm(flowUV * 14.0);
+        fbm(flow * 14.0);
 
     float foam =
         smoothstep(
-            0.72,
+            0.74,
             0.9,
             foamField
         );
@@ -229,32 +233,32 @@ void main(){
     color +=
         pearl *
         foam *
-        0.24;
+        0.22;
 
     //////////////////////////////////////////////////////
     // MICRO TURBULENCE
     //////////////////////////////////////////////////////
 
     float micro =
-        fbm(flowUV * 40.0);
+        fbm(flow * 40.0);
 
-    color += micro * 0.02;
+    color += micro * 0.018;
 
     //////////////////////////////////////////////////////
-    // PEARL SHEEN
+    // PEARL METALLIC
     //////////////////////////////////////////////////////
 
     float sheen =
         smoothstep(
             0.3,
             1.0,
-            river2
+            mass2
         );
 
     color +=
         vec3(0.12,0.18,0.2) *
         sheen *
-        0.12;
+        0.14;
 
     //////////////////////////////////////////////////////
     // FINAL
@@ -265,8 +269,7 @@ void main(){
 }
 `;
 
-
-function createShader(gl, type, source) {
+function createShader(type, source){
 
     const shader = gl.createShader(type);
 
@@ -274,26 +277,25 @@ function createShader(gl, type, source) {
 
     gl.compileShader(shader);
 
-    console.log(gl.getShaderInfoLog(shader));
-
     return shader;
 }
 
-const vertexShader = createShader(
-    gl,
-    gl.VERTEX_SHADER,
-    vertexShaderSource
-);
+const vertexShader =
+    createShader(
+        gl.VERTEX_SHADER,
+        vertexShaderSource
+    );
 
-const fragmentShader = createShader(
-    gl,
-    gl.FRAGMENT_SHADER,
-    fragmentShaderSource
-);
+const fragmentShader =
+    createShader(
+        gl.FRAGMENT_SHADER,
+        fragmentShaderSource
+    );
 
 const program = gl.createProgram();
 
 gl.attachShader(program, vertexShader);
+
 gl.attachShader(program, fragmentShader);
 
 gl.linkProgram(program);
@@ -304,6 +306,7 @@ const vertices = new Float32Array([
     -1,-1,
      1,-1,
     -1, 1,
+
     -1, 1,
      1,-1,
      1, 1
@@ -319,10 +322,11 @@ gl.bufferData(
     gl.STATIC_DRAW
 );
 
-const position = gl.getAttribLocation(
-    program,
-    "position"
-);
+const position =
+    gl.getAttribLocation(
+        program,
+        "position"
+    );
 
 gl.enableVertexAttribArray(position);
 
@@ -335,14 +339,21 @@ gl.vertexAttribPointer(
     0
 );
 
-const uTime = gl.getUniformLocation(
-    program,
-    "uTime"
-);
+const uTime =
+    gl.getUniformLocation(
+        program,
+        "uTime"
+    );
 
-function render(time) {
+function render(time){
 
     time *= 0.001;
+
+    canvas.width =
+        canvas.clientWidth;
+
+    canvas.height =
+        canvas.clientHeight;
 
     gl.viewport(
         0,
@@ -355,19 +366,9 @@ function render(time) {
 
     gl.uniform1f(uTime, time);
 
-    gl.drawArrays(
-        gl.TRIANGLES,
-        0,
-        6
-    );
+    gl.drawArrays(gl.TRIANGLES,0,6);
 
     requestAnimationFrame(render);
 }
 
 requestAnimationFrame(render);
-
-window.addEventListener("resize", () => {
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-});
