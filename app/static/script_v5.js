@@ -17,17 +17,19 @@ void main() {
 }
 `;
 
+
 const fragmentShaderSource = `
-
-#extension GL_OES_standard_derivatives : enable
 precision highp float;
-
 
 varying vec2 vUv;
 
 uniform float uTime;
 
-float random(vec2 st) {
+////////////////////////////////////////////////////////
+// RANDOM
+////////////////////////////////////////////////////////
+
+float random(vec2 st){
 
     return fract(
         sin(dot(st.xy, vec2(12.9898,78.233))) *
@@ -35,7 +37,11 @@ float random(vec2 st) {
     );
 }
 
-float noise(vec2 st) {
+////////////////////////////////////////////////////////
+// NOISE
+////////////////////////////////////////////////////////
+
+float noise(vec2 st){
 
     vec2 i = floor(st);
     vec2 f = fract(st);
@@ -52,12 +58,17 @@ float noise(vec2 st) {
         + (d-b)*u.x*u.y;
 }
 
-float fbm(vec2 st) {
+////////////////////////////////////////////////////////
+// FBM
+////////////////////////////////////////////////////////
+
+float fbm(vec2 st){
 
     float value = 0.0;
+
     float amp = 0.5;
 
-    for(int i = 0; i < 5; i++) {
+    for(int i=0;i<6;i++){
 
         value += amp * noise(st);
 
@@ -69,131 +80,191 @@ float fbm(vec2 st) {
     return value;
 }
 
-void main() {
+////////////////////////////////////////////////////////
+// FLOW FIELD
+////////////////////////////////////////////////////////
+
+vec2 flowField(vec2 uv){
+
+    vec2 flow = uv;
+
+    float t = uTime * 0.04;
+
+    flow.x +=
+        sin(flow.y * 1.8 + t) * 0.45;
+
+    flow.y +=
+        cos(flow.x * 1.4 - t) * 0.35;
+
+    flow += vec2(
+        fbm(flow * 1.2),
+        fbm(flow * 1.2 + 8.0)
+    ) * 0.22;
+
+    return flow;
+}
+
+void main(){
 
     vec2 uv = vUv;
 
     uv -= 0.5;
 
-    float t = uTime * 0.05;
+    //////////////////////////////////////////////////////
+    // MACRO FLOW
+    //////////////////////////////////////////////////////
 
-    vec2 flow = uv;
+    vec2 flowUV =
+        flowField(uv * 2.0);
 
-    flow.x += sin(flow.y * 3.0 + t) * 0.4;
-    flow.y += cos(flow.x * 2.5 - t) * 0.3;
+    float river =
+        fbm(flowUV * 1.2);
 
-    float n1 = fbm(flow * 3.0);
+    float river2 =
+        fbm(flowUV * 2.4 + 10.0);
 
-    float n2 = fbm(flow * 6.0 + 5.0);
+    //////////////////////////////////////////////////////
+    // LARGE OCEAN REGIONS
+    //////////////////////////////////////////////////////
+
+    float oceanMask =
+        smoothstep(
+            0.2,
+            0.85,
+            river
+        );
+
+    //////////////////////////////////////////////////////
+    // COLORS
+    //////////////////////////////////////////////////////
 
     vec3 deep =
-        vec3(0.01, 0.03, 0.08);
+        vec3(0.01,0.03,0.08);
 
     vec3 blue =
-        vec3(0.0, 0.22, 0.45);
+        vec3(0.0,0.24,0.45);
 
     vec3 cyan =
-        vec3(0.0, 0.55, 0.65);
+        vec3(0.0,0.72,0.78);
 
-    vec3 color = mix(
-        deep,
-        blue,
-        smoothstep(
-            0.1,
-            0.85,
-            n1
-        )
-    );
+    vec3 pearl =
+        vec3(0.7,0.9,0.95);
 
-    color = mix(
-        color,
-        cyan,
-        smoothstep(
-            0.35,
-            0.95,
-            n2
-        ) * 0.55
-    );
+    vec3 color =
+        mix(
+            deep,
+            blue,
+            oceanMask
+        );
+
+    color =
+        mix(
+            color,
+            cyan,
+            river2 * 0.6
+        );
 
     //////////////////////////////////////////////////////
-    // RESIN DEPTH LAYER
+    // DEPTH STACKING
     //////////////////////////////////////////////////////
 
-    float resinDepth =
-        fbm(flow * 10.0);
+    float depth1 =
+        fbm(flowUV * 5.0);
 
-    color += resinDepth * 0.04;
+    float depth2 =
+        fbm(flowUV * 10.0);
 
-    float goldEdge =
-        abs(n1 - n2);
+    color += depth1 * 0.05;
+    color += depth2 * 0.025;
 
-    goldEdge = smoothstep(
-        0.02,
-        0.08,
-        goldEdge
-    );
+    //////////////////////////////////////////////////////
+    // GOLD BOUNDARIES
+    //////////////////////////////////////////////////////
 
-    vec3 gold =
-        vec3(1.0, 0.82, 0.3);
+    float boundary =
+        abs(river - river2);
+
+    boundary =
+        smoothstep(
+            0.06,
+            0.12,
+            boundary
+        );
 
     float goldNoise =
-        fbm(flow * 18.0);
+        fbm(flowUV * 20.0);
 
     float goldMask =
         smoothstep(
-            0.45,
-            0.8,
+            0.52,
+            0.72,
             goldNoise
         );
 
+    vec3 gold =
+        vec3(1.0,0.82,0.32);
+
     color +=
         gold *
-        goldEdge *
+        boundary *
         goldMask *
-        0.32;
+        0.42;
+
+    //////////////////////////////////////////////////////
+    // FOAM CELLS
+    //////////////////////////////////////////////////////
+
+    float foamField =
+        fbm(flowUV * 14.0);
 
     float foam =
-        fbm(flow * 14.0);
-
-    foam =
         smoothstep(
             0.72,
-            0.92,
-            foam
+            0.9,
+            foamField
         );
 
-    foam *= smoothstep(
-        0.03,
-        0.12,
-        goldEdge
-    );
+    foam *= boundary;
 
     color +=
-        vec3(0.92,0.96,1.0) *
+        pearl *
         foam *
-        0.18;
-
+        0.24;
 
     //////////////////////////////////////////////////////
-    // OCEAN GLOW
+    // MICRO TURBULENCE
     //////////////////////////////////////////////////////
 
-    float glow =
+    float micro =
+        fbm(flowUV * 40.0);
+
+    color += micro * 0.02;
+
+    //////////////////////////////////////////////////////
+    // PEARL SHEEN
+    //////////////////////////////////////////////////////
+
+    float sheen =
         smoothstep(
-            0.4,
+            0.3,
             1.0,
-            n2
+            river2
         );
 
-    color += vec3(
-        0.0,
-        0.12,
-        0.18
-    ) * glow * 0.18;
+    color +=
+        vec3(0.12,0.18,0.2) *
+        sheen *
+        0.12;
 
-    gl_FragColor = vec4(color, 1.0);
+    //////////////////////////////////////////////////////
+    // FINAL
+    //////////////////////////////////////////////////////
+
+    gl_FragColor =
+        vec4(color,1.0);
 }
 `;
+
 
 function createShader(gl, type, source) {
 
