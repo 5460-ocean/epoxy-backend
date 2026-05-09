@@ -29,6 +29,29 @@ attribute vec2 position;
 varying vec2 vUv;
 
 
+
+
+vec2 riverFlow(vec2 uv) {
+
+    vec2 p = uv;
+
+    for(int i = 0; i < 6; i++) {
+
+        p.x += sin(
+            p.y * 1.4 +
+            float(i) * 0.7 +
+            uTime * 0.03
+        ) * 0.22;
+
+        p.y += cos(
+            p.x * 1.2 +
+            float(i) * 0.6
+        ) * 0.18;
+    }
+
+    return p;
+}
+
 void main() {
 
     vec2 uv = vUv;
@@ -229,12 +252,7 @@ void main() {
             edge
         );
 
-    vec3 gold =
-        vec3(
-            1.0,
-            0.82,
-            0.3
-        );
+    
 
     color += gold * edge * 0.5;
 
