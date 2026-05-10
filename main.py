@@ -84,7 +84,7 @@ canvas {
 </html>
 """
 
-@app.get("/app/v6")
+@app.get("/app/v6", response_class=HTMLResponse)
 def app_v6():
 
     return """
