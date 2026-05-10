@@ -78,7 +78,7 @@ canvas {
 
 <canvas id="glcanvas"></canvas>
 
-<script src="/static/script_v5.js"></script>
+<script src="/static/script_v5.js?v=9"></script>
 
 </body>
 </html>
