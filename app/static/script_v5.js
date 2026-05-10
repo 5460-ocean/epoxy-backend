@@ -91,18 +91,28 @@ vec2 flowField(vec2 uv){
 
     vec2 flow = uv;
 
-    float t = uTime * 0.018;
+    float t = uTime * 0.032;
 
     flow.x +=
-        sin(flow.y * 1.2 + t) * 0.18;
+        sin(flow.y * 1.6 + t) * 0.26;
 
     flow.y +=
-        cos(flow.x * 1.0 - t) * 0.15;
+        cos(flow.x * 1.3 - t) * 0.22;
 
     flow += vec2(
         fbm(flow * 1.2),
         fbm(flow * 1.2 + 7.0)
     ) * 0.2;
+
+
+    //////////////////////////////////////////////////////
+    // LARGE CINEMATIC DRIFT
+    //////////////////////////////////////////////////////
+
+    flow += vec2(
+        sin(t * 0.7),
+        cos(t * 0.5)
+    ) * 0.08;
 
     return flow;
 }
