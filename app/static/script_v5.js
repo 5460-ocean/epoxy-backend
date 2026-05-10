@@ -71,7 +71,7 @@ float fbm(vec2 st){
 
     float amp = 0.5;
 
-    for(int i=0;i<7;i++){
+    for(int i=0;i<5;i++){
 
         value += amp * noise(st);
 
@@ -91,13 +91,13 @@ vec2 flowField(vec2 uv){
 
     vec2 flow = uv;
 
-    float t = uTime * 0.06;
+    float t = uTime * 0.018;
 
     flow.x +=
-        sin(flow.y * 2.0 + t) * 0.4;
+        sin(flow.y * 1.2 + t) * 0.18;
 
     flow.y +=
-        cos(flow.x * 1.5 - t) * 0.35;
+        cos(flow.x * 1.0 - t) * 0.15;
 
     flow += vec2(
         fbm(flow * 1.2),
@@ -118,7 +118,7 @@ void main(){
     //////////////////////////////////////////////////////
 
     vec2 flow =
-        flowField(uv * 2.0);
+        flowField(uv * 1.2);
 
     //////////////////////////////////////////////////////
     // LARGE OCEAN MASSES
@@ -212,7 +212,7 @@ void main(){
         gold *
         boundary *
         goldMask *
-        0.45;
+        0.22;
 
     //////////////////////////////////////////////////////
     // FOAM REGIONS
@@ -240,9 +240,9 @@ void main(){
     //////////////////////////////////////////////////////
 
     float micro =
-        fbm(flow * 40.0);
+        fbm(flow * 18.0);
 
-    color += micro * 0.018;
+    color += micro * 0.01;
 
     //////////////////////////////////////////////////////
     // PEARL METALLIC
