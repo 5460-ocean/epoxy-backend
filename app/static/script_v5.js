@@ -5,8 +5,13 @@ const gl = canvas.getContext("webgl");
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
 
+////////////////////////////////////////////////////////
+// VERTEX SHADER
+////////////////////////////////////////////////////////
+
 const vertexShaderSource = `
 attribute vec2 position;
+
 varying vec2 vUv;
 
 void main(){
@@ -16,6 +21,10 @@ void main(){
     gl_Position = vec4(position,0.0,1.0);
 }
 `;
+
+////////////////////////////////////////////////////////
+// FRAGMENT SHADER
+////////////////////////////////////////////////////////
 
 const fragmentShaderSource = `
 precision highp float;
@@ -84,50 +93,50 @@ float fbm(vec2 st){
 }
 
 ////////////////////////////////////////////////////////
-// FLOW FIELD
+// DIRECTIONAL FLOW
 ////////////////////////////////////////////////////////
 
+vec2 advect(vec2 uv){
 
-vec2 flowField(vec2 uv){
-
-    vec2 flow = uv;
-
-    float t = uTime * 0.08;
+    float t = uTime * 0.05;
 
     //////////////////////////////////////////////////////
-    // CONTINUOUS DIRECTIONAL DRIFT
+    // CONSTANT DRIFT
     //////////////////////////////////////////////////////
 
-    flow += vec2(
-        t * 0.12,
-        t * 0.04
+    uv += vec2(
+        t * 0.18,
+        t * 0.05
     );
 
     //////////////////////////////////////////////////////
-    // LARGE FLUID WARPING
+    // MACRO WARP
     //////////////////////////////////////////////////////
 
     vec2 warp1 = vec2(
-        fbm(flow * 0.8),
-        fbm(flow * 0.8 + 5.0)
+
+        fbm(uv * 0.5),
+
+        fbm(uv * 0.5 + 8.0)
     );
 
-    flow += (warp1 - 0.5) * 0.45;
+    uv += (warp1 - 0.5) * 0.8;
 
     //////////////////////////////////////////////////////
-    // SECONDARY SWIRL
+    // SECONDARY FLOW
     //////////////////////////////////////////////////////
 
     vec2 warp2 = vec2(
-        fbm(flow * 1.6 + 10.0),
-        fbm(flow * 1.6 + 20.0)
+
+        fbm(uv * 1.2 + 20.0),
+
+        fbm(uv * 1.2 + 30.0)
     );
 
-    flow += (warp2 - 0.5) * 0.18;
+    uv += (warp2 - 0.5) * 0.25;
 
-    return flow;
+    return uv;
 }
-
 
 void main(){
 
@@ -136,27 +145,26 @@ void main(){
     uv -= 0.5;
 
     //////////////////////////////////////////////////////
-    // FLOW
+    // FLOW FIELD
     //////////////////////////////////////////////////////
 
-    vec2 flow =
-        flowField(uv * 1.2);
+    vec2 flow = advect(uv * 1.4);
 
     //////////////////////////////////////////////////////
-    // LARGE OCEAN MASSES
+    // MASSIVE OCEAN REGIONS
     //////////////////////////////////////////////////////
 
-    float mass1 =
-        fbm(flow * 0.55);
+    float river1 =
+        fbm(flow * 0.4);
 
-    float mass2 =
-        fbm(flow * 1.1 + 8.0);
+    float river2 =
+        fbm(flow * 0.8 + 12.0);
 
     float ocean =
         smoothstep(
-            0.2,
-            0.85,
-            mass1
+            0.18,
+            0.82,
+            river1
         );
 
     //////////////////////////////////////////////////////
@@ -170,10 +178,10 @@ void main(){
         vec3(0.0,0.22,0.42);
 
     vec3 cyan =
-        vec3(0.0,0.68,0.78);
+        vec3(0.0,0.72,0.78);
 
     vec3 pearl =
-        vec3(0.85,0.95,1.0);
+        vec3(0.9,0.96,1.0);
 
     vec3 color =
         mix(
@@ -186,67 +194,67 @@ void main(){
         mix(
             color,
             cyan,
-            mass2 * 0.55
+            river2 * 0.45
         );
 
     //////////////////////////////////////////////////////
-    // RESIN DEPTH
+    // SUBSURFACE DEPTH
     //////////////////////////////////////////////////////
 
     float depth1 =
-        fbm(flow * 5.0);
+        fbm(flow * 3.0);
 
     float depth2 =
-        fbm(flow * 10.0);
+        fbm(flow * 6.0);
 
-    color += depth1 * 0.05;
+    color += depth1 * 0.06;
 
-    color += depth2 * 0.025;
+    color += depth2 * 0.03;
 
     //////////////////////////////////////////////////////
     // GOLD BOUNDARIES
     //////////////////////////////////////////////////////
 
     float boundary =
-        abs(mass1 - mass2);
+        abs(river1 - river2);
 
     boundary =
         smoothstep(
-            0.05,
-            0.12,
+            0.04,
+            0.09,
             boundary
         );
 
     float goldNoise =
-        fbm(flow * 18.0);
+        fbm(flow * 10.0);
 
-    float goldMask =
+    float gold =
         smoothstep(
-            0.68,
-            0.82,
+            0.72,
+            0.84,
             goldNoise
         );
 
-    vec3 gold =
-        vec3(1.0,0.82,0.35);
+    vec3 goldColor =
+        vec3(1.0,0.84,0.38);
 
     color +=
-        gold *
+        goldColor *
         boundary *
-        goldMask *
-        0.22;
+        gold *
+        0.16;
 
     //////////////////////////////////////////////////////
-    // FOAM REGIONS
+    // FOAM CELLS
     //////////////////////////////////////////////////////
 
     float foamField =
-        fbm(flow * 14.0);
+        fbm(flow * 12.0);
 
     float foam =
         smoothstep(
-            0.74,
-            0.9,
+            0.76,
+            0.92,
             foamField
         );
 
@@ -255,32 +263,16 @@ void main(){
     color +=
         pearl *
         foam *
-        0.22;
+        0.14;
 
     //////////////////////////////////////////////////////
-    // MICRO TURBULENCE
+    // MICRO DETAIL
     //////////////////////////////////////////////////////
 
     float micro =
-        fbm(flow * 18.0);
+        fbm(flow * 20.0);
 
     color += micro * 0.01;
-
-    //////////////////////////////////////////////////////
-    // PEARL METALLIC
-    //////////////////////////////////////////////////////
-
-    float sheen =
-        smoothstep(
-            0.3,
-            1.0,
-            mass2
-        );
-
-    color +=
-        vec3(0.12,0.18,0.2) *
-        sheen *
-        0.14;
 
     //////////////////////////////////////////////////////
     // FINAL
@@ -291,6 +283,10 @@ void main(){
 }
 `;
 
+////////////////////////////////////////////////////////
+// SHADER CREATION
+////////////////////////////////////////////////////////
+
 function createShader(type, source){
 
     const shader = gl.createShader(type);
@@ -298,6 +294,8 @@ function createShader(type, source){
     gl.shaderSource(shader, source);
 
     gl.compileShader(shader);
+
+    console.log(gl.getShaderInfoLog(shader));
 
     return shader;
 }
@@ -314,6 +312,10 @@ const fragmentShader =
         fragmentShaderSource
     );
 
+////////////////////////////////////////////////////////
+// PROGRAM
+////////////////////////////////////////////////////////
+
 const program = gl.createProgram();
 
 gl.attachShader(program, vertexShader);
@@ -323,6 +325,10 @@ gl.attachShader(program, fragmentShader);
 gl.linkProgram(program);
 
 gl.useProgram(program);
+
+////////////////////////////////////////////////////////
+// GEOMETRY
+////////////////////////////////////////////////////////
 
 const vertices = new Float32Array([
     -1,-1,
@@ -361,11 +367,19 @@ gl.vertexAttribPointer(
     0
 );
 
+////////////////////////////////////////////////////////
+// UNIFORMS
+////////////////////////////////////////////////////////
+
 const uTime =
     gl.getUniformLocation(
         program,
         "uTime"
     );
+
+////////////////////////////////////////////////////////
+// RENDER LOOP
+////////////////////////////////////////////////////////
 
 function render(time){
 
@@ -388,7 +402,11 @@ function render(time){
 
     gl.uniform1f(uTime, time);
 
-    gl.drawArrays(gl.TRIANGLES,0,6);
+    gl.drawArrays(
+        gl.TRIANGLES,
+        0,
+        6
+    );
 
     requestAnimationFrame(render);
 }
