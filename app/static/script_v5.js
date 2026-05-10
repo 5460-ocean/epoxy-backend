@@ -1,9 +1,8 @@
 const canvas = document.getElementById("glcanvas");
-
 const gl = canvas.getContext("webgl");
 
-canvas.width = canvas.clientWidth;
-canvas.height = canvas.clientHeight;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
 ////////////////////////////////////////////////////////
 // VERTEX SHADER
@@ -14,11 +13,11 @@ attribute vec2 position;
 
 varying vec2 vUv;
 
-void main(){
+void main() {
 
     vUv = position * 0.5 + 0.5;
 
-    gl_Position = vec4(position,0.0,1.0);
+    gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
 
@@ -37,7 +36,7 @@ uniform float uTime;
 // RANDOM
 ////////////////////////////////////////////////////////
 
-float random(vec2 st){
+float random(vec2 st) {
 
     return fract(
         sin(dot(st.xy, vec2(12.9898,78.233))) *
@@ -49,18 +48,14 @@ float random(vec2 st){
 // NOISE
 ////////////////////////////////////////////////////////
 
-float noise(vec2 st){
+float noise(vec2 st) {
 
     vec2 i = floor(st);
-
     vec2 f = fract(st);
 
     float a = random(i);
-
     float b = random(i + vec2(1.0,0.0));
-
     float c = random(i + vec2(0.0,1.0));
-
     float d = random(i + vec2(1.0,1.0));
 
     vec2 u = f * f * (3.0 - 2.0 * f);
@@ -74,13 +69,12 @@ float noise(vec2 st){
 // FBM
 ////////////////////////////////////////////////////////
 
-float fbm(vec2 st){
+float fbm(vec2 st) {
 
     float value = 0.0;
-
     float amp = 0.5;
 
-    for(int i=0;i<5;i++){
+    for(int i=0;i<5;i++) {
 
         value += amp * noise(st);
 
@@ -93,52 +87,48 @@ float fbm(vec2 st){
 }
 
 ////////////////////////////////////////////////////////
-// DIRECTIONAL FLOW
+// DIRECTIONAL FLUID ADVECTION
 ////////////////////////////////////////////////////////
 
-vec2 advect(vec2 uv){
+vec2 advect(vec2 uv) {
 
     float t = uTime * 0.05;
 
     //////////////////////////////////////////////////////
-    // CONSTANT DRIFT
+    // CONTINUOUS CINEMATIC DRIFT
     //////////////////////////////////////////////////////
 
     uv += vec2(
-        t * 0.18,
-        t * 0.05
+        t * 0.12,
+        t * 0.03
     );
 
     //////////////////////////////////////////////////////
-    // MACRO WARP
+    // LARGE FLUID WARP
     //////////////////////////////////////////////////////
 
     vec2 warp1 = vec2(
-
-        fbm(uv * 0.5),
-
-        fbm(uv * 0.5 + 8.0)
+        fbm(uv * 0.35),
+        fbm(uv * 0.35 + 8.0)
     );
 
-    uv += (warp1 - 0.5) * 0.8;
+    uv += (warp1 - 0.5) * 1.1;
 
     //////////////////////////////////////////////////////
     // SECONDARY FLOW
     //////////////////////////////////////////////////////
 
     vec2 warp2 = vec2(
-
-        fbm(uv * 1.2 + 20.0),
-
-        fbm(uv * 1.2 + 30.0)
+        fbm(uv * 0.8 + 20.0),
+        fbm(uv * 0.8 + 40.0)
     );
 
-    uv += (warp2 - 0.5) * 0.25;
+    uv += (warp2 - 0.5) * 0.28;
 
     return uv;
 }
 
-void main(){
+void main() {
 
     vec2 uv = vUv;
 
@@ -148,23 +138,47 @@ void main(){
     // FLOW FIELD
     //////////////////////////////////////////////////////
 
-    vec2 flow = advect(uv * 1.4);
+    vec2 flow = advect(uv * 1.2);
 
     //////////////////////////////////////////////////////
-    // MASSIVE OCEAN REGIONS
+    // MACRO COMPOSITION
     //////////////////////////////////////////////////////
 
-    float river1 =
-        fbm(flow * 0.4);
+    float macro =
+        fbm(flow * 0.22);
 
-    float river2 =
-        fbm(flow * 0.8 + 12.0);
+    float macro2 =
+        fbm(flow * 0.35 + 20.0);
+
+    float riverMask =
+        smoothstep(
+            0.42,
+            0.72,
+            macro
+        );
+
+    //////////////////////////////////////////////////////
+    // LARGE SWEEPING RIVERS
+    //////////////////////////////////////////////////////
+
+    float riverFlow =
+        fbm(
+            flow * 0.6 +
+            macro2 * 2.0
+        );
 
     float ocean =
+        mix(
+            riverFlow,
+            macro,
+            0.65
+        );
+
+    ocean =
         smoothstep(
-            0.18,
-            0.82,
-            river1
+            0.25,
+            0.78,
+            ocean
         );
 
     //////////////////////////////////////////////////////
@@ -181,7 +195,7 @@ void main(){
         vec3(0.0,0.72,0.78);
 
     vec3 pearl =
-        vec3(0.9,0.96,1.0);
+        vec3(0.88,0.94,1.0);
 
     vec3 color =
         mix(
@@ -194,7 +208,7 @@ void main(){
         mix(
             color,
             cyan,
-            river2 * 0.45
+            riverFlow * 0.42
         );
 
     //////////////////////////////////////////////////////
@@ -202,77 +216,101 @@ void main(){
     //////////////////////////////////////////////////////
 
     float depth1 =
-        fbm(flow * 3.0);
+        fbm(flow * 2.5);
 
     float depth2 =
-        fbm(flow * 6.0);
+        fbm(flow * 5.0);
 
-    color += depth1 * 0.06;
-
-    color += depth2 * 0.03;
+    color += depth1 * 0.05;
+    color += depth2 * 0.025;
 
     //////////////////////////////////////////////////////
-    // GOLD BOUNDARIES
+    // GOLD FOLLOWS BOUNDARIES
     //////////////////////////////////////////////////////
 
     float boundary =
-        abs(river1 - river2);
+        abs(macro - riverFlow);
 
     boundary =
         smoothstep(
-            0.04,
+            0.035,
             0.09,
             boundary
         );
 
     float goldNoise =
-        fbm(flow * 10.0);
+        fbm(flow * 6.0);
 
-    float gold =
+    float goldMask =
         smoothstep(
             0.72,
-            0.84,
+            0.86,
             goldNoise
         );
 
-    vec3 goldColor =
-        vec3(1.0,0.84,0.38);
+    vec3 gold =
+        vec3(1.0,0.82,0.32);
 
     color +=
-        goldColor *
-        boundary *
         gold *
-        0.16;
+        boundary *
+        goldMask *
+        0.22;
 
     //////////////////////////////////////////////////////
-    // FOAM CELLS
+    // FOAM ONLY IN RIVER REGIONS
     //////////////////////////////////////////////////////
 
     float foamField =
-        fbm(flow * 12.0);
+        fbm(flow * 10.0);
 
     float foam =
         smoothstep(
-            0.76,
-            0.92,
+            0.82,
+            0.94,
             foamField
         );
 
-    foam *= boundary;
+    foam *= boundary * riverMask;
 
     color +=
         pearl *
         foam *
-        0.14;
+        0.12;
 
     //////////////////////////////////////////////////////
     // MICRO DETAIL
     //////////////////////////////////////////////////////
 
     float micro =
-        fbm(flow * 20.0);
+        fbm(flow * 18.0);
 
-    color += micro * 0.01;
+    color += micro * 0.006;
+
+    //////////////////////////////////////////////////////
+    // DEPTH PARALLAX
+    //////////////////////////////////////////////////////
+
+    float parallax =
+        fbm(
+            flow * 1.8 +
+            vec2(
+                uTime * 0.03,
+                uTime * 0.01
+            )
+        );
+
+    color += parallax * 0.025;
+
+    //////////////////////////////////////////////////////
+    // RESIN GLOW
+    //////////////////////////////////////////////////////
+
+    color += vec3(
+        0.02,
+        0.05,
+        0.08
+    ) * ocean;
 
     //////////////////////////////////////////////////////
     // FINAL
@@ -284,10 +322,10 @@ void main(){
 `;
 
 ////////////////////////////////////////////////////////
-// SHADER CREATION
+// SHADER COMPILER
 ////////////////////////////////////////////////////////
 
-function createShader(type, source){
+function createShader(type, source) {
 
     const shader = gl.createShader(type);
 
@@ -300,17 +338,15 @@ function createShader(type, source){
     return shader;
 }
 
-const vertexShader =
-    createShader(
-        gl.VERTEX_SHADER,
-        vertexShaderSource
-    );
+const vertexShader = createShader(
+    gl.VERTEX_SHADER,
+    vertexShaderSource
+);
 
-const fragmentShader =
-    createShader(
-        gl.FRAGMENT_SHADER,
-        fragmentShaderSource
-    );
+const fragmentShader = createShader(
+    gl.FRAGMENT_SHADER,
+    fragmentShaderSource
+);
 
 ////////////////////////////////////////////////////////
 // PROGRAM
@@ -319,7 +355,6 @@ const fragmentShader =
 const program = gl.createProgram();
 
 gl.attachShader(program, vertexShader);
-
 gl.attachShader(program, fragmentShader);
 
 gl.linkProgram(program);
@@ -351,10 +386,7 @@ gl.bufferData(
 );
 
 const position =
-    gl.getAttribLocation(
-        program,
-        "position"
-    );
+    gl.getAttribLocation(program, "position");
 
 gl.enableVertexAttribArray(position);
 
@@ -372,24 +404,18 @@ gl.vertexAttribPointer(
 ////////////////////////////////////////////////////////
 
 const uTime =
-    gl.getUniformLocation(
-        program,
-        "uTime"
-    );
+    gl.getUniformLocation(program, "uTime");
 
 ////////////////////////////////////////////////////////
 // RENDER LOOP
 ////////////////////////////////////////////////////////
 
-function render(time){
+function render(time) {
 
     time *= 0.001;
 
-    canvas.width =
-        canvas.clientWidth;
-
-    canvas.height =
-        canvas.clientHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     gl.viewport(
         0,
@@ -412,3 +438,9 @@ function render(time){
 }
 
 requestAnimationFrame(render);
+
+window.addEventListener("resize", () => {
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
