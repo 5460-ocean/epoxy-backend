@@ -90,43 +90,66 @@ float fbm(vec2 st) {
 // DIRECTIONAL FLUID ADVECTION
 ////////////////////////////////////////////////////////
 
+
 vec2 advect(vec2 uv) {
 
-    float t = uTime * 0.05;
+    float t = uTime * 0.12;
 
     //////////////////////////////////////////////////////
-    // CONTINUOUS CINEMATIC DRIFT
+    // DIRECTIONAL OCEAN TRANSPORT
     //////////////////////////////////////////////////////
 
-    uv += vec2(
-        t * 0.12,
-        t * 0.03
+    vec2 dir = normalize(vec2(
+        1.0,
+        0.35
+    ));
+
+    uv += dir * t;
+
+    //////////////////////////////////////////////////////
+    // STRETCHED FLOW SPACE
+    //////////////////////////////////////////////////////
+
+    vec2 stretched = vec2(
+        uv.x * 0.35,
+        uv.y * 1.4
     );
 
     //////////////////////////////////////////////////////
-    // LARGE FLUID WARP
+    // LARGE CURRENTS
     //////////////////////////////////////////////////////
 
-    vec2 warp1 = vec2(
-        fbm(uv * 0.35),
-        fbm(uv * 0.35 + 8.0)
+    vec2 current1 = vec2(
+
+        fbm(stretched * 0.25),
+
+        fbm(stretched * 0.25 + 8.0)
     );
 
-    uv += (warp1 - 0.5) * 1.1;
+    uv += (current1 - 0.5) * 1.8;
 
     //////////////////////////////////////////////////////
-    // SECONDARY FLOW
+    // SECONDARY FLUID SWIRL
     //////////////////////////////////////////////////////
 
-    vec2 warp2 = vec2(
-        fbm(uv * 0.8 + 20.0),
-        fbm(uv * 0.8 + 40.0)
+    vec2 current2 = vec2(
+
+        fbm(stretched * 0.55 + 20.0),
+
+        fbm(stretched * 0.55 + 40.0)
     );
 
-    uv += (warp2 - 0.5) * 0.28;
+    uv += (current2 - 0.5) * 0.45;
+
+    //////////////////////////////////////////////////////
+    // LONG FLOWING DISTORTION
+    //////////////////////////////////////////////////////
+
+    uv.x += sin(uv.y * 2.0 + t) * 0.18;
 
     return uv;
 }
+
 
 void main() {
 
@@ -145,10 +168,10 @@ void main() {
     //////////////////////////////////////////////////////
 
     float macro =
-        fbm(flow * 0.22);
+        fbm(flow * 0.12);
 
     float macro2 =
-        fbm(flow * 0.35 + 20.0);
+        fbm(flow * 0.18 + 20.0);
 
     float riverMask =
         smoothstep(
@@ -208,7 +231,7 @@ void main() {
         mix(
             color,
             cyan,
-            riverFlow * 0.42
+            riverFlow * 0.68
         );
 
     //////////////////////////////////////////////////////
