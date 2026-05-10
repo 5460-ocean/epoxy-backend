@@ -83,3 +83,105 @@ canvas {
 </body>
 </html>
 """
+
+@app.get("/app/v6")
+def app_v6():
+
+    return """
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Epoxy Shader V6</title>
+
+<style>
+
+html, body {
+
+    margin: 0;
+    padding: 0;
+
+    overflow: hidden;
+
+    background: black;
+
+    width: 100%;
+    height: 100%;
+}
+
+canvas {
+
+    width: 100vw;
+    height: 100vh;
+
+    display: block;
+}
+
+.ui {
+
+    position: fixed;
+
+    top: 20px;
+    left: 20px;
+
+    z-index: 10;
+
+    display: flex;
+
+    gap: 10px;
+
+    flex-wrap: wrap;
+}
+
+button {
+
+    background: rgba(0,0,0,0.55);
+
+    color: white;
+
+    border: 1px solid rgba(255,255,255,0.15);
+
+    padding: 10px 16px;
+
+    border-radius: 12px;
+
+    backdrop-filter: blur(12px);
+
+    cursor: pointer;
+
+    font-size: 14px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="ui">
+
+<button>Generate</button>
+
+<button>Randomize</button>
+
+<button>Save</button>
+
+<button>Load</button>
+
+<button>Download</button>
+
+</div>
+
+<canvas id="glcanvas"></canvas>
+
+<script src="/static/script_v6.js?v=1"></script>
+
+</body>
+</html>
+"""
