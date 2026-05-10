@@ -87,35 +87,47 @@ float fbm(vec2 st){
 // FLOW FIELD
 ////////////////////////////////////////////////////////
 
+
 vec2 flowField(vec2 uv){
 
     vec2 flow = uv;
 
-    float t = uTime * 0.032;
-
-    flow.x +=
-        sin(flow.y * 1.6 + t) * 0.26;
-
-    flow.y +=
-        cos(flow.x * 1.3 - t) * 0.22;
-
-    flow += vec2(
-        fbm(flow * 1.2),
-        fbm(flow * 1.2 + 7.0)
-    ) * 0.2;
-
+    float t = uTime * 0.08;
 
     //////////////////////////////////////////////////////
-    // LARGE CINEMATIC DRIFT
+    // CONTINUOUS DIRECTIONAL DRIFT
     //////////////////////////////////////////////////////
 
     flow += vec2(
-        sin(t * 0.7),
-        cos(t * 0.5)
-    ) * 0.08;
+        t * 0.12,
+        t * 0.04
+    );
+
+    //////////////////////////////////////////////////////
+    // LARGE FLUID WARPING
+    //////////////////////////////////////////////////////
+
+    vec2 warp1 = vec2(
+        fbm(flow * 0.8),
+        fbm(flow * 0.8 + 5.0)
+    );
+
+    flow += (warp1 - 0.5) * 0.45;
+
+    //////////////////////////////////////////////////////
+    // SECONDARY SWIRL
+    //////////////////////////////////////////////////////
+
+    vec2 warp2 = vec2(
+        fbm(flow * 1.6 + 10.0),
+        fbm(flow * 1.6 + 20.0)
+    );
+
+    flow += (warp2 - 0.5) * 0.18;
 
     return flow;
 }
+
 
 void main(){
 
@@ -135,10 +147,10 @@ void main(){
     //////////////////////////////////////////////////////
 
     float mass1 =
-        fbm(flow * 1.0);
+        fbm(flow * 0.55);
 
     float mass2 =
-        fbm(flow * 2.0 + 8.0);
+        fbm(flow * 1.1 + 8.0);
 
     float ocean =
         smoothstep(
@@ -210,8 +222,8 @@ void main(){
 
     float goldMask =
         smoothstep(
-            0.58,
-            0.75,
+            0.68,
+            0.82,
             goldNoise
         );
 
