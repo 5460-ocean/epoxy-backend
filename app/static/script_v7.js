@@ -68,29 +68,47 @@ float fbm(vec2 p) {
 
 vec2 riverFlow(vec2 uv) {
 
-    float t = uTime * 0.15;
+    float t = uTime;
 
-    // anisotropic stretch
-    uv *= mat2(
-        1.8, 0.45,
-       -0.25, 1.0
+    // continuous directional transport
+    uv += vec2(
+        t * 0.035,
+        t * 0.012
     );
 
-    // directional transport
-    uv.x += t * 0.12;
-
-    uv.y += sin(
-        uv.x * 2.0 + t
-    ) * 0.08;
-
-    // secondary sweep
+    // giant sweeping river motion
     uv.x += sin(
-        uv.y * 3.0 + t * 0.5
-    ) * 0.06;
+        uv.y * 1.2 +
+        t * 0.18
+    ) * 0.22;
 
     uv.y += cos(
-        uv.x * 2.0 - t * 0.3
-    ) * 0.04;
+        uv.x * 1.4 -
+        t * 0.16
+    ) * 0.18;
+
+    // secondary fluid drift
+    uv += vec2(
+        sin(t * 0.07),
+        cos(t * 0.05)
+    ) * 0.08;
+
+    // long cinematic streaking
+    uv *= mat2(
+        1.7, 0.55,
+       -0.28, 1.1
+    );
+
+    // turbulent accumulation
+    vec2 warp;
+
+    warp.x =
+        fbm(uv * 1.2 + t * 0.05);
+
+    warp.y =
+        fbm(uv * 1.2 - t * 0.04);
+
+    uv += (warp - 0.5) * 0.22;
 
     return uv;
 }
