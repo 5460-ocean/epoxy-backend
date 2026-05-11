@@ -145,28 +145,28 @@ void main() {
     // -----------------------------------
     // STEP 3
     // GOLD RIDGE EXTRACTION
+    // MOBILE SAFE
     // -----------------------------------
+
+    float ridgeNoise =
+        fbm(flowUV * 5.0);
 
     float ridge =
 
-        abs(dFdx(ocean)) +
-
-        abs(dFdy(ocean));
-
-    ridge =
         smoothstep(
-            0.08,
-            0.18,
-            ridge
+            0.45,
+            0.72,
+            ridgeNoise
+        );
+
+    ridge *=
+        smoothstep(
+            0.25,
+            0.85,
+            ocean
         );
 
     float goldMask = ridge;
-
-    goldMask *= smoothstep(
-        0.2,
-        0.8,
-        basinB
-    );
 
     // -----------------------------------
     // STEP 4
