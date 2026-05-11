@@ -68,95 +68,116 @@ float fbm(vec2 p) {
 
 vec2 riverFlow(vec2 uv) {
 
-    float t = uTime * 0.12;
+    float t = uTime * 0.10;
+
+    vec2 p = uv * 1.3;
 
     // -----------------------------------
     // LARGE SCALE CURRENT
     // -----------------------------------
 
-    vec2 p = uv;
-
-    p *= 1.4;
-
-    // directional ocean transport
-    p += vec2(
-        t * 0.18,
-        t * 0.04
+    vec2 velocity = vec2(
+        0.14,
+        0.03
     );
 
-    // -----------------------------------
-    // CURL FIELD
-    // -----------------------------------
-
-    float e = 0.15;
-
-    float n1 =
-        fbm(p + vec2(0.0, e));
-
-    float n2 =
-        fbm(p - vec2(0.0, e));
-
-    float n3 =
-        fbm(p + vec2(e, 0.0));
-
-    float n4 =
-        fbm(p - vec2(e, 0.0));
-
-    vec2 curl = vec2(
-        n1 - n2,
-        -(n3 - n4)
-    );
-
-    // -----------------------------------
-    // VORTEX MOTION
-    // -----------------------------------
-
-    p += curl * 1.8;
-
-    // sweeping river bend
-    p.x +=
+    // sweeping bends
+    velocity.x +=
         sin(
-            p.y * 1.2 +
+            p.y * 1.4 +
             t
-        ) * 0.25;
+        ) * 0.24;
 
-    p.y +=
+    velocity.y +=
         cos(
-            p.x * 1.0 -
+            p.x * 1.1 -
             t * 0.8
         ) * 0.18;
 
     // -----------------------------------
-    // LONG FLOW STRETCH
+    // RECURSIVE FLUID ADVECTION
     // -----------------------------------
 
-    p *= mat2(
-        2.2, 0.7,
-       -0.35, 1.1
+    vec2 q = p;
+
+    for(int i = 0; i < 3; i++) {
+
+        float e = 0.18;
+
+        float n1 =
+            fbm(q + vec2(0.0, e));
+
+        float n2 =
+            fbm(q - vec2(0.0, e));
+
+        float n3 =
+            fbm(q + vec2(e, 0.0));
+
+        float n4 =
+            fbm(q - vec2(e, 0.0));
+
+        vec2 curl = vec2(
+            n1 - n2,
+            -(n3 - n4)
+        );
+
+        q += curl * 0.9;
+
+        q += velocity * 0.35;
+    }
+
+    // -----------------------------------
+    // FLOW STRETCHING
+    // -----------------------------------
+
+    q *= mat2(
+        2.4, 0.8,
+       -0.4, 1.15
     );
 
     // -----------------------------------
-    // MICRO FLUID TURBULENCE
+    // DENSITY ACCUMULATION
+    // -----------------------------------
+
+    vec2 accum;
+
+    accum.x =
+        fbm(
+            q * 2.5 +
+            t * 0.15
+        );
+
+    accum.y =
+        fbm(
+            q * 2.5 -
+            t * 0.12
+        );
+
+    q +=
+        (accum - 0.5) * 0.12;
+
+    // -----------------------------------
+    // MICRO FLUID DETAIL
     // -----------------------------------
 
     vec2 micro;
 
     micro.x =
         fbm(
-            p * 4.0 +
-            t * 0.25
+            q * 7.0 +
+            t * 0.30
         );
 
     micro.y =
         fbm(
-            p * 4.0 -
-            t * 0.20
+            q * 7.0 -
+            t * 0.24
         );
 
-    p +=
-        (micro - 0.5) * 0.03;
+    q +=
+        (micro - 0.5) * 0.018;
 
-    return p;
+    return q;
 }
 
 void main() {
