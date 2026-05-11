@@ -68,84 +68,95 @@ float fbm(vec2 p) {
 
 vec2 riverFlow(vec2 uv) {
 
-    float t = uTime * 0.22;
+    float t = uTime * 0.12;
 
     // -----------------------------------
-    // LARGE SCALE OCEAN CURRENT
+    // LARGE SCALE CURRENT
     // -----------------------------------
 
-    vec2 baseFlow = vec2(
-        0.18,
-        0.04
+    vec2 p = uv;
+
+    p *= 1.4;
+
+    // directional ocean transport
+    p += vec2(
+        t * 0.18,
+        t * 0.04
     );
 
-    // giant sweeping curves
-    baseFlow.x +=
-        sin(
-            uv.y * 1.5 +
-            t * 0.7
-        ) * 0.22;
+    // -----------------------------------
+    // CURL FIELD
+    // -----------------------------------
 
-    baseFlow.y +=
+    float e = 0.15;
+
+    float n1 =
+        fbm(p + vec2(0.0, e));
+
+    float n2 =
+        fbm(p - vec2(0.0, e));
+
+    float n3 =
+        fbm(p + vec2(e, 0.0));
+
+    float n4 =
+        fbm(p - vec2(e, 0.0));
+
+    vec2 curl = vec2(
+        n1 - n2,
+        -(n3 - n4)
+    );
+
+    // -----------------------------------
+    // VORTEX MOTION
+    // -----------------------------------
+
+    p += curl * 1.8;
+
+    // sweeping river bend
+    p.x +=
+        sin(
+            p.y * 1.2 +
+            t
+        ) * 0.25;
+
+    p.y +=
         cos(
-            uv.x * 1.2 -
-            t * 0.5
+            p.x * 1.0 -
+            t * 0.8
         ) * 0.18;
 
     // -----------------------------------
-    // FLUID ADVECTION
+    // LONG FLOW STRETCH
     // -----------------------------------
 
-    vec2 advect = uv;
-
-    advect += baseFlow * 0.9;
-
-    // recursive transport
-    advect += vec2(
-
-        fbm(
-            advect * 0.9 +
-            t * 0.12
-        ),
-
-        fbm(
-            advect * 0.9 -
-            t * 0.10
-        )
-
-    ) * 0.22;
-
-    // -----------------------------------
-    // LONG FLOW STRETCHING
-    // -----------------------------------
-
-    advect *= mat2(
-        1.9, 0.65,
-       -0.32, 1.15
+    p *= mat2(
+        2.2, 0.7,
+       -0.35, 1.1
     );
 
     // -----------------------------------
-    // MICRO TURBULENCE
+    // MICRO FLUID TURBULENCE
     // -----------------------------------
 
     vec2 micro;
 
     micro.x =
         fbm(
-            advect * 3.0 +
+            p * 4.0 +
             t * 0.25
         );
 
     micro.y =
         fbm(
-            advect * 3.0 -
-            t * 0.22
+            p * 4.0 -
+            t * 0.20
         );
 
-    advect +=
-        (micro - 0.5) * 0.035;
+    p +=
+        (micro - 0.5) * 0.03;
 
-    return advect;
+    return p;
 }
 
 void main() {
