@@ -68,49 +68,84 @@ float fbm(vec2 p) {
 
 vec2 riverFlow(vec2 uv) {
 
-    float t = uTime;
+    float t = uTime * 0.22;
 
-    // continuous directional transport
-    uv += vec2(
-        t * 0.035,
-        t * 0.012
+    // -----------------------------------
+    // LARGE SCALE OCEAN CURRENT
+    // -----------------------------------
+
+    vec2 baseFlow = vec2(
+        0.18,
+        0.04
     );
 
-    // giant sweeping river motion
-    uv.x += sin(
-        uv.y * 1.2 +
-        t * 0.18
+    // giant sweeping curves
+    baseFlow.x +=
+        sin(
+            uv.y * 1.5 +
+            t * 0.7
+        ) * 0.22;
+
+    baseFlow.y +=
+        cos(
+            uv.x * 1.2 -
+            t * 0.5
+        ) * 0.18;
+
+    // -----------------------------------
+    // FLUID ADVECTION
+    // -----------------------------------
+
+    vec2 advect = uv;
+
+    advect += baseFlow * 0.9;
+
+    // recursive transport
+    advect += vec2(
+
+        fbm(
+            advect * 0.9 +
+            t * 0.12
+        ),
+
+        fbm(
+            advect * 0.9 -
+            t * 0.10
+        )
+
     ) * 0.22;
 
-    uv.y += cos(
-        uv.x * 1.4 -
-        t * 0.16
-    ) * 0.18;
+    // -----------------------------------
+    // LONG FLOW STRETCHING
+    // -----------------------------------
 
-    // secondary fluid drift
-    uv += vec2(
-        sin(t * 0.07),
-        cos(t * 0.05)
-    ) * 0.08;
-
-    // long cinematic streaking
-    uv *= mat2(
-        1.7, 0.55,
-       -0.28, 1.1
+    advect *= mat2(
+        1.9, 0.65,
+       -0.32, 1.15
     );
 
-    // turbulent accumulation
-    vec2 warp;
+    // -----------------------------------
+    // MICRO TURBULENCE
+    // -----------------------------------
 
-    warp.x =
-        fbm(uv * 1.2 + t * 0.05);
+    vec2 micro;
 
-    warp.y =
-        fbm(uv * 1.2 - t * 0.04);
+    micro.x =
+        fbm(
+            advect * 3.0 +
+            t * 0.25
+        );
 
-    uv += (warp - 0.5) * 0.22;
+    micro.y =
+        fbm(
+            advect * 3.0 -
+            t * 0.22
+        );
 
-    return uv;
+    advect +=
+        (micro - 0.5) * 0.035;
+
+    return advect;
 }
 
 void main() {
