@@ -292,3 +292,65 @@ button {
 </html>
 
 """
+
+@app.get("/app/v8", response_class=HTMLResponse)
+async def app_v8():
+    return """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Epoxy Fluid V8</title>
+
+<style>
+
+html, body {
+    margin: 0;
+    overflow: hidden;
+    background: black;
+}
+
+canvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+}
+
+.ui {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 10px 14px;
+    border-radius: 10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="ui">
+<button>Generate</button>
+<button>Randomize</button>
+<button>Save</button>
+<button>Load</button>
+<button>Download</button>
+</div>
+
+<canvas id="glcanvas"></canvas>
+
+<script src="/static/script_v8.js"></script>
+
+</body>
+</html>
+"""
