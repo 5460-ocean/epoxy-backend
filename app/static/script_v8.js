@@ -5,14 +5,10 @@ if (!gl) {
     alert("WebGL not supported");
 }
 
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    gl.viewport(0, 0, canvas.width, canvas.height);
-}
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-window.addEventListener("resize", resize);
-resize();
+gl.viewport(0, 0, canvas.width, canvas.height);
 
 const vertexShaderSource = `
 attribute vec2 aPosition;
@@ -27,206 +23,126 @@ void main() {
 const fragmentShaderSource = `
 precision highp float;
 
-uniform vec2 uResolution;
 uniform float uTime;
-
 varying vec2 vUv;
 
-float hash(vec2 p) {
-    return fract(
-        sin(dot(p, vec2(127.1, 311.7))) *
-        43758.5453123
-    );
+float hash(vec2 p){
+    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453123);
 }
 
-float noise(vec2 p) {
+float noise(vec2 p){
 
     vec2 i = floor(p);
     vec2 f = fract(p);
 
-    f = f * f * (3.0 - 2.0 * f);
+    f = f*f*(3.0-2.0*f);
 
     float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
+    float b = hash(i+vec2(1.0,0.0));
+    float c = hash(i+vec2(0.0,1.0));
+    float d = hash(i+vec2(1.0,1.0));
 
     return mix(
-        mix(a, b, f.x),
-        mix(c, d, f.x),
+        mix(a,b,f.x),
+        mix(c,d,f.x),
         f.y
     );
 }
 
-float fbm(vec2 p) {
+float fbm(vec2 p){
 
     float v = 0.0;
     float a = 0.5;
 
-    for(int i = 0; i < 6; i++) {
-        v += noise(p) * a;
+    for(int i=0;i<5;i++){
+
+        v += noise(p)*a;
+
         p *= 2.0;
+
         a *= 0.5;
     }
 
     return v;
 }
 
-vec2 curl(vec2 p) {
-
-    float e = 0.15;
-
-    float n1 = fbm(p + vec2(0.0, e));
-    float n2 = fbm(p - vec2(0.0, e));
-    float n3 = fbm(p + vec2(e, 0.0));
-    float n4 = fbm(p - vec2(e, 0.0));
-
-    return vec2(
-        n1 - n2,
-        -(n3 - n4)
-    );
-}
-
-vec2 advect(vec2 uv) {
-
-    float t = uTime * 0.08;
-
-    vec2 p = uv * 3.0;
-
-    vec2 velocity = vec2(0.0);
-
-    for(int i = 0; i < 5; i++) {
-
-        vec2 c = curl(p);
-
-        velocity += c;
-
-        p += c * 0.45;
-
-        p += vec2(
-            0.03,
-            0.008
-        );
-    }
-
-    uv += velocity * 0.12;
-
-    uv.x += sin(
-        uv.y * 2.0 +
-        t
-    ) * 0.08;
-
-    uv.y += cos(
-        uv.x * 1.8 -
-        t
-    ) * 0.06;
-
-    return uv;
-}
-
-void main() {
+void main(){
 
     vec2 uv = vUv;
 
-    uv = advect(uv);
+    float t = uTime * 0.05;
 
-    vec2 drift = vec2(
-        uTime * 0.004,
-        uTime * 0.001
-    );
+    uv.x += sin(uv.y*4.0+t)*0.08;
+    uv.y += cos(uv.x*3.0-t)*0.06;
 
-    float d1 = fbm((uv + drift) * 2.0);
-    float d2 = fbm((uv - drift) * 4.0);
-    float d3 = fbm((uv + drift * 2.0) * 8.0);
-
-    float density =
-        d1 * 0.6 +
-        d2 * 0.3 +
-        d3 * 0.1;
+    float n =
+        fbm(uv*3.0+t*0.2);
 
     vec3 deep =
-        vec3(0.01, 0.05, 0.12);
+        vec3(0.01,0.05,0.12);
 
     vec3 blue =
-        vec3(0.02, 0.22, 0.38);
+        vec3(0.02,0.25,0.45);
 
     vec3 cyan =
-        vec3(0.12, 0.42, 0.58);
+        vec3(0.3,0.7,0.9);
 
     vec3 color =
-        mix(deep, blue, density);
-
-    color =
-        mix(color, cyan, smoothstep(
-            0.55,
-            0.9,
-            density
-        ));
-
-    // resin glow
-    color +=
-        smoothstep(
-            0.7,
-            1.0,
-            density
-        ) * 0.08;
-
-    // soft gold energy lines
-    float ridge =
-        abs(dFdx(density)) +
-        abs(dFdy(density));
-
-    float gold =
-        smoothstep(
-            0.03,
-            0.12,
-            ridge
-        );
-
-    vec3 goldColor =
-        vec3(1.0, 0.78, 0.28);
+        mix(deep, blue, n);
 
     color =
         mix(
             color,
-            goldColor,
-            gold * 0.18
+            cyan,
+            smoothstep(0.6,1.0,n)
         );
 
     gl_FragColor =
-        vec4(color, 1.0);
+        vec4(color,1.0);
 }
 `;
 
-function createShader(type, source) {
+function compile(type, source){
 
-    const shader = gl.createShader(type);
+    const shader =
+        gl.createShader(type);
 
     gl.shaderSource(shader, source);
 
     gl.compileShader(shader);
 
+    if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
+
+        alert(gl.getShaderInfoLog(shader));
+
+        console.error(gl.getShaderInfoLog(shader));
+
+        return null;
+    }
+
     return shader;
 }
 
-const vertexShader =
-    createShader(
-        gl.VERTEX_SHADER,
-        vertexShaderSource
-    );
+const vs =
+    compile(gl.VERTEX_SHADER, vertexShaderSource);
 
-const fragmentShader =
-    createShader(
-        gl.FRAGMENT_SHADER,
-        fragmentShaderSource
-    );
+const fs =
+    compile(gl.FRAGMENT_SHADER, fragmentShaderSource);
 
-const program = gl.createProgram();
+const program =
+    gl.createProgram();
 
-gl.attachShader(program, vertexShader);
-gl.attachShader(program, fragmentShader);
+gl.attachShader(program, vs);
+gl.attachShader(program, fs);
 
 gl.linkProgram(program);
+
+if(!gl.getProgramParameter(program, gl.LINK_STATUS)){
+
+    alert(gl.getProgramInfoLog(program));
+
+    console.error(gl.getProgramInfoLog(program));
+}
 
 gl.useProgram(program);
 
@@ -239,7 +155,8 @@ const vertices = new Float32Array([
      1, 1
 ]);
 
-const buffer = gl.createBuffer();
+const buffer =
+    gl.createBuffer();
 
 gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
@@ -250,10 +167,7 @@ gl.bufferData(
 );
 
 const aPosition =
-    gl.getAttribLocation(
-        program,
-        "aPosition"
-    );
+    gl.getAttribLocation(program, "aPosition");
 
 gl.enableVertexAttribArray(aPosition);
 
@@ -267,28 +181,13 @@ gl.vertexAttribPointer(
 );
 
 const uTime =
-    gl.getUniformLocation(
-        program,
-        "uTime"
-    );
+    gl.getUniformLocation(program, "uTime");
 
-const uResolution =
-    gl.getUniformLocation(
-        program,
-        "uResolution"
-    );
-
-function render(time) {
+function render(time){
 
     time *= 0.001;
 
     gl.uniform1f(uTime, time);
-
-    gl.uniform2f(
-        uResolution,
-        canvas.width,
-        canvas.height
-    );
 
     gl.drawArrays(
         gl.TRIANGLES,
