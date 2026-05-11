@@ -70,13 +70,25 @@ void main(){
 
     vec2 uv = vUv;
 
-    float t = uTime * 0.05;
+    float t = uTime * 0.35;
 
-    uv.x += sin(uv.y*4.0+t)*0.08;
-    uv.y += cos(uv.x*3.0-t)*0.06;
+    uv.x += sin(
+        uv.y * 4.0 +
+        t
+    ) * 0.12;
+    uv.y += cos(
+        uv.x * 3.0 -
+        t
+    ) * 0.10;
 
     float n =
-        fbm(uv*3.0+t*0.2);
+        fbm(
+            uv * 3.0 +
+            vec2(
+                t * 0.4,
+                t * 0.15
+            )
+        );
 
     vec3 deep =
         vec3(0.01,0.05,0.12);
