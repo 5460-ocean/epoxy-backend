@@ -100,7 +100,7 @@ void main(){
 
         vec2 flow =
             flowField(
-                p * 0.65 +
+                p * 0.38 +
                 velocity * 0.25
             );
 
@@ -108,15 +108,12 @@ void main(){
             mix(
                 velocity,
                 flow,
-                0.42
+                0.78
             );
 
-        p += velocity * 0.11;
+        p += velocity * 0.24;
 
-        p += vec2(
-            0.012,
-            -0.004
-        );
+        p += vec2(0.04, -0.012);
     }
 
     p.x *= 1.15;
