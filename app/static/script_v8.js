@@ -117,6 +117,42 @@ void main(){
         vec3(0.3,0.7,0.9);
 
     
+float depth1 =
+    fbm(p * 0.7);
+
+float depth2 =
+    fbm(p * 1.5 + 8.0);
+
+float ridge =
+    abs(
+        depth1 - depth2
+    );
+
+ridge =
+    smoothstep(
+        0.04,
+        0.16,
+        ridge
+    );
+
+float depth1 =
+    fbm(p * 0.7);
+
+float depth2 =
+    fbm(p * 1.5 + 8.0);
+
+float ridge =
+    abs(
+        depth1 - depth2
+    );
+
+ridge =
+    smoothstep(
+        0.04,
+        0.16,
+        ridge
+    );
+
 vec3 color =
         mix(deep, blue, n);
 
@@ -146,7 +182,6 @@ color +=
         0.55,
         0.7
     ) * 0.12;
-
 
 float foam =
     smoothstep(
