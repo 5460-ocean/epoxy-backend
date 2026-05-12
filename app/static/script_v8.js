@@ -117,19 +117,6 @@ void main(){
         vec3(0.3,0.7,0.9);
 
     
-float ridge =
-    abs(
-        depth1 - depth2
-    );
-
-ridge =
-    smoothstep(
-        0.04,
-        0.16,
-        ridge
-    );
-
-
 vec3 color =
         mix(deep, blue, n);
 
