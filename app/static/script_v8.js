@@ -116,7 +116,21 @@ void main(){
     vec3 cyan =
         vec3(0.3,0.7,0.9);
 
-    vec3 color =
+    
+float ridge =
+    abs(
+        depth1 - depth2
+    );
+
+ridge =
+    smoothstep(
+        0.04,
+        0.16,
+        ridge
+    );
+
+
+vec3 color =
         mix(deep, blue, n);
 
     color =
@@ -126,7 +140,47 @@ void main(){
             smoothstep(0.6,1.0,n)
         );
 
-    gl_FragColor =
+    
+
+float highlight =
+    pow(
+        smoothstep(
+            0.5,
+            1.0,
+            n
+        ),
+        6.0
+    );
+
+color +=
+    highlight *
+    vec3(
+        0.4,
+        0.55,
+        0.7
+    ) * 0.12;
+
+
+float foam =
+    smoothstep(
+        0.72,
+        0.92,
+        fbm(
+            p * 4.0 +
+            ridge * 3.0
+        )
+    );
+
+color +=
+    foam *
+    vec3(
+        0.15,
+        0.22,
+        0.25
+    ) * 0.18;
+
+
+gl_FragColor =
         vec4(color,1.0);
 }
 `;
