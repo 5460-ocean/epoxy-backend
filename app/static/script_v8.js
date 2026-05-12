@@ -90,7 +90,7 @@ void main(){
 
     vec2 uv = vUv;
 
-    float t = uTime * 0.22;
+    float t = uTime * 0.08;
 
     uv -= 0.5;
 
@@ -188,7 +188,7 @@ void main(){
 
     goldMask *=
         0.8 +
-        fbm(p * 6.0) * 0.5;
+        fbm(p * 2.0) * 0.18;
 
     color =
         mix(
