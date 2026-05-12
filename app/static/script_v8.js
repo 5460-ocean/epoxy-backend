@@ -27,7 +27,10 @@ uniform float uTime;
 varying vec2 vUv;
 
 float hash(vec2 p){
-    return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453123);
+    return fract(
+        sin(dot(p, vec2(127.1,311.7))) *
+        43758.5453123
+    );
 }
 
 float noise(vec2 p){
@@ -35,12 +38,12 @@ float noise(vec2 p){
     vec2 i = floor(p);
     vec2 f = fract(p);
 
-    f = f*f*(3.0-2.0*f);
+    f = f * f * (3.0 - 2.0 * f);
 
     float a = hash(i);
-    float b = hash(i+vec2(1.0,0.0));
-    float c = hash(i+vec2(0.0,1.0));
-    float d = hash(i+vec2(1.0,1.0));
+    float b = hash(i + vec2(1.0,0.0));
+    float c = hash(i + vec2(0.0,1.0));
+    float d = hash(i + vec2(1.0,1.0));
 
     return mix(
         mix(a,b,f.x),
@@ -87,125 +90,158 @@ void main(){
 
     vec2 uv = vUv;
 
-    float t = uTime * 0.35;
+    float t = uTime * 0.22;
 
-    uv.x += sin(
-        uv.y * 4.0 +
-        t
-    ) * 0.12;
-    uv.y += cos(
-        uv.x * 3.0 -
-        t
-    ) * 0.10;
+    uv -= 0.5;
+
+    uv.x *= 0.8;
+
+    vec2 p = uv * 3.0;
+
+    for(int i=0;i<8;i++){
+
+        vec2 flow =
+            flowField(
+                p * 1.15 +
+                t * 0.12
+            );
+
+        p += flow * 0.18;
+
+        p *= 1.015;
+    }
+
+    p.x *= 1.4;
 
     float n =
-        fbm(
-            uv * 3.0 +
-            vec2(
-                t * 0.4,
-                t * 0.15
-            )
+        fbm(p * 0.8);
+
+    float depth1 =
+        fbm(p * 0.7);
+
+    float depth2 =
+        fbm(p * 1.5 + 8.0);
+
+    float ridge =
+        abs(depth1 - depth2);
+
+    ridge =
+        smoothstep(
+            0.04,
+            0.16,
+            ridge
         );
 
     vec3 deep =
-        vec3(0.01,0.05,0.12);
+        vec3(0.01,0.03,0.07);
 
     vec3 blue =
-        vec3(0.02,0.25,0.45);
+        vec3(0.02,0.18,0.34);
 
     vec3 cyan =
-        vec3(0.3,0.7,0.9);
+        vec3(0.15,0.45,0.7);
 
-    
-float depth1 =
-    fbm(p * 0.7);
+    vec3 basin =
+        vec3(0.55,0.72,0.78);
 
-float depth2 =
-    fbm(p * 1.5 + 8.0);
-
-float ridge =
-    abs(
-        depth1 - depth2
-    );
-
-ridge =
-    smoothstep(
-        0.04,
-        0.16,
-        ridge
-    );
-
-float depth1 =
-    fbm(p * 0.7);
-
-float depth2 =
-    fbm(p * 1.5 + 8.0);
-
-float ridge =
-    abs(
-        depth1 - depth2
-    );
-
-ridge =
-    smoothstep(
-        0.04,
-        0.16,
-        ridge
-    );
-
-vec3 color =
+    vec3 color =
         mix(deep, blue, n);
 
     color =
         mix(
             color,
             cyan,
-            smoothstep(0.6,1.0,n)
+            smoothstep(
+                0.45,
+                0.9,
+                depth1
+            )
         );
 
-    
+    color =
+        mix(
+            color,
+            basin,
+            smoothstep(
+                0.72,
+                1.0,
+                depth2
+            ) * 0.45
+        );
 
-float highlight =
-    pow(
-        smoothstep(
-            0.5,
+    // GOLD VEINS
+
+    vec3 gold =
+        vec3(
             1.0,
+            0.82,
+            0.32
+        );
+
+    float goldMask =
+        ridge *
+        smoothstep(
+            0.52,
+            0.82,
             n
-        ),
-        6.0
-    );
+        );
 
-color +=
-    highlight *
-    vec3(
-        0.4,
-        0.55,
-        0.7
-    ) * 0.12;
+    goldMask *=
+        0.8 +
+        fbm(p * 6.0) * 0.5;
 
-float foam =
-    smoothstep(
-        0.72,
-        0.92,
-        fbm(
-            p * 4.0 +
-            ridge * 3.0
-        )
-    );
+    color =
+        mix(
+            color,
+            gold,
+            goldMask * 0.75
+        );
 
-color +=
-    foam *
-    vec3(
-        0.15,
-        0.22,
-        0.25
-    ) * 0.18;
+    // CINEMATIC HIGHLIGHTS
 
+    float highlight =
+        pow(
+            smoothstep(
+                0.5,
+                1.0,
+                n
+            ),
+            6.0
+        );
 
-gl_FragColor =
+    color +=
+        highlight *
+        vec3(
+            0.4,
+            0.55,
+            0.7
+        ) * 0.12;
+
+    // FOAM POCKETS
+
+    float foam =
+        smoothstep(
+            0.72,
+            0.92,
+            fbm(
+                p * 4.0 +
+                ridge * 3.0
+            )
+        );
+
+    color +=
+        foam *
+        vec3(
+            0.15,
+            0.22,
+            0.25
+        ) * 0.18;
+
+    gl_FragColor =
         vec4(color,1.0);
 }
 `;
+
 
 function compile(type, source){
 
