@@ -54,16 +54,33 @@ float fbm(vec2 p){
     float v = 0.0;
     float a = 0.5;
 
-    for(int i=0;i<5;i++){
+    for(int i=0;i<6;i++){
 
-        v += noise(p)*a;
+        v += noise(p) * a;
 
-        p *= 2.0;
+        p *= 2.02;
 
         a *= 0.5;
     }
 
     return v;
+}
+
+vec2 flowField(vec2 p){
+
+    float n1 =
+        fbm(p * 1.2);
+
+    float n2 =
+        fbm(p * 1.7 + 4.0);
+
+    float angle =
+        (n1 + n2) * 6.2831;
+
+    return vec2(
+        cos(angle),
+        sin(angle)
+    );
 }
 
 void main(){
