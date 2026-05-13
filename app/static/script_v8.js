@@ -124,13 +124,13 @@ void main(){
     ) * 0.12;
 
     float n =
-        fbm(p * 0.8);
+        fbm(advected * 0.8);
 
     float depth1 =
-        fbm(p * 0.7);
+        fbm(advected * 0.7);
 
     float depth2 =
-        fbm(p * 1.5 + 8.0);
+        fbm(advected * 1.5 + 8.0);
 
     float ridge =
         abs(depth1 - depth2);
