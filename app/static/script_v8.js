@@ -124,8 +124,8 @@ void main(){
     p.x *= 1.15;
 
     p += vec2(
-        sin(t * 0.3),
-        cos(t * 0.2)
+                t * 0.22,
+                -t * 0.08
     ) * 0.06;
 
     float n =
