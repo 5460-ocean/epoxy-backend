@@ -116,9 +116,9 @@ void main(){
                 0.28
             );
 
-        p += velocity * 0.08;
+        p += velocity * 0.14;
 
-        p += vec2(0.008, -0.003);
+        p += vec2(0.018, -0.006);
     }
 
     p.x *= 1.15;
@@ -126,7 +126,7 @@ void main(){
     p += vec2(
         sin(t * 0.3),
         cos(t * 0.2)
-    ) * 0.03;
+    ) * 0.06;
 
     float n =
         fbm(p * 0.8);
