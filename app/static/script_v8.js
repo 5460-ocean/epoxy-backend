@@ -116,7 +116,7 @@ void main(){
                 0.28
             );
 
-        p += velocity * 0.14;
+        p += velocity * 0.24;
 
         p += vec2(0.018, -0.006);
     }
