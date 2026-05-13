@@ -1,8 +1,13 @@
 const canvas = document.getElementById("glcanvas");
 const gl = canvas.getContext("webgl");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const scale = 0.55;
+
+canvas.width =
+    window.innerWidth * scale;
+
+canvas.height =
+    window.innerHeight * scale;
 
 gl.viewport(0, 0, canvas.width, canvas.height);
 
