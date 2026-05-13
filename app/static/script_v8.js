@@ -91,7 +91,7 @@ void main(){
 
     vec2 uv = vUv;
 
-    float t = uTime * 0.08;
+    float t = uTime * 0.42;
 
     uv -= 0.5;
 
@@ -124,8 +124,8 @@ void main(){
     p.x *= 1.15;
 
     p += vec2(
-                t * 0.22,
-                -t * 0.08
+                t * 0.9,
+                -t * 0.35
     ) * 0.06;
 
     float n =
