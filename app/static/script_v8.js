@@ -96,7 +96,7 @@ void main(){
 
     vec2 velocity = vec2(0.0);
 
-    for(int i=0;i<12;i++){
+    for(int i=0;i<8;i++){
 
         vec2 flow =
             flowField(
@@ -108,12 +108,12 @@ void main(){
             mix(
                 velocity,
                 flow,
-                0.78
+                0.28
             );
 
-        p += velocity * 0.24;
+        p += velocity * 0.08;
 
-        p += vec2(0.04, -0.012);
+        p += vec2(0.008, -0.003);
     }
 
     p.x *= 1.15;
@@ -121,7 +121,7 @@ void main(){
     p += vec2(
         sin(t * 0.3),
         cos(t * 0.2)
-    ) * 0.12;
+    ) * 0.03;
 
     float n =
         fbm(p * 0.8);
