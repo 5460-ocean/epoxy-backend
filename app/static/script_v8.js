@@ -172,7 +172,14 @@ vec2 advected =
         ) - 0.5;
 
     advected +=
-        heavyFlow * 3.5;
+        
+heavyFlow * 1.4;
+
+    advected +=
+        normalize(
+            warp + 0.001
+        ) * ridge * 0.9
+;
 
     float n =
         fbm(
