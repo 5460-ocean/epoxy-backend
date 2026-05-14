@@ -141,8 +141,16 @@ void main(){
         p += velocity * 0.22;
     }
 
-    float n =
+    
+float n =
         fbm(p * 0.9);
+
+    n =
+        pow(
+            n,
+            1.35
+        );
+
 
     float depth =
         fbm(
@@ -150,7 +158,19 @@ void main(){
             n
         );
 
+    
+float compress =
+        fbm(
+            p * 0.22
+        );
+
+    p += vec2(
+        compress * 0.18,
+       -compress * 0.08
+    );
+
     float ridge =
+
         abs(
             n - depth
         );
@@ -238,7 +258,7 @@ void main(){
         mix(
             color,
             gold,
-            goldMask * 0.65
+            goldMask * 0.92
         );
 
     float glow =
