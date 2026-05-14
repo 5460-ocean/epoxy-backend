@@ -142,8 +142,14 @@ void main(){
     }
 
     
-float n =
-        fbm(p * 0.9);
+vec2 advected =
+        p +
+        velocity * 2.4;
+
+    float n =
+        fbm(
+            advected * 0.9
+        );
 
     n =
         pow(
