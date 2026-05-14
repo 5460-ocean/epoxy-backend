@@ -146,6 +146,20 @@ vec2 advected =
         p +
         velocity * 2.4;
 
+    vec2 warp =
+        vec2(
+            fbm(
+                advected * 0.6
+            ),
+            fbm(
+                advected * 0.6 +
+                12.0
+            )
+        ) - 0.5;
+
+    advected +=
+        warp * 1.8;
+
     float n =
         fbm(
             advected * 0.9
