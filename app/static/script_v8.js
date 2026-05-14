@@ -126,6 +126,11 @@ void main(){
                 )
             ) - 0.5;
 
+        flow += vec2(
+            -flow.y,
+             flow.x
+        ) * 0.65;
+
         velocity =
             mix(
                 velocity,
