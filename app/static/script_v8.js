@@ -160,6 +160,20 @@ vec2 advected =
     advected +=
         warp * 1.8;
 
+    vec2 heavyFlow =
+        vec2(
+            fbm(
+                advected * 0.18
+            ),
+            fbm(
+                advected * 0.18 +
+                20.0
+            )
+        ) - 0.5;
+
+    advected +=
+        heavyFlow * 3.5;
+
     float n =
         fbm(
             advected * 0.9
