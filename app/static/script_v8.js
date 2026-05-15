@@ -328,7 +328,15 @@ vec3 color =
             goldMask * 0.92
         );
 
-    float glow =
+    
+float gloss =
+    pow(
+        ridge,
+        3.5
+    );
+
+float glow =
+
         pow(
             smoothstep(
                 0.45,
@@ -339,7 +347,7 @@ vec3 color =
         );
 
     color +=
-        glow *
+        (glow + gloss * 0.9) *
         vec3(
             0.2,
             0.35,
