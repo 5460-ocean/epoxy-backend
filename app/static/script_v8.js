@@ -325,7 +325,13 @@ vec3 color =
         mix(
             color,
             gold,
-            goldMask * 0.92
+            
+goldMask *
+pow(
+    ridge,
+    0.45
+) * 1.35
+
         );
 
     
@@ -354,7 +360,13 @@ float glow =
             0.55
         ) * 0.08;
 
-    gl_FragColor =
+    
+color *=
+    1.0 -
+    ridge * 0.12;
+
+gl_FragColor =
+
         vec4(color,1.0);
 }
 `;
