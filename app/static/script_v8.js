@@ -231,7 +231,16 @@ float ridge =
             ridge
         );
 
-    vec3 deep =
+    
+float absorption =
+    smoothstep(
+        0.15,
+        0.85,
+        n
+    );
+
+vec3 deep =
+
         vec3(
             0.01,
             0.03,
@@ -259,7 +268,16 @@ float ridge =
             0.82
         );
 
-    vec3 color =
+    
+deep *=
+    mix(
+        1.4,
+        0.55,
+        absorption
+    );
+
+vec3 color =
+
         mix(
             deep,
             blue,
