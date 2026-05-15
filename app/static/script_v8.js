@@ -210,10 +210,18 @@ float compress =
        -compress * 0.08
     );
 
-    float ridge =
+    
+float deepCurrent =
+    fbm(
+        advected * 0.05 -
+        uTime * 0.04
+    );
+
+float ridge =
+
 
         abs(
-            n - depth
+            (n + deepCurrent * 0.25) - depth
         );
 
     ridge =
