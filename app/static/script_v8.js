@@ -178,7 +178,7 @@ heavyFlow * 1.4;
     advected +=
         normalize(
             warp + 0.001
-        ) * ridge * 0.9
+        ) * n * 0.9
 ;
 
     float n =
