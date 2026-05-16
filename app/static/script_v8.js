@@ -1,5 +1,13 @@
 const canvas =
-    document.getElementById("glcanvas");
+    document.getElementById("glcanvas"
+);
+
+micro =
+    pow(
+        micro,
+        2.2
+    );
+
 
 const gl =
     canvas.getContext("webgl");
@@ -339,10 +347,12 @@ vec3 color =
             
 goldMask *
 
+
 pow(
     ridge,
-    2.8
-) * 3.8
+    5.5
+) * 8.0
+
 
 
         );
@@ -366,7 +376,7 @@ float glow =
         );
 
     color +=
-        (glow + gloss * 1.8) *
+        (glow + gloss * 3.2) *
         vec3(
             0.2,
             0.35,
@@ -376,7 +386,7 @@ float glow =
     
 color *=
     1.0 -
-    ridge * 0.12;
+    ridge * 0.28;
 
 gl_FragColor =
 
