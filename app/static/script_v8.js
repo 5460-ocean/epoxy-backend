@@ -236,15 +236,7 @@ float density =
         n
     );
 
-float 
-ridge =
-    pow(
-        ridge,
-        1.8
-    );
-
-ridge =
-
+float ridge =
 
 
 
@@ -304,16 +296,7 @@ deep *=
         absorption
     );
 
-vec3 
-color *=
-    mix(
-        0.65,
-        1.25,
-        density
-    );
-
-color =
-
+vec3 color =
 
         mix(
             deep,
