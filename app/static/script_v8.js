@@ -228,7 +228,24 @@ float deepCurrent =
         uTime * 0.04
     );
 
-float ridge =
+
+float density =
+    smoothstep(
+        0.42,
+        0.72,
+        n
+    );
+
+float 
+ridge =
+    pow(
+        ridge,
+        1.8
+    );
+
+ridge =
+
+
 
 
         abs(
@@ -287,7 +304,16 @@ deep *=
         absorption
     );
 
-vec3 color =
+vec3 
+color *=
+    mix(
+        0.65,
+        1.25,
+        density
+    );
+
+color =
+
 
         mix(
             deep,
