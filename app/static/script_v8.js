@@ -337,7 +337,19 @@ vec3 color =
             color,
             gold,
             
+
+
 goldMask *
+pow(
+    ridge,
+    3.8
+) *
+
+pow(
+    ridge,
+    3.8
+) *
+
 
 pow(
     ridge,
