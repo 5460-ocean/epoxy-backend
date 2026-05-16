@@ -236,7 +236,7 @@ float density =
         n
     );
 
-float ridge =
+float pow(ridge, 0.72) =
 
 
 
@@ -246,8 +246,8 @@ float ridge =
 
     ridge =
         smoothstep(
-            0.03,
-            0.18,
+            0.008,
+            0.055,
             ridge
         );
 
