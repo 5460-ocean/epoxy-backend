@@ -200,13 +200,24 @@ heavyFlow * 1.4;
         );
 
     
+
+float micro =
+    fbm(
+        advected * 4.5 +
+        uTime * 0.12
+    );
+
 float compress =
+
         fbm(
             p * 0.22
         );
 
     p += vec2(
-        compress * 0.18,
+        
+compress * 0.18 +
+    micro * 0.025
+,
        -compress * 0.08
     );
 
@@ -327,10 +338,12 @@ vec3 color =
             gold,
             
 goldMask *
+
 pow(
     ridge,
-    0.45
-) * 1.35
+    2.8
+) * 3.8
+
 
         );
 
@@ -353,7 +366,7 @@ float glow =
         );
 
     color +=
-        (glow + gloss * 0.9) *
+        (glow + gloss * 1.8) *
         vec3(
             0.2,
             0.35,
