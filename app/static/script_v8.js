@@ -329,22 +329,25 @@ vec3 color =
     vec3 gold =
         vec3(
             1.0,
-            0.82,
+            0.90,
             0.35
         );
 
     float goldMask =
-        ridge *
-        smoothstep(
-            0.48,
-            0.82,
-            n
-        );
+ridge *
+pow(
+smoothstep(
+0.62,
+0.82,
+n
+),
+2.8
+);
 
     color =
         mix(
             color,
-            gold,
+            gold * 1.45,
             
 
 
@@ -397,11 +400,15 @@ float glow =
     
 color *=
     1.0 -
-    ridge * 0.12;
-
-gl_FragColor =
-
-        vec4(color,1.0);
+ridge *
+pow(
+smoothstep(
+0.62,
+0.82,
+n
+),
+2.8
+);
 }
 `;
 
@@ -488,6 +495,8 @@ const aPosition =
 
 gl.enableVertexAttribArray(
     aPosition
+),
+2.8
 );
 
 gl.vertexAttribPointer(
