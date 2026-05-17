@@ -236,7 +236,7 @@ float density =
         n
     );
 
-float pow(ridge, 0.72) =
+float ridge =
 
 
 
