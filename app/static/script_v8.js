@@ -335,13 +335,10 @@ vec3 color =
 
     float goldMask =
 ridge *
-pow(
 smoothstep(
 0.62,
 0.82,
 n
-),
-2.8
 );
 
     color =
