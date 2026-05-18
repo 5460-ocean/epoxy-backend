@@ -349,7 +349,6 @@ n
 
 
 goldMask *
-pow(
     ridge,
     3.8
 ) *
