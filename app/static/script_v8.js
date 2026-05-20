@@ -33,7 +33,6 @@ void main(){
         vec4(aPosition,0.0,1.0);
 }
 `;
-
 const fragmentShaderSource = `
 precision highp float;
 
@@ -404,7 +403,6 @@ gl_FragColor =
         vec4(color,1.0);
 }
 `;
-
 function compile(type, source){
 
     const shader =
