@@ -242,7 +242,7 @@ float ridge =
 
         abs(
             (n + deepCurrent * 0.25) - depth
-        );
+        ));
 
     ridge =
         smoothstep(
