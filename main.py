@@ -139,6 +139,11 @@ canvas {
     flex-wrap: wrap;
 }
 
+@app.get("/app/v8" , response_class=HTMLResponse)
+def app_v8():
+
+    return HTMLResponse(
+"""
 button {
 
     background: rgba(0,0,0,0.55);
