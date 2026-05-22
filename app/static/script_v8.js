@@ -158,7 +158,7 @@ vec2 advected =
         ) - 0.5;
 
     advected +=
-        warp * 1.8;
+        warp * 1.1;
 
     vec2 heavyFlow =
         vec2(
@@ -173,7 +173,7 @@ vec2 advected =
 
     advected +=
         
-heavyFlow * 1.4;
+heavyFlow * 0.65;
 
     advected +=
         normalize(
@@ -203,7 +203,7 @@ heavyFlow * 1.4;
 
 float micro =
     fbm(
-        advected * 4.5 +
+        advected * 8.0 +
         uTime * 0.12
     );
 
@@ -236,20 +236,31 @@ float density =
         n
     );
 
-float ridge =
+ridge =
+    smoothstep(
+        0.002,
+        0.018,
+        ridge
+    );
 
+ridge =
+    pow(
+        ridge,
+        1.8
+    );
 
+ridge =
+    smoothstep(
+        0.002,
+        0.018,
+        ridge
+    );
 
-        abs(
-            (n + deepCurrent * 0.25) - depth
-        );
-
-    ridge =
-        smoothstep(
-            0.008,
-            0.055,
-            ridge
-        );
+ridge =
+    pow(
+        ridge,
+        1.8
+    );
 
     
 float absorption =
@@ -260,12 +271,11 @@ float absorption =
     );
 
 vec3 deep =
-
-        vec3(
-            0.01,
-            0.03,
-            0.08
-        );
+    vec3(
+        0.001,
+        0.008,
+        0.025
+    );
 
     vec3 blue =
         vec3(
