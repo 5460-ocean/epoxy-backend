@@ -33,6 +33,7 @@ void main(){
         vec4(aPosition,0.0,1.0);
 }
 `;
+
 const fragmentShaderSource = `
 precision highp float;
 
@@ -62,8 +63,8 @@ float noise(vec2 p){
         (3.0 - 2.0 * f);
 
     float a = hash(i);
-    float b = hash(i + vec2(1.0,0.0);
-    float c = hash(i + vec2(0.0,1.0);
+    float b = hash(i + vec2(1.0,0.0));
+    float c = hash(i + vec2(0.0,1.0));
     float d = hash(i + vec2(1.0,1.0));
 
     return mix(
@@ -235,7 +236,7 @@ float density =
         n
     );
 
-float ridge =
+float pow(ridge, 0.72) =
 
 
 
@@ -403,6 +404,7 @@ gl_FragColor =
         vec4(color,1.0);
 }
 `;
+
 function compile(type, source){
 
     const shader =
