@@ -15,8 +15,7 @@ def home():
 
 @app.get("/app", response_class=HTMLResponse)
 def app_page():
-    return HTMLResponse(
-"""
+    return """
     <!DOCTYPE html>
     <html>
     <body style="margin:0;background:#0b0f1a;color:white;text-align:center;">
@@ -52,8 +51,7 @@ def app_page():
 
 @app.get("/app/v5", response_class=HTMLResponse)
 async def app_v5():
-    return HTMLResponse(
-"""
+    return """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,7 +83,6 @@ canvas {
 </body>
 </html>
 """
-    )
 
 @app.get("/app/v6", response_class=HTMLResponse)
 def app_v6():
@@ -142,71 +139,52 @@ canvas {
     flex-wrap: wrap;
 }
 
-@app.get("/app/v8" , response_class=HTMLResponse)
-async def app_v8():
+button {
 
-    return HTMLResponse(
-"""
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Epoxy Fluid V8</title>
+    background: rgba(0,0,0,0.55);
 
-<style>
+    color: white;
 
-html,body{
-    margin:0;
-    overflow:hidden;
-    background:black;
-}
+    border: 1px solid rgba(255,255,255,0.15);
 
-canvas{
-    width:100vw;
-    height:100vh;
-    display:block;
-}
+    padding: 10px 16px;
 
-.ui{
-    position:fixed;
-    top:12px;
-    left:12px;
-    display:flex;
-    gap:8px;
-    z-index:10;
-}
+    border-radius: 12px;
 
-button{
-    background:rgba(0,0,0,0.5);
-    color:white;
-    border:1px solid rgba(255,255,255,0.15);
-    padding:10px 14px;
-    border-radius:10px;
+    backdrop-filter: blur(12px);
+
+    cursor: pointer;
+
+    font-size: 14px;
 }
 
 </style>
+
 </head>
 
 <body>
 
 <div class="ui">
+
 <button>Generate</button>
+
 <button>Randomize</button>
+
 <button>Save</button>
+
 <button>Load</button>
+
 <button>Download</button>
+
 </div>
 
 <canvas id="glcanvas"></canvas>
 
-<script src="/static/script_v8.js"></script>
+<script src="/static/script_v6.js?v=1"></script>
 
 </body>
 </html>
 """
-    )
-
 
 @app.get("/app/v7", response_class=HTMLResponse)
 def app_v7():
