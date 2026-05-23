@@ -138,7 +138,10 @@ void main(){
                 0.08
             );
 
-        p += velocity * 0.22;
+        p += velocity * (
+    0.04 +
+    slab * 0.12
+);
     }
 
     
@@ -203,7 +206,7 @@ heavyFlow * 0.65;
 
 float micro =
     fbm(
-        advected * 8.0 +
+        advected * 5.0 +
         uTime * 0.12
     );
 
@@ -229,6 +232,28 @@ float deepCurrent =
     );
 
 
+
+n =
+    mix(
+        n,
+        smoothstep(
+            0.35,
+            0.9,
+            n
+        ),
+        0.55
+    );
+
+n =
+    mix(
+        n,
+        smoothstep(
+            0.35,
+            0.9,
+            n
+        ),
+        0.55
+    );
 
 float density =
     smoothstep(
@@ -372,13 +397,16 @@ pow(
         );
 
     
+
 float gloss =
     pow(
         ridge,
-        3.5
-    );
+        8.0
+    ) *
+    1.4;
 
 float glow =
+
 
         pow(
             smoothstep(
