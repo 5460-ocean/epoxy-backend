@@ -98,10 +98,10 @@ void main(){
     uv.x *= 0.8;
 
     float t =
-        uTime * 0.55;
+        uTime * 0.18;
 
     vec2 p =
-        uv * 3.0;
+        uv * 1.8;
 
     p += vec2(
         t * 1.4,
@@ -244,15 +244,15 @@ float ridge =
 
 ridge =
     smoothstep(
-        0.002,
-        0.018,
+        0.001,
+        0.012,
         ridge
     );
 
 ridge =
     pow(
         ridge,
-        1.8
+        2.8
     );
 
 float absorption =
@@ -265,9 +265,9 @@ float absorption =
 
 vec3 deep =
     vec3(
-        0.001,
-        0.008,
-        0.025
+        0.0005,
+        0.003,
+        0.012
     );
 
     vec3 blue =
@@ -390,7 +390,7 @@ float glow =
         );
 
     color +=
-        (glow + gloss * 1.8) *
+        (glow * 0.25 + gloss * 2.8) *
         vec3(
             0.2,
             0.35,
