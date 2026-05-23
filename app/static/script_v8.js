@@ -98,10 +98,10 @@ void main(){
     uv.x *= 0.8;
 
     float t =
-        uTime * 0.18;
+        uTime * 0.55;
 
     vec2 p =
-        uv * 1.8;
+        uv * 3.0;
 
     p += vec2(
         t * 1.4,
@@ -138,10 +138,7 @@ void main(){
                 0.08
             );
 
-        p += velocity * (
-    0.04 +
-    slab * 0.12
-);
+        p += velocity * 0.22;
     }
 
     
@@ -161,7 +158,7 @@ vec2 advected =
         ) - 0.5;
 
     advected +=
-        warp * 1.1;
+        warp * 1.8;
 
     vec2 heavyFlow =
         vec2(
@@ -176,7 +173,7 @@ vec2 advected =
 
     advected +=
         
-heavyFlow * 0.65;
+heavyFlow * 1.4;
 
     advected +=
         normalize(
@@ -206,7 +203,7 @@ heavyFlow * 0.65;
 
 float micro =
     fbm(
-        advected * 5.0 +
+        advected * 4.5 +
         uTime * 0.12
     );
 
@@ -232,29 +229,6 @@ float deepCurrent =
     );
 
 
-
-n =
-    mix(
-        n,
-        smoothstep(
-            0.35,
-            0.9,
-            n
-        ),
-        0.55
-    );
-
-n =
-    mix(
-        n,
-        smoothstep(
-            0.35,
-            0.9,
-            n
-        ),
-        0.55
-    );
-
 float density =
     smoothstep(
         0.42,
@@ -262,26 +236,23 @@ float density =
         n
     );
 
-float ridge =
-    abs(
-        (n + deepCurrent * 0.25) - depth
-    );
+float pow(ridge, 0.72) =
 
-ridge =
-    smoothstep(
-        0.001,
-        0.012,
-        ridge
-    );
 
-ridge =
-    pow(
-        ridge,
-        2.8
-    );
 
+        abs(
+            (n + deepCurrent * 0.25) - depth
+        );
+
+    ridge =
+        smoothstep(
+            0.008,
+            0.055,
+            ridge
+        );
+
+    
 float absorption =
-
     smoothstep(
         0.15,
         0.85,
@@ -289,11 +260,12 @@ float absorption =
     );
 
 vec3 deep =
-    vec3(
-        0.0005,
-        0.003,
-        0.012
-    );
+
+        vec3(
+            0.01,
+            0.03,
+            0.08
+        );
 
     vec3 blue =
         vec3(
@@ -397,16 +369,13 @@ pow(
         );
 
     
-
 float gloss =
     pow(
         ridge,
-        8.0
-    ) *
-    1.4;
+        3.5
+    );
 
 float glow =
-
 
         pow(
             smoothstep(
@@ -418,7 +387,7 @@ float glow =
         );
 
     color +=
-        (glow * 0.25 + gloss * 2.8) *
+        (glow + gloss * 1.8) *
         vec3(
             0.2,
             0.35,
