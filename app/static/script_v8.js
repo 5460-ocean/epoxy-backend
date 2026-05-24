@@ -313,8 +313,8 @@ float ridge =
 
 ridge =
     smoothstep(
-        0.12,
-        0.22,
+        0.18,
+        0.185,
         ridge
     );
 
@@ -346,6 +346,21 @@ fracture =
     pow(
         fracture,
         3.0
+    );
+
+
+
+float filament =
+    pow(
+        ridge,
+        42.0
+    );
+
+float metallicFilament =
+    smoothstep(
+        0.92,
+        1.0,
+        filament
     );
 
 float metallicCore =
@@ -606,6 +621,54 @@ color +=
     vec3(1.0) *
     lacquer *
     0.035;
+
+
+
+
+float resinDepth =
+    smoothstep(
+        0.18,
+        0.82,
+        depth
+    );
+
+color *=
+    mix(
+        0.55,
+        1.0,
+        resinDepth
+    );
+
+
+
+
+float lacquerBand =
+    pow(
+        1.0 -
+        abs(
+            uv.y + 0.15
+        ),
+        48.0
+    );
+
+color +=
+    vec3(1.0) *
+    lacquerBand *
+    0.025;
+
+
+
+
+float blackVein =
+    pow(
+        ridge,
+        1.8
+    );
+
+color -=
+    vec3(0.03,0.04,0.06) *
+    blackVein *
+    0.85;
 
 
 gl_FragColor =
