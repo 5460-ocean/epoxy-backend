@@ -313,8 +313,8 @@ float ridge =
 
 ridge =
     smoothstep(
-        0.18,
-        0.185,
+        0.188,
+        0.1895,
         ridge
     );
 
@@ -669,6 +669,32 @@ color -=
     vec3(0.03,0.04,0.06) *
     blackVein *
     0.85;
+
+
+
+
+float microSpec =
+
+    pow(
+        ridge,
+        90.0
+    );
+
+color +=
+
+    gold *
+
+    microSpec *
+
+    0.25;
+
+color =
+    pow(
+        color,
+        vec3(1.18)
+    );
+
+color *= 1.08;
 
 
 gl_FragColor =
