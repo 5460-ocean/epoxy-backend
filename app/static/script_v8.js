@@ -308,8 +308,15 @@ branchMask =
 
 float ridge =
     ridgeLarge * 1.0 +
-    ridgeMedium * branchMask * 0.75 +
-    ridgeSmall * branchMask * 0.22;
+    ridgeMedium * branchMask * 0.42 +
+    ridgeSmall * branchMask * 0.08;
+
+ridge =
+    smoothstep(
+        0.12,
+        0.22,
+        ridge
+    );
 
 ridge =
     smoothstep(
@@ -325,6 +332,21 @@ ridge =
     );
 
 
+
+
+
+float fracture =
+    smoothstep(
+        0.82,
+        0.92,
+        ridge
+    );
+
+fracture =
+    pow(
+        fracture,
+        3.0
+    );
 
 float metallicCore =
     pow(
@@ -554,6 +576,36 @@ color =
         color,
         vec3(1.35)
     );
+
+
+
+
+color =
+    clamp(
+        color,
+        0.0,
+        1.0
+    );
+
+color =
+    pow(
+        color,
+        vec3(1.8)
+    );
+
+
+
+
+float lacquer =
+    pow(
+        1.0 - abs(uv.y * 0.8),
+        24.0
+    );
+
+color +=
+    vec3(1.0) *
+    lacquer *
+    0.035;
 
 
 gl_FragColor =
