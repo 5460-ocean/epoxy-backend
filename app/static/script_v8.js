@@ -547,6 +547,15 @@ color +=
     0.12;
 
 
+
+
+color =
+    pow(
+        color,
+        vec3(1.35)
+    );
+
+
 gl_FragColor =
 
         vec4(color,1.0);
