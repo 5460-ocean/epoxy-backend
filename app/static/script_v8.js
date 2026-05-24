@@ -294,10 +294,22 @@ ridgeSmall =
         ridgeSmall
     );
 
+float branchMask =
+    fbm(
+        advected * 0.45
+    );
+
+branchMask =
+    smoothstep(
+        0.42,
+        0.82,
+        branchMask
+    );
+
 float ridge =
     ridgeLarge * 1.0 +
-    ridgeMedium * 0.55 +
-    ridgeSmall * 0.18;
+    ridgeMedium * branchMask * 0.75 +
+    ridgeSmall * branchMask * 0.22;
 
 ridge =
     smoothstep(
