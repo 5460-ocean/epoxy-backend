@@ -236,22 +236,24 @@ float density =
         n
     );
 
-float pow(ridge, 0.72) =
+float ridge =
+    abs(
+        (n + deepCurrent * 0.25) - depth
+    );
 
+ridge =
+    smoothstep(
+        0.001,
+        0.012,
+        ridge
+    );
 
+ridge =
+    pow(
+        ridge,
+        2.8
+    );
 
-        abs(
-            (n + deepCurrent * 0.25) - depth
-        );
-
-    ridge =
-        smoothstep(
-            0.008,
-            0.055,
-            ridge
-        );
-
-    
 float absorption =
     smoothstep(
         0.15,
