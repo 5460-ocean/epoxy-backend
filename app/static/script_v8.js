@@ -324,6 +324,20 @@ ridge =
         4.6
     );
 
+
+
+float metallicCore =
+    pow(
+        ridge,
+        18.0
+    );
+
+float metallicEdge =
+    pow(
+        ridge,
+        5.5
+    );
+
 float absorption =
     smoothstep(
         0.15,
@@ -473,6 +487,48 @@ color *=
 
 color -=
     ridgeMedium * 0.045;
+
+
+
+float clearcoat =
+    pow(
+        1.0 - abs(uv.y),
+        8.0
+    );
+
+float specular =
+    pow(
+        max(
+            ridge,
+            0.0
+        ),
+        22.0
+    );
+
+color +=
+    vec3(1.0) *
+    clearcoat *
+    0.08;
+
+color +=
+    vec3(1.0,0.98,0.92) *
+    specular *
+    0.18;
+
+
+
+
+float shadowVein =
+    pow(
+        ridge,
+        2.2
+    );
+
+color -=
+    vec3(0.02,0.03,0.05) *
+    shadowVein *
+    0.65;
+
 
 gl_FragColor =
 
