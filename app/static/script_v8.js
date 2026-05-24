@@ -229,7 +229,7 @@ float compress =
     p += vec2(
         
 compress * 0.18 +
-    micro * 0.025
+    micro * 0.008
 ,
        -compress * 0.08
     );
@@ -508,12 +508,12 @@ float specular =
 color +=
     vec3(1.0) *
     clearcoat *
-    0.08;
+    0.025;
 
 color +=
-    vec3(1.0,0.98,0.92) *
+    vec3(1.0,0.92,0.72) *
     specular *
-    0.18;
+    0.06;
 
 
 
@@ -528,6 +528,23 @@ color -=
     vec3(0.02,0.03,0.05) *
     shadowVein *
     0.65;
+
+
+
+
+float sharpGloss =
+    pow(
+        max(
+            ridge,
+            0.0
+        ),
+        38.0
+    );
+
+color +=
+    vec3(1.0,0.98,0.94) *
+    sharpGloss *
+    0.12;
 
 
 gl_FragColor =
