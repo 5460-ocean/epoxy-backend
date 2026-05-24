@@ -231,15 +231,60 @@ float deepCurrent =
 
 float density =
     smoothstep(
-        0.42,
-        0.72,
+        0.52,
+        0.82,
         n
     );
 
-float ridge =
-    abs(
-        (n + deepCurrent * 0.25) - depth
+n =
+    mix(
+        n,
+        slab,
+        0.22
     );
+
+float ridgeLarge =
+    abs(
+        (n + deepCurrent * 0.12) - depth
+    );
+
+ridgeLarge =
+    smoothstep(
+        0.002,
+        0.018,
+        ridgeLarge
+    );
+
+float ridgeMedium =
+    abs(
+        (n * 1.2) - depth
+    );
+
+ridgeMedium =
+    smoothstep(
+        0.001,
+        0.010,
+        ridgeMedium
+    );
+
+float ridgeSmall =
+    abs(
+        fbm(
+            advected * 2.8
+        ) - depth
+    );
+
+ridgeSmall =
+    smoothstep(
+        0.0005,
+        0.004,
+        ridgeSmall
+    );
+
+float ridge =
+    ridgeLarge * 1.0 +
+    ridgeMedium * 0.55 +
+    ridgeSmall * 0.18;
 
 ridge =
     smoothstep(
@@ -251,7 +296,7 @@ ridge =
 ridge =
     pow(
         ridge,
-        2.8
+        4.6
     );
 
 float absorption =
@@ -399,7 +444,10 @@ float glow =
     
 color *=
     1.0 -
-    ridge * 0.12;
+    ridgeLarge * 0.22;
+
+color -=
+    ridgeMedium * 0.045;
 
 gl_FragColor =
 
