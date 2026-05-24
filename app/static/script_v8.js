@@ -103,6 +103,19 @@ void main(){
     vec2 p =
         uv * 3.0;
 
+float slab =
+    fbm(
+        uv * 0.22
+    );
+
+slab =
+    smoothstep(
+        0.28,
+        0.78,
+        slab
+    );
+
+
     p += vec2(
         t * 1.4,
        -t * 0.55
