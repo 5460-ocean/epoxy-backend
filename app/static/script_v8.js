@@ -662,7 +662,7 @@ color +=
 float blackVein =
     pow(
         ridge,
-        1.8
+        5.0
     );
 
 color -=
@@ -695,6 +695,35 @@ color =
     );
 
 color *= 1.08;
+
+
+
+
+color *=
+    vec3(
+        0.72,
+        0.82,
+        0.95
+    );
+
+
+
+
+float filamentLine =
+
+    smoothstep(
+        0.9985,
+        0.9995,
+        ridge
+    );
+
+color +=
+
+    gold *
+
+    filamentLine *
+
+    0.85;
 
 
 gl_FragColor =
