@@ -102,17 +102,17 @@ void main(){
 
     
 
-float slab =
+float macroSlab =
 
     fbm(
         uv * 0.42
     );
 
-slab =
+macroSlab =
     smoothstep(
         0.32,
         0.78,
-        slab
+        macroSlab
     );
 
 
@@ -366,7 +366,7 @@ fracture =
 
 
 
-float filament =
+float metallicFilament =
     pow(
         ridge,
         42.0
@@ -499,7 +499,7 @@ color =
     mix(
         color,
         gold,
-        filament * 0.42
+        metallicFilament * 0.42
     );
 
 
