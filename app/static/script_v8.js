@@ -100,7 +100,23 @@ void main(){
     float t =
         uTime * 0.55;
 
-    vec2 p =
+    
+
+float slab =
+
+    fbm(
+        uv * 0.42
+    );
+
+slab =
+    smoothstep(
+        0.32,
+        0.78,
+        slab
+    );
+
+
+vec2 p =
         uv * 3.0;
 
 float slab =
@@ -456,7 +472,21 @@ vec3 color =
             0.35
         );
 
-    float goldMask =
+    
+
+float filament =
+
+    smoothstep(
+        0.9982,
+        0.9994,
+        ridge
+    );
+
+filament *=
+    slab;
+
+
+float goldMask =
         ridge *
         smoothstep(
             0.48,
@@ -464,32 +494,14 @@ vec3 color =
             n
         );
 
-    color =
-        mix(
-            color,
-            gold,
-            
+    
+color =
+    mix(
+        color,
+        gold,
+        filament * 0.42
+    );
 
-
-goldMask *
-pow(
-    ridge,
-    3.8
-) *
-
-pow(
-    ridge,
-    3.8
-) *
-
-
-pow(
-    ridge,
-    2.8
-) * 3.8
-
-
-        );
 
     
 float gloss =
@@ -518,193 +530,14 @@ float glow =
         ) * 0.08;
 
     
-color *=
-    1.0 -
-    ridgeLarge * 0.22;
-
-color -=
-    ridgeMedium * 0.045;
-
-
-
-float clearcoat =
-    pow(
-        1.0 - abs(uv.y),
-        8.0
-    );
-
-float specular =
-    pow(
-        max(
-            ridge,
-            0.0
-        ),
-        22.0
-    );
-
-color +=
-    vec3(1.0) *
-    clearcoat *
-    0.025;
-
-color +=
-    vec3(1.0,0.92,0.72) *
-    specular *
-    0.06;
-
-
-
-
-float shadowVein =
-    pow(
-        ridge,
-        2.2
-    );
-
-color -=
-    vec3(0.02,0.03,0.05) *
-    shadowVein *
-    0.65;
-
-
-
-
-float sharpGloss =
-    pow(
-        max(
-            ridge,
-            0.0
-        ),
-        38.0
-    );
-
-color +=
-    vec3(1.0,0.98,0.94) *
-    sharpGloss *
-    0.12;
-
-
-
-
-color =
-    pow(
-        color,
-        vec3(1.35)
-    );
-
-
-
-
-color =
-    clamp(
-        color,
-        0.0,
-        1.0
-    );
-
-color =
-    pow(
-        color,
-        vec3(1.8)
-    );
-
-
-
-
-float lacquer =
-    pow(
-        1.0 - abs(uv.y * 0.8),
-        24.0
-    );
-
-color +=
-    vec3(1.0) *
-    lacquer *
-    0.035;
-
-
-
-
-float resinDepth =
-    smoothstep(
-        0.18,
-        0.82,
-        depth
-    );
-
-color *=
-    mix(
-        0.55,
-        1.0,
-        resinDepth
-    );
-
-
-
-
-float lacquerBand =
-    pow(
-        1.0 -
-        abs(
-            uv.y + 0.15
-        ),
-        48.0
-    );
-
-color +=
-    vec3(1.0) *
-    lacquerBand *
-    0.025;
-
-
-
-
-float blackVein =
-    pow(
-        ridge,
-        5.0
-    );
-
-color -=
-    vec3(0.03,0.04,0.06) *
-    blackVein *
-    0.85;
-
-
-
-
-float microSpec =
-
-    pow(
-        ridge,
-        90.0
-    );
-
-color +=
-
-    gold *
-
-    microSpec *
-
-    0.25;
-
-color =
-    pow(
-        color,
-        vec3(1.18)
-    );
-
-color *= 1.08;
-
-
-
 
 color *=
     vec3(
-        0.72,
-        0.82,
-        0.95
+        0.16,
+        0.22,
+        0.32
     );
+
 
 
 
@@ -724,6 +557,50 @@ color +=
     filamentLine *
 
     0.85;
+
+
+
+
+float clearcoat =
+
+    pow(
+        1.0 -
+        abs(
+            uv.y * 0.85
+        ),
+        120.0
+    );
+
+color +=
+
+    vec3(1.0) *
+
+    clearcoat *
+
+    0.022;
+
+
+
+
+float shadowVein =
+
+    smoothstep(
+        0.994,
+        0.998,
+        ridge
+    );
+
+color -=
+
+    vec3(
+        0.06,
+        0.05,
+        0.04
+    ) *
+
+    shadowVein *
+
+    0.7;
 
 
 gl_FragColor =
