@@ -322,68 +322,114 @@ branchMask =
         branchMask
     );
 
+
 float ridge =
-    ridgeLarge * 1.0 +
-    ridgeMedium * branchMask * 0.42 +
-    ridgeSmall * branchMask * 0.08;
+
+      ridgeLarge * 1.0 +
+
+      ridgeMedium * branchMask * 0.42 +
+
+      ridgeSmall * branchMask * 0.08;
 
 ridge =
-    smoothstep(
-        0.188,
-        0.1895,
-        ridge
-    );
 
-ridge =
-    smoothstep(
-        0.001,
-        0.012,
-        ridge
-    );
-
-ridge =
-    pow(
-        ridge,
-        4.6
-    );
-
-
-
-
-
-float fracture =
-    smoothstep(
-        0.82,
-        0.92,
-        ridge
-    );
-
-fracture =
-    pow(
-        fracture,
-        3.0
-    );
-
-
-
-float metallicFilament =
-    pow(
-        ridge,
-        42.0
-    );
-
-float goldMask =
-        ridge *
-        smoothstep(
-            0.48,
-            0.82,
-            n
+       smoothstep(
+                 0.188,
+                 0.1895,
+                 ridge
         );
 
-    
+ridge =
+
+       smoothstep(
+                 0.001,
+                 0.012,
+                 ridge
+        );
+
+ridge =
+
+       pow(
+                 ridge,
+                 4.6
+       );
+
+float fracture =
+
+       smoothstep(
+                 0.82,
+                 0.92,
+                 ridge
+       );
+
+fracture =
+
+       pow(
+                 fracture,
+                 3.0
+       );
+
+vec3 gold =
+
+       vec3(
+                 1.0,
+                 0.82,
+                 0.22
+       );
+
+float goldMask =
+
+       smoothstep(
+                 0.9965,
+                 0.9992,
+                 ridge
+       );
+
+goldMask *=
+
+       smoothstep(
+                 0.48,
+                 0.78,
+                 slab
+       );
+
+vec3 color =
+
+       mix(
+                 deep,
+                 blue,
+                 n
+       );
+
 color =
-    mix(
-        color,
+
+       mix(
+                 color,
+                 cyan,
+                 smoothstep(
+                           0.35,
+                           0.9,
+                           depth
+                 )
+       );
+
+color =
+
+       mix(
+                 color,
+                 basin,
+                 smoothstep(
+                           0.72,
+                           1.0,
+                           depth
+                 ) * 0.35
+       );
+
+color =
+
+       mix(
+                 color,
+
         gold,
         metallicFilament * 0.42
     );
@@ -428,65 +474,17 @@ color *=
 
 
 
-float filamentLine =
-
-    smoothstep(
-        0.9985,
-        0.9995,
-        ridge
-    );
-
-color +=
-
-    gold *
-
-    filamentLine *
-
-    0.85;
 
 
 
 
-float clearcoat =
-
-    pow(
-        1.0 -
-        abs(
-            uv.y * 0.85
-        ),
-        120.0
-    );
-
-color +=
-
-    vec3(1.0) *
-
-    clearcoat *
-
-    0.022;
 
 
 
 
-float shadowVein =
 
-    smoothstep(
-        0.994,
-        0.998,
-        ridge
-    );
 
-color -=
 
-    vec3(
-        0.06,
-        0.05,
-        0.04
-    ) *
-
-    shadowVein *
-
-    0.7;
 
 
 gl_FragColor =
