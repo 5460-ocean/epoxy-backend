@@ -383,25 +383,16 @@ void main() {
         );
 
     
-// piano lacquer clearcoat
-float fresnel = pow(
-    1.0 - max(dot(normalize(vec3(0.0,0.0,1.0)), normal), 0.0),
-    5.0
-);
 
-// glass sheen
-color += vec3(1.0) * fresnel * 0.12;
+// glossy epoxy finish
+color += fractureMask * 0.08;
 
-// sharp lacquer highlight
-float spec = pow(
-    max(dot(reflectDir, lightDir), 0.0),
-    96.0
-);
+// subtle glass sheen
+color += vec3(0.04, 0.05, 0.06);
 
-color += vec3(1.0) * spec * 0.45;
+// balanced contrast
+color = pow(color, vec3(0.92));
 
-// cinematic contrast
-color = pow(color, vec3(1.18));
 
 
 gl_FragColor =
