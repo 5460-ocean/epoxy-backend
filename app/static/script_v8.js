@@ -415,6 +415,52 @@ metallicFilament *=
        slab;
 
 
+
+
+vec3 deep =
+
+       vec3(
+                 0.0005,
+                 0.003,
+                 0.012
+       );
+
+vec3 blue =
+
+       vec3(
+                 0.02,
+                 0.16,
+                 0.32
+       );
+
+vec3 cyan =
+
+       vec3(
+                 0.15,
+                 0.42,
+                 0.72
+       );
+
+vec3 basin =
+
+       vec3(
+                 0.55,
+                 0.74,
+                 0.82
+       );
+
+float metallicFilament =
+
+       smoothstep(
+                 0.9982,
+                 0.9994,
+                 ridge
+       );
+
+metallicFilament *=
+       slab;
+
+
 vec3 gold =
 
        vec3(
