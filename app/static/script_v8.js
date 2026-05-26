@@ -391,7 +391,7 @@ color += fractureMask * 0.08;
 color += vec3(0.04, 0.05, 0.06);
 
 // balanced contrast
-color = pow(color, vec3(0.92));
+
 
 
 
