@@ -382,7 +382,29 @@ void main() {
             vec3(0.92)
         );
 
-    gl_FragColor =
+    
+// piano lacquer clearcoat
+float fresnel = pow(
+    1.0 - max(dot(normalize(vec3(0.0,0.0,1.0)), normal), 0.0),
+    5.0
+);
+
+// glass sheen
+color += vec3(1.0) * fresnel * 0.12;
+
+// sharp lacquer highlight
+float spec = pow(
+    max(dot(reflectDir, lightDir), 0.0),
+    96.0
+);
+
+color += vec3(1.0) * spec * 0.45;
+
+// cinematic contrast
+color = pow(color, vec3(1.18));
+
+
+gl_FragColor =
         vec4(color, 1.0);
 }
 `;
