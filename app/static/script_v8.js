@@ -403,13 +403,33 @@ vec3 basin =
                  0.82
        );
 
-float metallicFilament =
 
-       smoothstep(
-                 0.9982,
-                 0.9994,
-                 ridge
-       );
+float warpX = fbm(p * 3.0 + 1.7);
+float warpY = fbm(p * 3.0 - 2.1);
+
+vec2 warp = vec2(warpX, warpY);
+
+float fractureNoise = fbm(p * 6.0 + warp * 0.35);
+
+float fractureMask = smoothstep(0.93, 0.985, fractureNoise);
+fractureMask = pow(fractureMask, 3.0);
+
+float metallicFilament = pow(fractureMask, 8.0);
+
+
+color = mix(deep, blue, n1 * 0.4);
+color = mix(color, cyan, n2 * 0.18);
+color = mix(color, basin, basinMask * 0.65);
+
+vec3 goldTint = vec3(1.0, 0.82, 0.32);
+
+// embedded metallic veins only
+color += goldTint * metallicFilament * 0.22;
+
+// subtle depth around veins
+color *= 1.0 - metallicFilament * 0.08;
+
+
 
 metallicFilament *=
        slab;
@@ -547,6 +567,27 @@ color *=
 
 
 
+
+
+
+float fresnel = pow(
+    1.0 - max(dot(viewDir, normal), 0.0),
+    5.0
+);
+
+// glass sheen
+color += vec3(1.0) * fresnel * 0.18;
+
+// sharp highlight
+float spec = pow(
+    max(dot(reflectDir, lightDir), 0.0),
+    64.0
+);
+
+color += vec3(1.0) * spec * 0.35;
+
+// remove haze
+color = pow(color, vec3(1.15));
 
 
 gl_FragColor =
