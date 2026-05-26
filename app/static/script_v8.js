@@ -59,10 +59,8 @@ const material = new THREE.ShaderMaterial({
 
         precision highp float;
 
-        uniform float time;
-        uniform vec2 resolution;
-
-        varying vec2 vUv;
+        uniform float u_time;
+        uniform vec2 u_resolution;
 
         // ----------------------------------------------------
         // HASH
@@ -93,8 +91,8 @@ const material = new THREE.ShaderMaterial({
             vec2 u = f * f * (3.0 - 2.0 * f);
 
             return mix(a,b,u.x)
-                 + (c-a) * u.y * (1.0-u.x)
-                 + (d-b) * u.x * u.y;
+                + (c-a) * u.y * (1.0-u.x)
+                + (d-b) * u.x * u.y;
         }
 
         // ----------------------------------------------------
@@ -123,17 +121,17 @@ const material = new THREE.ShaderMaterial({
 
         void main() {
 
-            vec2 uv = vUv;
+            vec2 uv = gl_FragCoord.xy / u_resolution.xy;
 
             vec2 p = (uv - 0.5) * 2.0;
 
             // ------------------------------------------------
-            // FLOW FIELD
+            // LARGE FLOW FIELD
             // ------------------------------------------------
 
             vec2 flow = vec2(
-                fbm(p * 0.6 + time * 0.03),
-                fbm(p * 0.6 - time * 0.02 + 8.3)
+                fbm(p * 0.6 + u_time * 0.03),
+                fbm(p * 0.6 - u_time * 0.02 + 8.3)
             );
 
             p += flow * 1.4;
@@ -215,12 +213,12 @@ const material = new THREE.ShaderMaterial({
             color += gold * trunkVeins * 0.12;
 
             color += gold *
-                     metallicFilament *
-                     0.08;
+                    metallicFilament *
+                    0.08;
 
             color *= 1.0 -
-                     metallicFilament *
-                     0.04;
+                    metallicFilament *
+                    0.04;
 
             // ------------------------------------------------
             // CLEARCOAT
@@ -232,11 +230,11 @@ const material = new THREE.ShaderMaterial({
             );
 
             color += vec3(1.0) *
-                     fresnel *
-                     0.06;
+                    fresnel *
+                    0.06;
 
             // ------------------------------------------------
-            // CONTRAST
+            // FINAL
             // ------------------------------------------------
 
             color = pow(
@@ -244,11 +242,8 @@ const material = new THREE.ShaderMaterial({
                 vec3(0.92)
             );
 
-            // ------------------------------------------------
-            // OUTPUT
-            // ------------------------------------------------
-
             gl_FragColor = vec4(color, 1.0);
+        }
         }
 
     `
