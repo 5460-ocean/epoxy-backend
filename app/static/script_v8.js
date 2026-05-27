@@ -240,7 +240,7 @@ void main() {
 
         smoothstep(
             0.45,
-            0.72,
+            0.78,
             ridgeNoise
         );
 
@@ -300,7 +300,7 @@ void main() {
 
     vec3 cyanBloom = vec3(
         0.28,
-        0.72,
+        0.78,
         0.82
     );
 
