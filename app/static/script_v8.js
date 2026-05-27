@@ -183,6 +183,15 @@ vec2 riverFlow(vec2 uv) {
 void main() {
 
     vec2 uv =
+
+        vec2 resinMotion =
+                vec2(
+                        sin(u_time * 0.04),
+                        cos(u_time * 0.008)
+                ) * 0.02;
+
+        uv += resinMotion;
+
         gl_FragCoord.xy /
         uResolution.xy;
 
