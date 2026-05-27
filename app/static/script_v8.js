@@ -177,86 +177,186 @@ void main() {
         smoothstep(
             0.72,
             0.9,
-            foam
-        );
 
-    foam *= ridge;
+/*
+====================
+LUXURY RESIN
+====================
+*/
 
-    /*
-    =========================
-    OCEAN DEPTH
-    =========================
-    */
+// deep black epoxy
+vec3 deep =
+         vec3(
+                    0.003,
+                    0.004,
+                    0.010
+          );
 
-    vec3 deepOcean =
-        vec3(
-            0.01,
-            0.05,
-            0.12
-        );
+// submerged blue
+vec3 blue =
+         vec3(
+                    0.02,
+                    0.06,
+                    0.16
+          );
 
-    vec3 cyanOcean =
-        vec3(
-            0.0,
-            0.35,
-            0.48
-        );
+// subtle cyan energy
+vec3 cyan =
+         vec3(
+                    0.03,
+                    0.11,
+                    0.20
+          );
 
-    vec3 shallow =
-        vec3(
-            0.0,
-            0.55,
-            0.72
-        );
+/*
+====================
+PRESSURE BASINS
+====================
+*/
 
-    vec3 ocean =
-        mix(
-            deepOcean,
-            cyanOcean,
-            basin
-        );
+float resinMask =
+         smoothstep(
+                    0.35,
+                    0.85,
+                    basin
+          );
 
-    ocean =
-        mix(
-            ocean,
-            shallow,
-            channels * 0.5
-        );
+vec3 color =
+         mix(
+                    deep,
+                    blue,
+                    resinMask * 0.65
+          );
 
-    /*
-    =========================
-    GOLD
-    =========================
-    */
+color =
+         mix(
+                    color,
+                    cyan,
+                    channels * 0.08
+          );
 
-    vec3 gold =
-        vec3(
-            1.0,
-            0.82,
-            0.28
-        );
+// carve black depth
+color *=
+         1.0 -
+         pow(
+              1.0 - resinMask,
+              2.5
+         ) * 0.55;
 
-    ocean +=
-        gold *
-        goldMask *
-        1.8;
+/*
+====================
+FRACTURE HIERARCHY
+====================
+*/
 
-    /*
-    =========================
-    FOAM
-    =========================
-    */
+// major gold rivers
+float trunkVeins =
+       smoothstep(
+              0.72,
+              0.735,
+              fbm(uv * 1.4 + 2.0)
+       );
 
-    ocean +=
-        foam *
-        0.45;
+// secondary branches
+float branchVeins =
+       smoothstep(
+              0.76,
+              0.775,
+              fbm(uv * 5.5 - 4.0)
+       );
 
-    /*
-    =========================
-    DEPTH FOG
-    =========================
-    */
+// micro metallic cracks
+float microVeins =
+       smoothstep(
+              0.82,
+              0.826,
+              fbm(uv * 13.0 + 7.0)
+       );
 
+float fractureMask =
+       max(
+            trunkVeins,
+            branchVeins * 0.7
+       );
+
+fractureMask =
+       max(
+            fractureMask,
+            microVeins *
+            branchVeins *
+            0.5
+       );
+
+/*
+====================
+METALLIC GOLD
+====================
+*/
+
+vec3 gold =
+         vec3(
+                    1.0,
+                    0.82,
+                    0.28
+          );
+
+// thick metallic rivers
+color +=
+         gold *
+         trunkVeins *
+         0.22;
+
+// secondary branching
+color +=
+         gold *
+         branchVeins *
+         0.10;
+
+// micro metallic filaments
+color +=
+         gold *
+         microVeins *
+         0.04;
+
+// embedded metallic depth
+color *=
+         1.0 -
+         fractureMask *
+         0.08;
+
+/*
+====================
+GLASS CLEARCOAT
+====================
+*/
+
+float clearcoat =
+       pow(
+            1.0 - abs(uv.y - 0.5),
+            10.0
+       );
+
+// lacquer reflections
+color +=
+         vec3(1.0) *
+         clearcoat *
+         0.045;
+
+// subtle polished contrast
+color =
+       pow(
+            color,
+            vec3(0.92)
+       );
+
+/*
+====================
+FINAL OUTPUT
+====================
+*/
+
+gl_FragColor =
+       vec4( color, 1.0 );
     float depth =
         fbm(
             uv * 0.8
@@ -381,4 +481,3 @@ window.addEventListener("resize", () => {
 
     canvas.height = window.innerHeight;
 });
-
