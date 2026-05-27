@@ -206,10 +206,10 @@ void main() {
         fbm(flowUV * 0.8);
 
     float basinB =
-        fbm(flowUV * 1.4 + 4.0);
+        fbm(flowUV * 1.4 + vec2(sin(u_time * 0.01), cos(u_time * 0.01)) * 0.08 + 4.0);
 
     float basinC =
-        fbm(flowUV * 2.2 - 2.0);
+        fbm(flowUV * 2.2 + vec2(cos(u_time * 0.012), sin(u_time * 0.013)) * 0.05 - 2.0);
 
     // -----------------------------------
     // STEP 2
