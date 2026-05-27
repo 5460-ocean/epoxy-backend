@@ -8,7 +8,7 @@ const vertexShaderSource = `
 attribute vec2 position;
 
 void main() {
-    gl_Position = vec4(position, 1.0, 1.0);
+    gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
 
@@ -183,15 +183,6 @@ vec2 riverFlow(vec2 uv) {
 void main() {
 
     vec2 uv =
-
-        vec2 resinMotion =
-                vec2(
-                        sin(u_time * 0.04),
-                        cos(u_time * 0.008)
-                ) * 0.02;
-
-        uv += resinMotion;
-
         gl_FragCoord.xy /
         uResolution.xy;
 
@@ -249,7 +240,7 @@ void main() {
 
         smoothstep(
             0.45,
-            0.78,
+            0.72,
             ridgeNoise
         );
 
@@ -309,7 +300,7 @@ void main() {
 
     vec3 cyanBloom = vec3(
         0.28,
-        0.78,
+        0.72,
         0.82
     );
 
