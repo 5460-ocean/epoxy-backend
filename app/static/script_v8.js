@@ -1,50 +1,40 @@
-
 const canvas = document.getElementById("glcanvas");
-
 const gl = canvas.getContext("webgl");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const vertex = `
+const vertexShaderSource = `
 attribute vec2 position;
 
 void main() {
-
     gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
 
-const fragment = `
-
+const fragmentShaderSource = `
 precision highp float;
 
 uniform vec2 uResolution;
 uniform float uTime;
 
-#define PI 3.14159265359
-
 float hash(vec2 p) {
-
     return fract(
-        sin(dot(p, vec2(127.1,311.7))) * 43758.5453123
+        sin(dot(p, vec2(127.1,311.7))) *
+        43758.5453123
     );
 }
 
 float noise(vec2 p) {
 
     vec2 i = floor(p);
-
     vec2 f = fract(p);
 
     f = f * f * (3.0 - 2.0 * f);
 
     float a = hash(i);
-
     float b = hash(i + vec2(1.0,0.0));
-
     float c = hash(i + vec2(0.0,1.0));
-
     float d = hash(i + vec2(1.0,1.0));
 
     return mix(
@@ -57,7 +47,6 @@ float noise(vec2 p) {
 float fbm(vec2 p) {
 
     float v = 0.0;
-
     float a = 0.5;
 
     for(int i=0;i<6;i++) {
@@ -72,19 +61,123 @@ float fbm(vec2 p) {
     return v;
 }
 
+// -----------------------------------
+// STEP 1
+// FIX FLOW PHYSICS
+// -----------------------------------
+
 vec2 riverFlow(vec2 uv) {
 
-    float t = uTime * 0.18;
+    float t = uTime * 0.10;
 
-    vec2 flow = uv;
+    vec2 p = uv * 1.3;
 
-    flow.x += sin(flow.y * 2.5 + t) * 0.9;
+    // -----------------------------------
+    // LARGE SCALE CURRENT
+    // -----------------------------------
 
-    flow.y += cos(flow.x * 2.0 - t * 0.7) * 0.6;
+    vec2 velocity = vec2(
+        0.14,
+        0.03
+    );
 
-    flow += vec2(t * 0.15, t * 0.05);
+    // sweeping bends
+    velocity.x +=
+        sin(
+            p.y * 1.4 +
+            t
+        ) * 0.24;
 
-    return flow;
+    velocity.y +=
+        cos(
+            p.x * 1.1 -
+            t * 0.8
+        ) * 0.18;
+
+    // -----------------------------------
+    // RECURSIVE FLUID ADVECTION
+    // -----------------------------------
+
+    vec2 q = p;
+
+    for(int i = 0; i < 3; i++) {
+
+        float e = 0.18;
+
+        float n1 =
+            fbm(q + vec2(0.0, e));
+
+        float n2 =
+            fbm(q - vec2(0.0, e));
+
+        float n3 =
+            fbm(q + vec2(e, 0.0));
+
+        float n4 =
+            fbm(q - vec2(e, 0.0));
+
+        vec2 curl = vec2(
+            n1 - n2,
+            -(n3 - n4)
+        );
+
+        q += curl * 0.9;
+
+        q += velocity * 0.35;
+    }
+
+    // -----------------------------------
+    // FLOW STRETCHING
+    // -----------------------------------
+
+    q *= mat2(
+        2.4, 0.8,
+       -0.4, 1.15
+    );
+
+    // -----------------------------------
+    // DENSITY ACCUMULATION
+    // -----------------------------------
+
+    vec2 accum;
+
+    accum.x =
+        fbm(
+            q * 2.5 +
+            t * 0.15
+        );
+
+    accum.y =
+        fbm(
+            q * 2.5 -
+            t * 0.12
+        );
+
+    q +=
+        (accum - 0.5) * 0.12;
+
+    // -----------------------------------
+    // MICRO FLUID DETAIL
+    // -----------------------------------
+
+    vec2 micro;
+
+    micro.x =
+        fbm(
+            q * 7.0 +
+            t * 0.30
+        );
+
+    micro.y =
+        fbm(
+            q * 7.0 -
+            t * 0.24
+        );
+
+    q +=
+        (micro - 0.5) * 0.018;
+
+    return q;
 }
 
 void main() {
@@ -93,322 +186,270 @@ void main() {
         gl_FragCoord.xy /
         uResolution.xy;
 
+    uv -= 0.5;
+
     uv.x *=
         uResolution.x /
         uResolution.y;
 
+    // cinematic composition bias
+    uv.x += uv.y * 0.35;
+
     vec2 flowUV =
         riverFlow(uv * 2.0);
 
-    /*
-    =========================
-    LARGE OCEAN MASSES
-    =========================
-    */
+    // -----------------------------------
+    // MACRO OCEAN MASSES
+    // -----------------------------------
 
-    float basin =
-        fbm(flowUV * 0.6);
+    float basinA =
+        fbm(flowUV * 0.8);
 
-    basin =
+    float basinB =
+        fbm(flowUV * 1.4 + 4.0);
+
+    float basinC =
+        fbm(flowUV * 2.2 - 2.0);
+
+    // -----------------------------------
+    // STEP 2
+    // FLOW COMPRESSION
+    // -----------------------------------
+
+    float ocean =
+        basinA * 0.55 +
+        basinB * 0.30 +
+        basinC * 0.15;
+
+    ocean =
+        pow(
+            ocean,
+            2.8
+        );
+
+    // -----------------------------------
+    // STEP 3
+    // GOLD RIDGE EXTRACTION
+    // MOBILE SAFE
+    // -----------------------------------
+
+    float ridgeNoise =
+        fbm(flowUV * 5.0);
+
+    float ridge =
+
+        smoothstep(
+            0.45,
+            0.72,
+            ridgeNoise
+        );
+
+    ridge *=
         smoothstep(
             0.25,
             0.85,
-            basin
+            ocean
         );
 
-    /*
-    =========================
-    FLOW CHANNELS
-    =========================
-    */
+    float goldMask = ridge;
 
-    float channels =
-        fbm(
-            flowUV * 3.0
-        );
+    // -----------------------------------
+    // STEP 4
+    // DEPTH STACKING
+    // -----------------------------------
 
-    channels =
-        pow(channels, 2.2);
+    float deepLayer =
+        fbm(flowUV * 0.35);
 
-    /*
-    =========================
-    FLOW RIDGES
-    =========================
-    */
+    float midLayer =
+        fbm(flowUV * 1.1);
 
-    float ridge =
-        abs(
-            channels - basin
-        );
+    float surfaceLayer =
+        fbm(flowUV * 3.0);
 
-    ridge =
+    float translucent =
+
+        deepLayer * 0.55 +
+
+        midLayer * 0.30 +
+
+        surfaceLayer * 0.15;
+
+    translucent =
         smoothstep(
-            0.08,
-            0.22,
-            ridge
-        );
-
-    /*
-    =========================
-    GOLD BOUNDARIES
-    =========================
-    */
-
-    float goldMask =
-        ridge *
-        smoothstep(
-            0.4,
+            0.1,
             0.9,
-            channels
+            translucent
         );
 
-    /*
-    =========================
-    FOAM REGIONS
-    =========================
-    */
+    // -----------------------------------
+    // COLORS
+    // -----------------------------------
 
-    float foam =
-        fbm(
-            flowUV * 12.0
+    vec3 deepOcean = vec3(
+        0.01,
+        0.05,
+        0.12
+    );
+
+    vec3 tealFlow = vec3(
+        0.00,
+        0.34,
+        0.48
+    );
+
+    vec3 cyanBloom = vec3(
+        0.28,
+        0.72,
+        0.82
+    );
+
+    vec3 pearl = vec3(
+        0.90,
+        0.95,
+        1.0
+    );
+
+    vec3 gold = vec3(
+        1.0,
+        0.82,
+        0.35
+    );
+
+    // -----------------------------------
+    // STEP 5
+    // VOLUME FLOW RENDERING
+    // -----------------------------------
+
+    vec3 color = deepOcean;
+
+    // stronger basin depth
+    color +=
+        tealFlow *
+        ocean *
+        1.8;
+
+    // reduced cloudiness
+    color +=
+        cyanBloom *
+        translucent *
+        0.10;
+
+    // pearl metallic sheen
+    float pearlScatter =
+
+        pow(
+            surfaceLayer,
+            4.0
         );
 
-    foam =
-        smoothstep(
-            0.72,
-            0.9,
+    color +=
+        pearl *
+        pearlScatter *
+        0.18;
 
-/*
-====================
-LUXURY RESIN
-====================
-*/
+    // gold ridge transport
+    color +=
+        gold *
+        goldMask *
+        1.45;
 
-// deep black epoxy
-vec3 deep =
-         vec3(
-                    0.003,
-                    0.004,
-                    0.010
-          );
+    // -----------------------------------
+    // STEP 6
+    // SUBSURFACE DEPTH
+    // -----------------------------------
 
-// submerged blue
-vec3 blue =
-         vec3(
-                    0.02,
-                    0.06,
-                    0.16
-          );
+    float depth =
+        fbm(flowUV * 0.3);
 
-// subtle cyan energy
-vec3 cyan =
-         vec3(
-                    0.03,
-                    0.11,
-                    0.20
-          );
+    color *=
+        0.82 +
+        depth * 0.35;
 
-/*
-====================
-PRESSURE BASINS
-====================
-*/
+    // reflective micro particles
+    float sparkle =
+        pow(
+            noise(flowUV * 20.0),
+            15.0
+        );
 
-float resinMask =
-         smoothstep(
-                    0.35,
-                    0.85,
-                    basin
-          );
+    color += sparkle * 0.05;
 
-vec3 color =
-         mix(
-                    deep,
-                    blue,
-                    resinMask * 0.65
-          );
-
-color =
-         mix(
-                    color,
-                    cyan,
-                    channels * 0.08
-          );
-
-// carve black depth
-color *=
-         1.0 -
-         pow(
-              1.0 - resinMask,
-              2.5
-         ) * 0.55;
-
-/*
-====================
-FRACTURE HIERARCHY
-====================
-*/
-
-// major gold rivers
-float trunkVeins =
-       smoothstep(
-              0.72,
-              0.735,
-              fbm(uv * 1.4 + 2.0)
-       );
-
-// secondary branches
-float branchVeins =
-       smoothstep(
-              0.76,
-              0.775,
-              fbm(uv * 5.5 - 4.0)
-       );
-
-// micro metallic cracks
-float microVeins =
-       smoothstep(
-              0.82,
-              0.826,
-              fbm(uv * 13.0 + 7.0)
-       );
-
-float fractureMask =
-       max(
-            trunkVeins,
-            branchVeins * 0.7
-       );
-
-fractureMask =
-       max(
-            fractureMask,
-            microVeins *
-            branchVeins *
-            0.5
-       );
-
-/*
-====================
-METALLIC GOLD
-====================
-*/
-
-vec3 gold =
-         vec3(
-                    1.0,
-                    0.82,
-                    0.28
-          );
-
-// thick metallic rivers
-color +=
-         gold *
-         trunkVeins *
-         0.22;
-
-// secondary branching
-color +=
-         gold *
-         branchVeins *
-         0.10;
-
-// micro metallic filaments
-color +=
-         gold *
-         microVeins *
-         0.04;
-
-// embedded metallic depth
-color *=
-         1.0 -
-         fractureMask *
-         0.08;
-
-/*
-====================
-GLASS CLEARCOAT
-====================
-*/
-
-float clearcoat =
-       pow(
-            1.0 - abs(uv.y - 0.5),
-            10.0
-       );
-
-// lacquer reflections
-color +=
-         vec3(1.0) *
-         clearcoat *
-         0.045;
-
-// subtle polished contrast
-color =
-       pow(
+    // cinematic soft response
+    color =
+        pow(
             color,
             vec3(0.92)
-       );
-
-/*
-====================
-FINAL OUTPUT
-====================
-*/
-
-gl_FragColor =
-       vec4( color, 1.0 );
-    float depth =
-        fbm(
-            uv * 0.8
         );
 
-    ocean *=
-        0.75 + depth * 0.5;
-
     gl_FragColor =
-        vec4(ocean, 1.0);
+        vec4(color, 1.0);
 }
 `;
 
-function shader(type, source) {
+function compileShader(type, source) {
 
-    const s = gl.createShader(type);
+    const shader =
+        gl.createShader(type);
 
-    gl.shaderSource(s, source);
+    gl.shaderSource(shader, source);
 
-    gl.compileShader(s);
+    gl.compileShader(shader);
 
-    return s;
+    if (
+        !gl.getShaderParameter(
+            shader,
+            gl.COMPILE_STATUS
+        )
+    ) {
+        console.error(
+            gl.getShaderInfoLog(shader)
+        );
+    }
+
+    return shader;
 }
 
-const program = gl.createProgram();
+const vertexShader =
+    compileShader(
+        gl.VERTEX_SHADER,
+        vertexShaderSource
+    );
 
-gl.attachShader(
-    program,
-    shader(gl.VERTEX_SHADER, vertex)
-);
+const fragmentShader =
+    compileShader(
+        gl.FRAGMENT_SHADER,
+        fragmentShaderSource
+    );
 
-gl.attachShader(
-    program,
-    shader(gl.FRAGMENT_SHADER, fragment)
-);
+const program =
+    gl.createProgram();
+
+gl.attachShader(program, vertexShader);
+
+gl.attachShader(program, fragmentShader);
 
 gl.linkProgram(program);
 
 gl.useProgram(program);
 
-const vertices = new Float32Array([
-    -1,-1,
-     1,-1,
-    -1, 1,
-    -1, 1,
-     1,-1,
-     1, 1
-]);
+const vertices =
+    new Float32Array([
+        -1,-1,
+         1,-1,
+        -1, 1,
+        -1, 1,
+         1,-1,
+         1, 1
+    ]);
 
-const buffer = gl.createBuffer();
+const buffer =
+    gl.createBuffer();
 
-gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+gl.bindBuffer(
+    gl.ARRAY_BUFFER,
+    buffer
+);
 
 gl.bufferData(
     gl.ARRAY_BUFFER,
@@ -456,7 +497,12 @@ function render(time) {
         canvas.height
     );
 
-    gl.uniform1f(uTime, time);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.uniform1f(
+        uTime,
+        time
+    );
 
     gl.uniform2f(
         uResolution,
@@ -477,7 +523,9 @@ requestAnimationFrame(render);
 
 window.addEventListener("resize", () => {
 
-    canvas.width = window.innerWidth;
+    canvas.width =
+        window.innerWidth;
 
-    canvas.height = window.innerHeight;
+    canvas.height =
+        window.innerHeight;
 });
