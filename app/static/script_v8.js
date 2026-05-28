@@ -202,19 +202,19 @@ uv.x += uv.y * 0.35;
 
 // anchored resin transport
 vec2 flowUV =
-        riverFlow( uv * 1.2 );
+        riverFlow( uv * 0.7 );
 
 // slow internal circulation
 flowUV +=
         vec2(
                 sin(
                         flowUV.y * 3.0 +
-                        uTime * 0.05
+                        uTime * 0.22
                 ),
 
                 cos(
                         flowUV.x * 2.5 +
-                        uTime * 0.045
+                        uTime * 0.18
                 )
         ) * 0.035;
 
@@ -230,7 +230,7 @@ flowUV +=
                         flowUV.y * 7.0 -
                         flowUV.x * 3.0
                 )
-        ) * 0.012;
+        ) * 0.04;
 
 //------------------------------------------
 // RESIN MASSES
@@ -264,7 +264,7 @@ float ocean =
 ocean =
        pow(
              ocean,
-             2.1
+             1.35
        );
 
 
