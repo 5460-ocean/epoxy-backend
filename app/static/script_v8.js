@@ -216,7 +216,7 @@ flowUV +=
                         flowUV.x * 2.5 +
                         uTime * 0.18
                 )
-        ) * 0.035;
+        ) * 0.018;
 
 // subtle localized eddies
 flowUV +=
@@ -230,7 +230,7 @@ flowUV +=
                         flowUV.y * 7.0 -
                         flowUV.x * 3.0
                 )
-        ) * 0.04;
+        ) * 0.012;
 
 //------------------------------------------
 // RESIN MASSES
@@ -240,8 +240,8 @@ float basinA =
        fbm(
               flowUV * 0.8 +
               vec2(
-                     uTime * 0.012,
-                     -uTime * 0.008
+                     uTime * 0.018,
+                     -uTime * 0.006
               )
        );
 
