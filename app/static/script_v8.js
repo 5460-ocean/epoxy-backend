@@ -240,8 +240,8 @@ float basinA =
        fbm(
               flowUV * 0.8 +
               vec2(
-                     uTime * 0.03,
-                     -uTime * 0.02
+                     uTime * 0.012,
+                     -uTime * 0.008
               )
        );
 
@@ -249,9 +249,9 @@ float basinB =
        fbm(
               flowUV * 1.4 +
               vec2(
-                     sin(uTime * 0.04),
-                     cos(uTime * 0.03)
-              ) * 0.8 +
+                     sin(uTime * 0.012),
+                     cos(uTime * 0.012)
+              ) * 0.25 +
               vec2(4.0)
        );
 
@@ -259,9 +259,9 @@ float basinC =
        fbm(
               flowUV * 2.2 +
               vec2(
-                     cos(uTime * 0.05),
-                     sin(uTime * 0.04)
-              ) * 0.5 -
+                     cos(uTime * 0.014),
+                     sin(uTime * 0.012)
+              ) * 0.18 -
               vec2(2.0)
        );
 
@@ -278,7 +278,7 @@ float ocean =
 ocean =
        pow(
              ocean,
-             1.35
+             1.12
        );
 
 
