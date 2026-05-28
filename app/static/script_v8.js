@@ -237,17 +237,31 @@ flowUV +=
 //------------------------------------------
 
 float basinA =
-       fbm( flowUV * 0.8 );
+       fbm(
+              flowUV * 0.8 +
+              vec2(
+                     uTime * 0.03,
+                     -uTime * 0.02
+              )
+       );
 
 float basinB =
        fbm(
               flowUV * 1.4 +
+              vec2(
+                     sin(uTime * 0.04),
+                     cos(uTime * 0.03)
+              ) * 0.8 +
               vec2(4.0)
        );
 
 float basinC =
        fbm(
-              flowUV * 2.2 -
+              flowUV * 2.2 +
+              vec2(
+                     cos(uTime * 0.05),
+                     sin(uTime * 0.04)
+              ) * 0.5 -
               vec2(2.0)
        );
 
