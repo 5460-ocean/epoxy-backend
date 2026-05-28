@@ -204,45 +204,46 @@ uv.x += uv.y * 0.35;
 vec2 flowUV =
         riverFlow( uv * 0.7 );
 
-// viscous curl circulation
+
+// master directional current
+vec2 current =
+        vec2(
+                1.0,
+                -0.28
+        );
+
+// coherent suspended drift
+flowUV +=
+        current *
+        uTime *
+        0.018;
+
+// large viscous curl
 flowUV +=
         vec2(
                 sin(
-                        flowUV.y * 2.0 +
-                        uTime * 0.08
+                        flowUV.y * 1.5
                 ),
 
                 cos(
-                        flowUV.x * 2.0 +
-                        uTime * 0.07
+                        flowUV.x * 1.5
                 )
         ) * 0.010;
 
-// secondary curl resistance
+// subtle secondary circulation
 flowUV +=
         vec2(
                 cos(
-                        flowUV.y * 6.0
+                        flowUV.y * 3.0 +
+                        uTime * 0.03
                 ),
 
                 sin(
-                        flowUV.x * 6.0
+                        flowUV.x * 3.0 +
+                        uTime * 0.03
                 )
-        ) * 0.004;
+        ) * 0.003;
 
-// subtle localized eddies
-flowUV +=
-        vec2(
-                sin(
-                        flowUV.x * 8.0 +
-                        flowUV.y * 4.0
-                ),
-
-                cos(
-                        flowUV.y * 7.0 -
-                        flowUV.x * 3.0
-                )
-        ) * 0.012;
 
 //------------------------------------------
 // RESIN MASSES
