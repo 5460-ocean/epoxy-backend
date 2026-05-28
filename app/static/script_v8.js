@@ -1,1 +1,531 @@
-const canvas = document.getElementById("glcanvas");\nconst gl = canvas.getContext("webgl");\n\ncanvas.width = window.innerWidth;\ncanvas.height = window.innerHeight;\n\nconst vertexShaderSource = `\nattribute vec2 position;\n\nvoid main() {\n    gl_Position = vec4(position, 0.0, 1.0);\n}\n`;\n\nconst fragmentShaderSource = `\nprecision highp float;\n\nuniform vec2 uResolution;\nuniform float uTime;\n\nfloat hash(vec2 p) {\n    return fract(\n        sin(dot(p, vec2(127.1,311.7))) *\n        43758.5453123\n    );\n}\n\nfloat noise(vec2 p) {\n\n    vec2 i = floor(p);\n    vec2 f = fract(p);\n\n    f = f * f * (3.0 - 2.0 * f);\n\n    float a = hash(i);\n    float b = hash(i + vec2(1.0,0.0));\n    float c = hash(i + vec2(0.0,1.0));\n    float d = hash(i + vec2(1.0,1.0));\n\n    return mix(\n        mix(a,b,f.x),\n        mix(c,d,f.x),\n        f.y\n    );\n}\n\nfloat fbm(vec2 p) {\n\n    float v = 0.0;\n    float a = 0.5;\n\n    for(int i=0;i<6;i++) {\n\n        v += noise(p) * a;\n\n        p *= 2.0;\n\n        a *= 0.5;\n    }\n\n    return v;\n}\n\n// -----------------------------------\n// STEP 1\n// FIX FLOW PHYSICS\n// -----------------------------------\n\nvec2 riverFlow(vec2 uv) {\n\n    float t = uTime * 0.10;\n\n    vec2 p = uv * 1.3;\n\n    // -----------------------------------\n    // LARGE SCALE CURRENT\n    // -----------------------------------\n\n    vec2 velocity = vec2(\n        0.14,\n        0.03\n    );\n\n    // sweeping bends\n    velocity.x +=\n        sin(\n            p.y * 1.4 +\n            t\n        ) * 0.24;\n\n    velocity.y +=\n        cos(\n            p.x * 1.1 -\n            t * 0.8\n        ) * 0.18;\n\n    // -----------------------------------\n    // RECURSIVE FLUID ADVECTION\n    // -----------------------------------\n\n    vec2 q = p;\n\n    for(int i = 0; i < 3; i++) {\n\n        float e = 0.18;\n\n        float n1 =\n            fbm(q + vec2(0.0, e));\n\n        float n2 =\n            fbm(q - vec2(0.0, e));\n\n        float n3 =\n            fbm(q + vec2(e, 0.0));\n\n        float n4 =\n            fbm(q - vec2(e, 0.0));\n\n        vec2 curl = vec2(\n            n1 - n2,\n            -(n3 - n4)\n        );\n\n        q += curl * 0.9;\n\n        q += velocity * 0.35;\n    }\n\n    // -----------------------------------\n    // FLOW STRETCHING\n    // -----------------------------------\n\n    q *= mat2(\n        2.4, 0.8,\n       -0.4, 1.15\n    );\n\n    // -----------------------------------\n    // DENSITY ACCUMULATION\n    // -----------------------------------\n\n    vec2 accum;\n\n    accum.x =\n        fbm(\n            q * 2.5 +\n            t * 0.15\n        );\n\n    accum.y =\n        fbm(\n            q * 2.5 -\n            t * 0.12\n        );\n\n    q +=\n        (accum - 0.5) * 0.12;\n\n    // -----------------------------------\n    // MICRO FLUID DETAIL\n    // -----------------------------------\n\n    vec2 micro;\n\n    micro.x =\n        fbm(\n            q * 7.0 +\n            t * 0.30\n        );\n\n    micro.y =\n        fbm(\n            q * 7.0 -\n            t * 0.24\n        );\n\n    q +=\n        (micro - 0.5) * 0.010;\n\n    return q;\n}\n\nvoid main() {\n\n    vec2 uv =\n        gl_FragCoord.xy /\n        uResolution.xy;\n\n    uv -= 0.5;\n\n\n// ----------------------------------------------------\n// FLOW UV\n\n// ----------------------------------------------------\n// FLOW UV\n// ----------------------------------------------------\n\nuv.x *=\n       uResolution.x /\n       uResolution.y;\n\n// cinematic composition bias\nuv.x += uv.y * 0.18;\n\n// master suspended current\nvec2 current =\n        normalize(\n                vec2(\n                        1.0,\n                        -0.22\n                )\n        );\n\n// low-frequency velocity field\nvec2 velocity =\n        vec2(\n                fbm(\n                        uv * 0.45 +\n                        vec2(\n                                uTime * 0.02,\n                                0.0\n                        )\n                ),\n\n                fbm(\n                        uv * 0.45 +\n                        vec2(\n                                8.0,\n                                uTime * 0.018\n                        )\n                )\n        );\n\nvelocity -= 0.5;\n\n// resin advection\nvec2 flowUV =\n        uv;\n\n// coherent directional transport\nflowUV +=\n        current *\n        uTime *\n        0.035;\n\n// viscous steering\nflowUV +=\n        velocity *\n        0.18;\n\n// anisotropic resin stretching\nflowUV.x *= 1.35;\nflowUV.y *= 0.82;\n\n// ----------------------------------------------------\n// LARGE STATIC BASINS\n// ----------------------------------------------------\n\nfloat basinA =\n       fbm(\n              flowUV * 0.55\n       );\n\n// ----------------------------------------------------\n// MID FLOW STRUCTURES\n// ----------------------------------------------------\n\nfloat basinB =\n       fbm(\n              flowUV * 1.1 +\n              current *\n              uTime *\n              0.012 +\n              vec2(4.0)\n       );\n\n// ----------------------------------------------------\n// FINE RESIN DETAIL\n// ----------------------------------------------------\n\nfloat basinC =\n       fbm(\n              flowUV * 2.0 +\n              velocity *\n              0.35 -\n              vec2(2.0)\n       );\n\n// ----------------------------------------------------\n// RESIN COMPOSITION\n// ----------------------------------------------------\n\nfloat ocean =\n       basinA * 0.62 +\n       basinB * 0.28 +\n       basinC * 0.10;\n\nocean =\n       pow(\n             ocean,\n             1.18\n       );\n\n// ----------------------------------------------------\n// RESIN COMPOSITION\n// ----------------------------------------------------\n\nfloat ocean =\n       basinA * 0.62 +\n       basinB * 0.28 +\n       basinC * 0.10;\n\nocean =\n       pow(\n             ocean,\n             1.18\n       );\n//------------------------------------------\n// FLOW COMPRESSION\n//------------------------------------------\n\nfloat ocean =\n       basinA * 0.55 +\n       basinB * 0.30 +\n       basinC * 0.15;\n\n// sharper geological structure\nocean =\n       pow(\n             ocean,\n             1.08\n       );\n\n\n    // -----------------------------------\n    // STEP 3\n    // GOLD RIDGE EXTRACTION\n    // MOBILE SAFE\n    // -----------------------------------\n\n    float ridgeNoise =\n        fbm(flowUV * 5.0);\n\n    float ridge =\n\n        smoothstep(\n            0.45,\n            0.72,\n            ridgeNoise\n        );\n\n    ridge *=\n        smoothstep(\n            0.25,\n            0.85,\n            ocean\n        );\n\n    float goldMask = ridge;\n\n    // -----------------------------------\n    // STEP 4\n    // DEPTH STACKING\n    // -----------------------------------\n\n    float deepLayer =\n        fbm(flowUV * 0.35);\n\n    float midLayer =\n        fbm(flowUV * 1.1);\n\n    float surfaceLayer =\n        fbm(flowUV * 3.0);\n\n    float translucent =\n\n        deepLayer * 0.55 +\n\n        midLayer * 0.30 +\n\n        surfaceLayer * 0.15;\n\n    translucent =\n        smoothstep(\n            0.1,\n            0.9,\n            translucent\n        );\n\n    // -----------------------------------\n    // COLORS\n    // -----------------------------------\n\n    vec3 deepOcean = vec3(\n        0.01,\n        0.05,\n        0.12\n    );\n\n    vec3 tealFlow = vec3(\n        0.00,\n        0.34,\n        0.48\n    );\n\n    vec3 cyanBloom = vec3(\n        0.28,\n        0.72,\n        0.82\n    );\n\n    vec3 pearl = vec3(\n        0.90,\n        0.95,\n        1.0\n    );\n\n    vec3 gold = vec3(\n        1.0,\n        0.82,\n        0.35\n    );\n\n    // -----------------------------------\n    // STEP 5\n    // VOLUME FLOW RENDERING\n    // -----------------------------------\n\n    vec3 color = deepOcean;\n\n    // stronger basin depth\n    color +=\n        tealFlow *\n        ocean *\n        1.8;\n\n    // reduced cloudiness\n    color +=\n        cyanBloom *\n        translucent *\n        0.10;\n\n    // pearl metallic sheen\n    float pearlScatter =\n\n        pow(\n            surfaceLayer,\n            4.0\n        );\n\n    color +=\n        pearl *\n        pearlScatter *\n        0.18;\n\n    // gold ridge transport\n    color +=\n        gold *\n        goldMask *\n        1.45;\n\n    // -----------------------------------\n    // STEP 6\n    // SUBSURFACE DEPTH\n    // -----------------------------------\n\n    float depth =\n        fbm(flowUV * 0.3);\n\n    color *=\n        0.82 +\n        depth * 0.35;\n\n    // reflective micro particles\n    float sparkle =\n        pow(\n            noise(flowUV * 20.0),\n            15.0\n        );\n\n    color += sparkle * 0.05;\n\n    // cinematic soft response\n    color =\n        pow(\n            color,\n            vec3(0.92)\n        );\n\n    gl_FragColor =\n        vec4(color, 1.0);\n}\n`;\n\nfunction compileShader(type, source) {\n\n    const shader =\n        gl.createShader(type);\n\n    gl.shaderSource(shader, source);\n\n    gl.compileShader(shader);\n\n    if (\n        !gl.getShaderParameter(\n            shader,\n            gl.COMPILE_STATUS\n        )\n    ) {\n        console.error(\n            gl.getShaderInfoLog(shader)\n        );\n    }\n\n    return shader;\n}\n\nconst vertexShader =\n    compileShader(\n        gl.VERTEX_SHADER,\n        vertexShaderSource\n    );\n\nconst fragmentShader =\n    compileShader(\n        gl.FRAGMENT_SHADER,\n        fragmentShaderSource\n    );\n\nconst program =\n    gl.createProgram();\n\ngl.attachShader(program, vertexShader);\n\ngl.attachShader(program, fragmentShader);\n\ngl.linkProgram(program);\n\ngl.useProgram(program);\n\nconst vertices =\n    new Float32Array([\n        -1,-1,\n         1,-1,\n        -1, 1,\n        -1, 1,\n         1,-1,\n         1, 1\n    ]);\n\nconst buffer =\n    gl.createBuffer();\n\ngl.bindBuffer(\n    gl.ARRAY_BUFFER,\n    buffer\n);\n\ngl.bufferData(\n    gl.ARRAY_BUFFER,\n    vertices,\n    gl.STATIC_DRAW\n);\n\nconst position =\n    gl.getAttribLocation(\n        program,\n        "position"\n    );\n\ngl.enableVertexAttribArray(position);\n\ngl.vertexAttribPointer(\n    position,\n    2,\n    gl.FLOAT,\n    false,\n    0,\n    0\n);\n\nconst uTime =\n    gl.getUniformLocation(\n        program,\n        "uTime"\n    );\n\nconst uResolution =\n    gl.getUniformLocation(\n        program,\n        "uResolution"\n    );\n\nfunction render(time) {\n\n    time *= 0.001;\n\n    gl.viewport(\n        0,\n        0,\n        canvas.width,\n        canvas.height\n    );\n\n    gl.clear(gl.COLOR_BUFFER_BIT);\n\n    gl.uniform1f(\n        uTime,\n        time\n    );\n\n    gl.uniform2f(\n        uResolution,\n        canvas.width,\n        canvas.height\n    );\n\n    gl.drawArrays(\n        gl.TRIANGLES,\n        0,\n        6\n    );\n\n    requestAnimationFrame(render);\n}\n\nrequestAnimationFrame(render);\n\nwindow.addEventListener("resize", () => {\n\n    canvas.width =\n        window.innerWidth;\n\n    canvas.height =\n        window.innerHeight;\n});
+const canvas = document.getElementById("glcanvas");
+const gl = canvas.getContext("webgl");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const vertexShaderSource = `
+attribute vec2 position;
+
+void main() {
+    gl_Position = vec4(position, 0.0, 1.0);
+}
+`;
+
+const fragmentShaderSource = `
+precision highp float;
+
+uniform vec2 uResolution;
+uniform float uTime;
+
+float hash(vec2 p) {
+    return fract(
+        sin(dot(p, vec2(127.1,311.7))) *
+        43758.5453123
+    );
+}
+
+float noise(vec2 p) {
+
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+
+    f = f * f * (3.0 - 2.0 * f);
+
+    float a = hash(i);
+    float b = hash(i + vec2(1.0,0.0));
+    float c = hash(i + vec2(0.0,1.0));
+    float d = hash(i + vec2(1.0,1.0));
+
+    return mix(
+        mix(a,b,f.x),
+        mix(c,d,f.x),
+        f.y
+    );
+}
+
+float fbm(vec2 p) {
+
+    float v = 0.0;
+    float a = 0.5;
+
+    for(int i=0;i<6;i++) {
+
+        v += noise(p) * a;
+
+        p *= 2.0;
+
+        a *= 0.5;
+    }
+
+    return v;
+}
+
+// -----------------------------------
+// STEP 1
+// FIX FLOW PHYSICS
+// -----------------------------------
+
+vec2 riverFlow(vec2 uv) {
+
+    float t = uTime * 0.10;
+
+    vec2 p = uv * 1.3;
+
+    // -----------------------------------
+    // LARGE SCALE CURRENT
+    // -----------------------------------
+
+    vec2 velocity = vec2(
+        0.14,
+        0.03
+    );
+
+    // sweeping bends
+    velocity.x +=
+        sin(
+            p.y * 1.4 +
+            t
+        ) * 0.24;
+
+    velocity.y +=
+        cos(
+            p.x * 1.1 -
+            t * 0.8
+        ) * 0.18;
+
+    // -----------------------------------
+    // RECURSIVE FLUID ADVECTION
+    // -----------------------------------
+
+    vec2 q = p;
+
+    for(int i = 0; i < 3; i++) {
+
+        float e = 0.18;
+
+        float n1 =
+            fbm(q + vec2(0.0, e));
+
+        float n2 =
+            fbm(q - vec2(0.0, e));
+
+        float n3 =
+            fbm(q + vec2(e, 0.0));
+
+        float n4 =
+            fbm(q - vec2(e, 0.0));
+
+        vec2 curl = vec2(
+            n1 - n2,
+            -(n3 - n4)
+        );
+
+        q += curl * 0.9;
+
+        q += velocity * 0.35;
+    }
+
+    // -----------------------------------
+    // FLOW STRETCHING
+    // -----------------------------------
+
+    q *= mat2(
+        2.4, 0.8,
+       -0.4, 1.15
+    );
+
+    // -----------------------------------
+    // DENSITY ACCUMULATION
+    // -----------------------------------
+
+    vec2 accum;
+
+    accum.x =
+        fbm(
+            q * 2.5 +
+            t * 0.15
+        );
+
+    accum.y =
+        fbm(
+            q * 2.5 -
+            t * 0.12
+        );
+
+    q +=
+        (accum - 0.5) * 0.12;
+
+    // -----------------------------------
+    // MICRO FLUID DETAIL
+    // -----------------------------------
+
+    vec2 micro;
+
+    micro.x =
+        fbm(
+            q * 7.0 +
+            t * 0.30
+        );
+
+    micro.y =
+        fbm(
+            q * 7.0 -
+            t * 0.24
+        );
+
+    q +=
+        (micro - 0.5) * 0.018;
+
+    return q;
+}
+
+void main() {
+
+    vec2 uv =
+        gl_FragCoord.xy /
+        uResolution.xy;
+
+    uv -= 0.5;
+
+    uv.x *=
+        uResolution.x /
+        uResolution.y;
+
+    // cinematic composition bias
+    uv.x += uv.y * 0.35;
+
+    vec2 flowUV =
+        riverFlow(uv * 2.0);
+
+    // -----------------------------------
+    // MACRO OCEAN MASSES
+    // -----------------------------------
+
+    float basinA =
+        fbm(flowUV * 0.8);
+
+    float basinB =
+        fbm(flowUV * 1.4 + 4.0);
+
+    float basinC =
+        fbm(flowUV * 2.2 - 2.0);
+
+    // -----------------------------------
+    // STEP 2
+    // FLOW COMPRESSION
+    // -----------------------------------
+
+    float ocean =
+        basinA * 0.55 +
+        basinB * 0.30 +
+        basinC * 0.15;
+
+    ocean =
+        pow(
+            ocean,
+            2.8
+        );
+
+    // -----------------------------------
+    // STEP 3
+    // GOLD RIDGE EXTRACTION
+    // MOBILE SAFE
+    // -----------------------------------
+
+    float ridgeNoise =
+        fbm(flowUV * 5.0);
+
+    float ridge =
+
+        smoothstep(
+            0.45,
+            0.72,
+            ridgeNoise
+        );
+
+    ridge *=
+        smoothstep(
+            0.25,
+            0.85,
+            ocean
+        );
+
+    float goldMask = ridge;
+
+    // -----------------------------------
+    // STEP 4
+    // DEPTH STACKING
+    // -----------------------------------
+
+    float deepLayer =
+        fbm(flowUV * 0.35);
+
+    float midLayer =
+        fbm(flowUV * 1.1);
+
+    float surfaceLayer =
+        fbm(flowUV * 3.0);
+
+    float translucent =
+
+        deepLayer * 0.55 +
+
+        midLayer * 0.30 +
+
+        surfaceLayer * 0.15;
+
+    translucent =
+        smoothstep(
+            0.1,
+            0.9,
+            translucent
+        );
+
+    // -----------------------------------
+    // COLORS
+    // -----------------------------------
+
+    vec3 deepOcean = vec3(
+        0.01,
+        0.05,
+        0.12
+    );
+
+    vec3 tealFlow = vec3(
+        0.00,
+        0.34,
+        0.48
+    );
+
+    vec3 cyanBloom = vec3(
+        0.28,
+        0.72,
+        0.82
+    );
+
+    vec3 pearl = vec3(
+        0.90,
+        0.95,
+        1.0
+    );
+
+    vec3 gold = vec3(
+        1.0,
+        0.82,
+        0.35
+    );
+
+    // -----------------------------------
+    // STEP 5
+    // VOLUME FLOW RENDERING
+    // -----------------------------------
+
+    vec3 color = deepOcean;
+
+    // stronger basin depth
+    color +=
+        tealFlow *
+        ocean *
+        1.8;
+
+    // reduced cloudiness
+    color +=
+        cyanBloom *
+        translucent *
+        0.10;
+
+    // pearl metallic sheen
+    float pearlScatter =
+
+        pow(
+            surfaceLayer,
+            4.0
+        );
+
+    color +=
+        pearl *
+        pearlScatter *
+        0.18;
+
+    // gold ridge transport
+    color +=
+        gold *
+        goldMask *
+        1.45;
+
+    // -----------------------------------
+    // STEP 6
+    // SUBSURFACE DEPTH
+    // -----------------------------------
+
+    float depth =
+        fbm(flowUV * 0.3);
+
+    color *=
+        0.82 +
+        depth * 0.35;
+
+    // reflective micro particles
+    float sparkle =
+        pow(
+            noise(flowUV * 20.0),
+            15.0
+        );
+
+    color += sparkle * 0.05;
+
+    // cinematic soft response
+    color =
+        pow(
+            color,
+            vec3(0.92)
+        );
+
+    gl_FragColor =
+        vec4(color, 1.0);
+}
+`;
+
+function compileShader(type, source) {
+
+    const shader =
+        gl.createShader(type);
+
+    gl.shaderSource(shader, source);
+
+    gl.compileShader(shader);
+
+    if (
+        !gl.getShaderParameter(
+            shader,
+            gl.COMPILE_STATUS
+        )
+    ) {
+        console.error(
+            gl.getShaderInfoLog(shader)
+        );
+    }
+
+    return shader;
+}
+
+const vertexShader =
+    compileShader(
+        gl.VERTEX_SHADER,
+        vertexShaderSource
+    );
+
+const fragmentShader =
+    compileShader(
+        gl.FRAGMENT_SHADER,
+        fragmentShaderSource
+    );
+
+const program =
+    gl.createProgram();
+
+gl.attachShader(program, vertexShader);
+
+gl.attachShader(program, fragmentShader);
+
+gl.linkProgram(program);
+
+gl.useProgram(program);
+
+const vertices =
+    new Float32Array([
+        -1,-1,
+         1,-1,
+        -1, 1,
+        -1, 1,
+         1,-1,
+         1, 1
+    ]);
+
+const buffer =
+    gl.createBuffer();
+
+gl.bindBuffer(
+    gl.ARRAY_BUFFER,
+    buffer
+);
+
+gl.bufferData(
+    gl.ARRAY_BUFFER,
+    vertices,
+    gl.STATIC_DRAW
+);
+
+const position =
+    gl.getAttribLocation(
+        program,
+        "position"
+    );
+
+gl.enableVertexAttribArray(position);
+
+gl.vertexAttribPointer(
+    position,
+    2,
+    gl.FLOAT,
+    false,
+    0,
+    0
+);
+
+const uTime =
+    gl.getUniformLocation(
+        program,
+        "uTime"
+    );
+
+const uResolution =
+    gl.getUniformLocation(
+        program,
+        "uResolution"
+    );
+
+function render(time) {
+
+    time *= 0.001;
+
+    gl.viewport(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.uniform1f(
+        uTime,
+        time
+    );
+
+    gl.uniform2f(
+        uResolution,
+        canvas.width,
+        canvas.height
+    );
+
+    gl.drawArrays(
+        gl.TRIANGLES,
+        0,
+        6
+    );
+
+    requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+
+window.addEventListener("resize", () => {
+
+    canvas.width =
+        window.innerWidth;
+
+    canvas.height =
+        window.innerHeight;
+});
