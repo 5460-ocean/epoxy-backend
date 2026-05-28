@@ -175,7 +175,7 @@ vec2 riverFlow(vec2 uv) {
         );
 
     q +=
-        (micro - 0.5) * 0.018;
+        (micro - 0.5) * 0.010;
 
     return q;
 }
@@ -216,7 +216,7 @@ vec2 current =
 flowUV +=
         current *
         uTime *
-        0.018;
+        0.010;
 
 // large viscous curl
 flowUV +=
@@ -228,7 +228,7 @@ flowUV +=
                 cos(
                         flowUV.x * 1.5
                 )
-        ) * 0.010;
+        ) * 0.005;
 
 // subtle secondary circulation
 flowUV +=
@@ -242,7 +242,7 @@ flowUV +=
                         flowUV.x * 3.0 +
                         uTime * 0.03
                 )
-        ) * 0.003;
+        ) * 0.0015;
 
 
 //------------------------------------------
