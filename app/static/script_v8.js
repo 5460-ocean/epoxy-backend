@@ -188,44 +188,85 @@ void main() {
 
     uv -= 0.5;
 
-    uv.x *=
-        uResolution.x /
-        uResolution.y;
+    
+// ----------------------------------------------------
+// FLOW UV
+// ----------------------------------------------------
 
-    // cinematic composition bias
-    uv.x += uv.y * 0.35;
+uv.x *=
+       uResolution.x /
+       uResolution.y;
 
-    vec2 flowUV =
-        riverFlow(uv * 2.0);
+// cinematic composition bias
+uv.x += uv.y * 0.35;
 
-    // -----------------------------------
-    // MACRO OCEAN MASSES
-    // -----------------------------------
+// anchored resin transport
+vec2 flowUV =
+        riverFlow( uv * 1.2 );
 
-    float basinA =
-        fbm(flowUV * 0.8);
+// slow internal circulation
+flowUV +=
+        vec2(
+                sin(
+                        flowUV.y * 3.0 +
+                        uTime * 0.05
+                ),
 
-    float basinB =
-        fbm(flowUV * 1.4 + 4.0);
+                cos(
+                        flowUV.x * 2.5 +
+                        uTime * 0.045
+                )
+        ) * 0.035;
 
-    float basinC =
-        fbm(flowUV * 2.2 - 2.0);
+// subtle localized eddies
+flowUV +=
+        vec2(
+                sin(
+                        flowUV.x * 8.0 +
+                        flowUV.y * 4.0
+                ),
 
-    // -----------------------------------
-    // STEP 2
-    // FLOW COMPRESSION
-    // -----------------------------------
+                cos(
+                        flowUV.y * 7.0 -
+                        flowUV.x * 3.0
+                )
+        ) * 0.012;
 
-    float ocean =
-        basinA * 0.55 +
-        basinB * 0.30 +
-        basinC * 0.15;
+//------------------------------------------
+// RESIN MASSES
+//------------------------------------------
 
-    ocean =
-        pow(
-            ocean,
-            2.8
-        );
+float basinA =
+       fbm( flowUV * 0.8 );
+
+float basinB =
+       fbm(
+              flowUV * 1.4 +
+              vec2(4.0)
+       );
+
+float basinC =
+       fbm(
+              flowUV * 2.2 -
+              vec2(2.0)
+       );
+
+//------------------------------------------
+// FLOW COMPRESSION
+//------------------------------------------
+
+float ocean =
+       basinA * 0.55 +
+       basinB * 0.30 +
+       basinC * 0.15;
+
+// sharper geological structure
+ocean =
+       pow(
+             ocean,
+             2.1
+       );
+
 
     // -----------------------------------
     // STEP 3
