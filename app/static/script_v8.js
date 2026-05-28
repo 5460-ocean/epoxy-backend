@@ -204,19 +204,31 @@ uv.x += uv.y * 0.35;
 vec2 flowUV =
         riverFlow( uv * 0.7 );
 
-// slow internal circulation
+// viscous curl circulation
 flowUV +=
         vec2(
                 sin(
-                        flowUV.y * 3.0 +
-                        uTime * 0.22
+                        flowUV.y * 2.0 +
+                        uTime * 0.08
                 ),
 
                 cos(
-                        flowUV.x * 2.5 +
-                        uTime * 0.18
+                        flowUV.x * 2.0 +
+                        uTime * 0.07
                 )
-        ) * 0.018;
+        ) * 0.010;
+
+// secondary curl resistance
+flowUV +=
+        vec2(
+                cos(
+                        flowUV.y * 6.0
+                ),
+
+                sin(
+                        flowUV.x * 6.0
+                )
+        ) * 0.004;
 
 // subtle localized eddies
 flowUV +=
@@ -240,8 +252,8 @@ float basinA =
        fbm(
               flowUV * 0.8 +
               vec2(
-                     uTime * 0.018,
-                     -uTime * 0.006
+                     uTime * 0.010,
+                     -uTime * 0.003
               )
        );
 
@@ -278,7 +290,7 @@ float ocean =
 ocean =
        pow(
              ocean,
-             1.12
+             1.35
        );
 
 
