@@ -349,7 +349,7 @@ button {
 
 <canvas id="glcanvas"></canvas>
 
-<script src="/static/script_v8.js"></script>
+<script src="/static/script_v8.js?v=99"></script>
 
 </body>
 </html>
