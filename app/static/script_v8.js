@@ -121,9 +121,9 @@ vec2 riverFlow(vec2 uv) {
             -(n3 - n4)
         );
 
-        q += curl * 0.9;
+        q += curl * 0.15;
 
-        q += velocity * 0.35;
+        q += velocity * 1.00;
     }
 
     // -----------------------------------
