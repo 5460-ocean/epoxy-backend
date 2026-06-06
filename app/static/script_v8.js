@@ -85,12 +85,12 @@ vec2 riverFlow(vec2 uv) {
 velocity.x +=
     sin(
         p.y * 0.25
-    ) * 0.020;
+    ) * 0.060;
 
 velocity.y +=
     sin(
         p.x * 0.15
-    ) * 0.006;
+    ) * 0.020;
 
     // -----------------------------------
     // RECURSIVE FLUID ADVECTION
