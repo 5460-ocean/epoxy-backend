@@ -68,7 +68,7 @@ float fbm(vec2 p) {
 
 vec2 riverFlow(vec2 uv) {
 
-    float t = uTime * 0.04;
+    float t = uTime * 0.10;
 
     vec2 p = uv * 1.3;
 
