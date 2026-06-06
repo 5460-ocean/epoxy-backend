@@ -142,13 +142,13 @@ velocity.y +=
     accum.x =
         fbm(
             q * 2.5 +
-            t * 0.15
+            t * 0.02
         );
 
     accum.y =
         fbm(
             q * 2.5 -
-            t * 0.12
+            t * 0.02
         );
 
     q +=
