@@ -68,7 +68,7 @@ float fbm(vec2 p) {
 
 vec2 riverFlow(vec2 uv) {
 
-    float t = uTime * 0.10;
+    float t = uTime * 0.04;
 
     vec2 p = uv * 1.3;
 
@@ -82,17 +82,15 @@ vec2 riverFlow(vec2 uv) {
     );
 
     // sweeping bends
-    velocity.x +=
-        sin(
-            p.y * 1.4 +
-            t
-        ) * 0.24;
+velocity.x +=
+    sin(
+        p.y * 0.25
+    ) * 0.020;
 
-    velocity.y +=
-        cos(
-            p.x * 1.1 -
-            t * 0.8
-        ) * 0.18;
+velocity.y +=
+    sin(
+        p.x * 0.15
+    ) * 0.006;
 
     // -----------------------------------
     // RECURSIVE FLUID ADVECTION
@@ -100,7 +98,7 @@ vec2 riverFlow(vec2 uv) {
 
     vec2 q = p;
 
-    for(int i = 0; i < 3; i++) {
+    for(int i = 0; i < 2; i++) {
 
         float e = 0.18;
 
@@ -121,9 +119,9 @@ vec2 riverFlow(vec2 uv) {
             -(n3 - n4)
         );
 
-        q += curl * 0.15;
+        q += curl * 0.08;
 
-        q += velocity * 1.00;
+        q += velocity * 1.40;
     }
 
     // -----------------------------------
@@ -165,13 +163,13 @@ vec2 riverFlow(vec2 uv) {
     micro.x =
         fbm(
             q * 7.0 +
-            t * 0.30
+            t * 0.02
         );
 
     micro.y =
         fbm(
             q * 7.0 -
-            t * 0.24
+            t * 0.02
         );
 
     q +=
