@@ -163,13 +163,13 @@ velocity.y +=
     micro.x =
         fbm(
             q * 7.0 +
-            t * 0.02
+            t * 0.10
         );
 
     micro.y =
         fbm(
             q * 7.0 -
-            t * 0.02
+            t * 0.10
         );
 
     q +=
