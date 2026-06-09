@@ -152,7 +152,7 @@ velocity.y +=
         );
 
     q +=
-        (accum - 0.5) * 0.12;
+        (accum - 0.5) * 0.50;
 
     // -----------------------------------
     // MICRO FLUID DETAIL
@@ -173,7 +173,7 @@ velocity.y +=
         );
 
     q +=
-        (micro - 0.5) * 0.018;
+        (micro - 0.5) * 0.10;
 
     return q;
 }
