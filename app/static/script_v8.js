@@ -194,7 +194,10 @@ void main() {
     uv.x += uv.y * 0.35;
 
     vec2 flowUV =
-        riverFlow(uv * 2.0);
+        riverFlow(
+        uv * 2.0 +
+        vec2( uTime * 0.15, 0.0 )
+    );
 
     // -----------------------------------
     // MACRO OCEAN MASSES
