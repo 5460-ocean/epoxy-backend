@@ -142,13 +142,13 @@ velocity.y +=
     accum.x =
         fbm(
             q * 2.5 +
-t * 0.05
+0.0
         );
 
     accum.y =
         fbm(
             q * 2.5 -
-t * 0.05
+0.0
         );
 
     q +=
@@ -163,13 +163,13 @@ t * 0.05
     micro.x =
         fbm(
             q * 7.0 +
-t * 0.10
+0.0
         );
 
     micro.y =
         fbm(
             q * 7.0 -
-t * 0.10
+0.0
         );
 
     q +=
