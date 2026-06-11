@@ -196,7 +196,7 @@ void main() {
     vec2 flowUV =
         riverFlow(
         uv * 2.0 +
-        vec2( uTime * 0.15, 0.0 )
+        vec2( uTime * 0.25, 0.0 )
     );
 
     // -----------------------------------
