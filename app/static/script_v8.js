@@ -193,11 +193,19 @@ void main() {
     // cinematic composition bias
     uv.x += uv.y * 0.35;
 
-    vec2 drift =
-    vec2(
-        sin( uv.y * 6.0 + uv.x * 2.0 ),
-        cos( uv.x * 5.0 - uv.y * 2.0 )
-    ) * uTime * 0.04;
+vec2 drift =
+vec2(
+    sin(
+        uv.y * 6.0 +
+        uv.x * 2.0 +
+        uTime * 0.10
+    ),
+    cos(
+        uv.x * 5.0 -
+        uv.y * 2.0 +
+        uTime * 0.08
+    )
+) * 0.35;
 
 vec2 flowUV =
     riverFlow(
