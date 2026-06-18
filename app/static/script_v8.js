@@ -379,10 +379,30 @@ ocean
         0.18;
 
     // gold ridge transport
-    color +=
-        gold *
-        goldMask *
-        0.45;
+    float shadowVein =
+       pow(
+             metallicFilament,
+             8.0
+       );
+
+color -=
+       vec3(
+             0.08,
+             0.06,
+             0.04
+       ) *
+       shadowVein;
+
+float goldCore =
+       pow(
+             metallicFilament,
+             28.0
+       );
+
+color +=
+       gold *
+       goldCore *
+       0.80;
 
     // -----------------------------------
     // STEP 6
