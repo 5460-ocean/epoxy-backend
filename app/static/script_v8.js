@@ -266,7 +266,22 @@ vec2 flowUV =
             ocean
         );
 
-    float goldMask = ridge;
+    float metallicFilament =
+pow(
+1.0 - abs(
+fbm( flowUV * 8.0 ) -
+fbm( flowUV * 14.0 )
+),
+18.0
+);
+
+float goldMask =
+metallicFilament *
+smoothstep(
+0.35,
+0.85,
+ocean
+);
 
     // -----------------------------------
     // STEP 4
@@ -284,11 +299,11 @@ vec2 flowUV =
 
     float translucent =
 
-        deepLayer * 0.55 +
+        deepLayer * 0.65 +
 
-        midLayer * 0.30 +
+        midLayer * 0.25 +
 
-        surfaceLayer * 0.15;
+        surfaceLayer * 0.10;
 
     translucent =
         smoothstep(
@@ -367,7 +382,7 @@ vec2 flowUV =
     color +=
         gold *
         goldMask *
-        1.45;
+        0.45;
 
     // -----------------------------------
     // STEP 6
@@ -388,7 +403,23 @@ vec2 flowUV =
             15.0
         );
 
-    color += sparkle * 0.05;
+    color += sparkle * 0.03;
+
+float fresnel =
+       pow(
+             1.0 -
+             clamp(
+                   length( uv ) * 1.35,
+                   0.0,
+                   1.0
+             ),
+             4.0
+       );
+
+color +=
+       vec3( 1.0 ) *
+       fresnel *
+       0.12;
 
     // cinematic soft response
     color =
