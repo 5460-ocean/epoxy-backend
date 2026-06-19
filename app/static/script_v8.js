@@ -396,13 +396,13 @@ color -=
 float goldCore =
        pow(
              metallicFilament,
-             28.0
+             16.0
        );
 
 color +=
        gold *
        goldCore *
-       0.80;
+       1.10;
 
     // -----------------------------------
     // STEP 6
