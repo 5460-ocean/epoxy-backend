@@ -121,7 +121,7 @@ velocity.y +=
 
         q += curl * 0.08;
 
-        q += velocity * 4.00;
+        q += velocity * 1.20;
     }
 
     // -----------------------------------
@@ -205,7 +205,7 @@ vec2(
         uv.y * 2.0 +
         uTime * 0.08
     )
-) * 0.35;
+) * 0.10;
 
 vec2 flowUV =
     riverFlow(
