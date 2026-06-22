@@ -208,10 +208,13 @@ vec2(
 ) * 0.10;
 
 vec2 flowUV =
-    riverFlow(
-        uv * 2.0 +
-        drift
-    );
+        riverFlow(
+              uv * 2.0 +
+              vec2(
+                   uTime * 0.06,
+                   uTime * 0.015
+              )
+        );
 
     // -----------------------------------
     // MACRO OCEAN MASSES
