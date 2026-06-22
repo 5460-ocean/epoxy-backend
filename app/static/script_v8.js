@@ -77,8 +77,8 @@ vec2 riverFlow(vec2 uv) {
     // -----------------------------------
 
     vec2 velocity = vec2(
-        0.14,
-        0.03
+        0.35,
+        0.08
     );
 
     // sweeping bends
