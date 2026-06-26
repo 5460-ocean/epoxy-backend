@@ -272,8 +272,8 @@ vec2 flowUV =
     float metallicFilament =
 pow(
 1.0 - abs(
-fbm( flowUV * 8.0 ) -
-fbm( flowUV * 14.0 )
+fbm( flowUV * 2.5 ) -
+fbm( flowUV * 5.0 )
 ),
 10.0
 );
