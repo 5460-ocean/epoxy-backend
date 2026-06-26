@@ -281,8 +281,8 @@ fbm( flowUV * 14.0 )
 float goldMask =
 metallicFilament *
 smoothstep(
-0.55,
-0.92,
+0.65,
+0.95,
 ocean
 );
 
