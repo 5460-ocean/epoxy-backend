@@ -275,7 +275,7 @@ pow(
 fbm( flowUV * 2.5 ) -
 fbm( flowUV * 5.0 )
 ),
-10.0
+6.0
 );
 
 float goldMask =
