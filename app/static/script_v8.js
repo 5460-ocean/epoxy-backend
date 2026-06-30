@@ -405,7 +405,7 @@ float goldCore =
 color +=
        gold *
        goldCore *
-       1.10;
+       1.45;
 
     // -----------------------------------
     // STEP 6
