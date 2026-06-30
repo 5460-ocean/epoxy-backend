@@ -292,13 +292,13 @@ ocean
     // -----------------------------------
 
     float deepLayer =
-        fbm(flowUV * 0.35);
+        fbm(flowUV * 0.18);
 
     float midLayer =
-        fbm(flowUV * 1.1);
+        fbm(flowUV * 0.60);
 
     float surfaceLayer =
-        fbm(flowUV * 3.0);
+        fbm(flowUV * 1.60);
 
     float translucent =
 
