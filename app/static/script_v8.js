@@ -344,9 +344,9 @@ ocean
     );
 
     vec3 gold = vec3(
-        1.0,
-        0.78,
-        0.22
+        0.93,
+        0.69,
+        0.18
     );
 
     // -----------------------------------
@@ -405,11 +405,11 @@ float goldCore =
 color +=
        gold *
        goldCore *
-       1.45;
+       1.28;
 
 // Metallic edge sparkle
 float metalSpec =
-    pow(goldCore, 0.35);
+    pow(goldCore, 0.55);
 
 color +=
     vec3(
