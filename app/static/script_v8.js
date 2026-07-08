@@ -432,6 +432,41 @@ color +=
         0.82 +
         depth * 0.35;
 
+// CLEAR COAT REFLECTION
+float clearCoat =
+    pow(
+        max(depth, 0.0),
+        8.0
+    );
+
+color +=
+    vec3(
+        0.10,
+        0.12,
+        0.14
+    ) *
+    clearCoat *
+    0.18;
+
+// SUBSURFACE RESIN HAZE
+float resinHaze =
+    fbm(
+        flowUV * 0.18 +
+        vec2(
+            uTime * 0.01,
+            0.0
+        )
+    );
+
+color +=
+    vec3(
+        0.015,
+        0.035,
+        0.060
+    ) *
+    resinHaze *
+    0.18;
+
     // reflective micro particles
     float sparkle =
         pow(
@@ -439,7 +474,7 @@ color +=
             15.0
         );
 
-    color += sparkle * 0.03;
+    color += sparkle * metallicFilament * 0.03;
 
 float fresnel =
        pow(
