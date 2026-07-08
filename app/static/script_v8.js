@@ -215,6 +215,14 @@ vec2 flowUV =
                    uTime * 0.015
               )
         );
+vec2 slowFlow =
+    vec2(
+        fbm(uv * 0.25 + vec2(8.0)),
+        fbm(uv * 0.25 + vec2(-5.0))
+    ) - 0.5;
+
+flowUV += slowFlow * 0.35;
+
 
     // -----------------------------------
     // MACRO OCEAN MASSES
@@ -399,7 +407,7 @@ color -=
 float goldCore =
        pow(
              metallicFilament,
-             16.0
+             12.0
        );
 
 color +=
@@ -474,7 +482,7 @@ color +=
             15.0
         );
 
-    color += sparkle * metallicFilament * 0.03;
+color += vec3(1.00, 0.92, 0.68) * sparkle * metallicFilament * 0.045;
 
 float fresnel =
        pow(
